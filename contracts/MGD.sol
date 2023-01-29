@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.17 .0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "hardhat/console.sol";
 
 contract MGD is ReentrancyGuard {
-
     // Variables
     address payable public immutable feeAccount; // the account that receives fees
-    uint public immutable feePercent; // the fee percentage on sales 
-    uint public itemCount; 
+    uint public immutable feePercent; // the fee percentage on sales
+    uint public itemCount;
 
     struct Item {
         uint itemId;
@@ -47,14 +46,18 @@ contract MGD is ReentrancyGuard {
     }
 
     // Make item to offer on the marketplace
-    function makeItem(IERC721 _nft, uint _tokenId, uint _price) external nonReentrant {
+    function makeItem(
+        IERC721 _nft,
+        uint _tokenId,
+        uint _price
+    ) external nonReentrant {
         require(_price > 0, "Price must be greater than zero");
         // increment itemCount
-        itemCount ++;
+        itemCount++;
         // transfer nft
         _nft.transferFrom(msg.sender, address(this), _tokenId);
         // add new item to items mapping
-        items[itemCount] = Item (
+        items[itemCount] = Item(
             itemCount,
             _nft,
             _tokenId,
@@ -63,13 +66,6 @@ contract MGD is ReentrancyGuard {
             false
         );
         // emit Offered event
-        emit Offered(
-            itemCount,
-            address(_nft),
-            _tokenId,
-            _price,
-            msg.sender
-        );
+        emit Offered(itemCount, address(_nft), _tokenId, _price, msg.sender);
     }
-
 }

@@ -4,7 +4,11 @@
   "description": "MGD Smart Contracts",
   "main": "index.ts",
   "scripts": {
-    "test": "npx hardhat test"
+    "test": "npx hardhat test",
+    "prettier": "prettier --write 'contracts/**/*.sol'",
+    "lint": "prettier --list-different 'contracts/**/*.sol'",
+    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
@@ -20,15 +24,30 @@
   },
   "homepage": "https://github.com/Mint-Gold-Dust/v2-contracts#readme",
   "devDependencies": {
+    "@commitlint/cli": "^17.4.2",
+    "@commitlint/config-conventional": "^17.4.2",
     "@nomiclabs/hardhat-ethers": "^2.2.2",
+    "@nomiclabs/hardhat-etherscan": "^3.1.5",
     "@openzeppelin/contracts": "^4.8.1",
+    "@openzeppelin/hardhat-upgrades": "^1.22.1",
     "@types/chai": "^4.3.4",
     "@types/mocha": "^10.0.1",
     "chai": "^4.3.7",
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "hardhat": "^2.12.6",
+    "husky": "^8.0.3",
     "mocha": "^10.2.0",
+    "prettier": "^2.8.3",
+    "prettier-plugin-solidity": "^1.1.1",
+    "solhint": "^3.3.8",
     "ts-node": "^10.9.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }

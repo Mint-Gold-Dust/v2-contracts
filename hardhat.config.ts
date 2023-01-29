@@ -1,5 +1,6 @@
 require("dotenv").config();
 import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-etherscan";
 import { HardhatUserConfig } from "hardhat/config";
 
 const config: HardhatUserConfig = {
