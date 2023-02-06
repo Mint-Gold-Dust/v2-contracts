@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract NFT is ERC721URIStorage {
+contract GDNFT is ERC721URIStorage {
     uint public tokenCount;
 
     constructor() ERC721("Mint Gold Dust", "MGD") {}
