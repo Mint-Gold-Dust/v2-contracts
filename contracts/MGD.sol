@@ -2,70 +2,97 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+
 import "hardhat/console.sol";
 
-contract MGD is ReentrancyGuard {
+contract MGD is ReentrancyGuard, Ownable {
     // Variables
-    address payable public immutable feeAccount; // the account that receives fees
-    uint public immutable feePercent; // the fee percentage on sales
-    uint public itemCount;
+    using Counters for Counters.Counter;
+    Counters.Counter private _itemCount;
+    address payable private _feeAccount; // the account that receives fees
+    uint256 private _feePercent; // the fee percentage on sales
 
     struct Item {
-        uint itemId;
+        uint256 itemId;
         IERC721 nft;
-        uint tokenId;
-        uint price;
+        uint256 tokenId;
+        uint256 price;
         address payable seller;
         bool sold;
     }
 
     // itemId -> Item
-    mapping(uint => Item) public items;
+    mapping(uint256 => Item) public items;
 
-    event Offered(
-        uint itemId,
+    event Listed(
+        uint256 itemId,
         address indexed nft,
-        uint tokenId,
-        uint price,
+        uint256 tokenId,
+        uint256 price,
         address indexed seller
     );
 
     event Bought(
-        uint itemId,
+        uint256 itemId,
         address indexed nft,
-        uint tokenId,
-        uint price,
+        uint256 tokenId,
+        uint256 price,
         address indexed seller,
         address indexed buyer
     );
 
-    constructor(uint _feePercent) {
-        feeAccount = payable(msg.sender);
-        feePercent = _feePercent;
+    constructor(uint256 feePercent) Ownable() {
+        _feeAccount = payable(msg.sender);
+        _feePercent = feePercent;
     }
 
-    // Make item to offer on the marketplace
-    function makeItem(
-        IERC721 _nft,
-        uint _tokenId,
-        uint _price
+    function _getFeePercent() public view returns (uint256) {
+        return _feePercent;
+    }
+
+    function _setFeePercent(uint256 newFee) public onlyOwner {
+        _feePercent = newFee;
+    }
+
+    function _setFeeAccount(address payable newAddress) public onlyOwner {
+        _feeAccount = newAddress;
+    }
+
+    /**
+     *
+     * @param nft the NFT smart contract address
+     * @param tokenId the id of the token to be listed
+     * @param price the price that the token should be listed
+     */
+    function _listItem(
+        IERC721 nft,
+        uint256 tokenId,
+        uint256 price
     ) external nonReentrant {
-        require(_price > 0, "Price must be greater than zero");
+        require(price > 0, "Price must be greater than zero");
         // increment itemCount
-        itemCount++;
+        _itemCount.increment();
         // transfer nft
-        _nft.transferFrom(msg.sender, address(this), _tokenId);
+        nft.transferFrom(msg.sender, address(this), tokenId);
         // add new item to items mapping
-        items[itemCount] = Item(
-            itemCount,
-            _nft,
-            _tokenId,
-            _price,
+        items[_itemCount.current()] = Item(
+            _itemCount.current(),
+            nft,
+            tokenId,
+            price,
             payable(msg.sender),
             false
         );
-        // emit Offered event
-        emit Offered(itemCount, address(_nft), _tokenId, _price, msg.sender);
+        // emit Listed event
+        emit Listed(
+            _itemCount.current(),
+            address(nft),
+            tokenId,
+            price,
+            msg.sender
+        );
     }
 }
