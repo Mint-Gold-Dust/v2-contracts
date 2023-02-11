@@ -1,7 +1,10 @@
 import { expect, use } from "chai";
 import { ethers } from "hardhat";
 
-describe("GDNFT", function () {
+const toWei = (num: any) => ethers.utils.parseEther(num.toString());
+const fromWei = (num: any) => ethers.utils.formatEther(num);
+
+describe("NFTMarketplace", function () {
   let GDNFT: any;
   let gdnft: any;
 
