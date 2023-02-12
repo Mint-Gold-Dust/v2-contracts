@@ -105,10 +105,13 @@ contract MGD is ReentrancyGuard, Ownable {
         Item storage item = items[tokenId];
         require(
             tokenId > 0 && tokenId <= _itemCount.current(),
-            "Item does not exists!"
+            "item doesn't exist"
         );
-        require(msg.value >= totalPrice, "Not enough ether");
-        require(!item.sold, "Item already sold");
+        require(
+            msg.value >= totalPrice,
+            "not enough ether to cover item price and market fee"
+        );
+        require(!item.sold, "item already sold");
 
         // pay seller and fee account
         item.seller.transfer(item.price);
@@ -130,7 +133,7 @@ contract MGD is ReentrancyGuard, Ownable {
         );
     }
 
-    function getTotalPrice(uint256 tokenId) public view returns (uint256) {
-        return ((items[tokenId].price * (100 + _feePercent)) / 100);
+    function getTotalPrice(uint256 _itemId) public view returns (uint256) {
+        return ((items[_itemId].price * (100 + _feePercent)) / 100);
     }
 }

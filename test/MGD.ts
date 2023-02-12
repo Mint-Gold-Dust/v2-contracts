@@ -1,7 +1,7 @@
 import { expect, use } from "chai";
 import { ethers } from "hardhat";
 
-const toWei = (num: number) => ethers.utils.parseEther(num.toString());
+const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
 describe("MGD Smart Contract", function () {
@@ -16,7 +16,7 @@ describe("MGD Smart Contract", function () {
   let addr2: any;
   let addrs: any;
 
-  let _feePercent: number;
+  let _feePercent = 10;
   let URI = "sample URI";
 
   beforeEach(async function () {
@@ -24,8 +24,6 @@ describe("MGD Smart Contract", function () {
     MGD = await ethers.getContractFactory("MGD");
     GDNFT = await ethers.getContractFactory("GDNFT");
     [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
-
-    _feePercent = 10;
 
     // To deploy our contracts
     mgd = await MGD.deploy(_feePercent);
@@ -73,10 +71,11 @@ describe("MGD Smart Contract", function () {
   });
 
   describe("Purchasing marketplace items", function () {
-    let price = 2;
-    let fee = (_feePercent / 100) * price;
+    let price = 20;
+    let fee: any;
     let totalPriceInWei: any;
     beforeEach(async function () {
+      fee = (_feePercent / 100) * price;
       // addr1 mints an nft
       await gdnft.connect(addr1).mint(URI);
       // addr1 approves marketplace to spend tokens
@@ -89,6 +88,7 @@ describe("MGD Smart Contract", function () {
       const feeAccountInitialEthBal = await deployer.getBalance();
       // fetch items total price (market fees + item price)
       totalPriceInWei = await mgd.getTotalPrice(1);
+      console.log("TOTALPRICE: ", +fromWei(totalPriceInWei) - fee);
       // addr 2 purchases item.
       await expect(
         mgd.connect(addr2).purchaseItem(1, { value: totalPriceInWei })
@@ -111,8 +111,8 @@ describe("MGD Smart Contract", function () {
         +price + +fromWei(sellerInitalEthBal)
       );
       // feeAccount should receive fee
-      expect(+fromWei(feeAccountFinalEthBal)).to.equal(
-        +fee + +fromWei(feeAccountInitialEthBal)
+      expect(+fromWei(await deployer.getBalance())).to.equal(
+        fee + +fromWei(feeAccountInitialEthBal)
       );
       // The buyer should now own the gdnft
       expect(await gdnft.ownerOf(1)).to.equal(addr2.address);
