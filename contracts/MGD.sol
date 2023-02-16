@@ -61,6 +61,10 @@ contract MGD is ReentrancyGuard, Ownable {
         _feeAccount = newAddress;
     }
 
+    function _getTokenCount() public view returns (uint256) {
+        return _itemCount.current();
+    }
+
     /**
      *
      * @param nft the NFT smart contract address
@@ -94,5 +98,42 @@ contract MGD is ReentrancyGuard, Ownable {
             price,
             msg.sender
         );
+    }
+
+    function purchaseItem(uint256 tokenId) external payable nonReentrant {
+        uint256 totalPrice = getTotalPrice(tokenId);
+        Item storage item = items[tokenId];
+        require(
+            tokenId > 0 && tokenId <= _itemCount.current(),
+            "item doesn't exist"
+        );
+        require(
+            msg.value >= totalPrice,
+            "not enough ether to cover item price and market fee"
+        );
+        require(!item.sold, "item already sold");
+
+        // pay seller and fee account
+        item.seller.transfer(item.price);
+        _feeAccount.transfer(totalPrice - item.price);
+
+        // update item to sold
+        item.sold = true;
+
+        // transfer nft to buyer
+        item.nft.transferFrom(address(this), msg.sender, item.tokenId);
+
+        emit Bought(
+            item.itemId,
+            address(item.nft),
+            tokenId,
+            item.price,
+            item.seller,
+            msg.sender
+        );
+    }
+
+    function getTotalPrice(uint256 _itemId) public view returns (uint256) {
+        return ((items[_itemId].price * (100 + _feePercent)) / 100);
     }
 }
