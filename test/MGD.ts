@@ -1,52 +1,86 @@
-// import { expect, use } from "chai";
-// import { ethers } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { expect, use } from "chai";
+import { Contract, ContractFactory } from "ethers";
+import { ethers } from "hardhat";
 
-// const toWei = (num: any) => ethers.utils.parseEther(num.toString());
-// const fromWei = (num: any) => ethers.utils.formatEther(num);
+const toWei = (num: any) => ethers.utils.parseEther(num.toString());
+const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-// describe("MGD Smart Contract", function () {
-//   let MGD: any;
-//   let mgd: any;
+describe("MGD Smart Contract", function () {
+  let Teste: ContractFactory;
+  let mgd: Contract;
 
-//   let GDNFT: any;
-//   let gdnft: any;
+  let deployer: SignerWithAddress;
+  let addr1: SignerWithAddress;
+  let addr2: SignerWithAddress;
+  let addrs: SignerWithAddress[];
 
-//   let deployer: any;
-//   let addr1: any;
-//   let addr2: any;
-//   let addrs: any;
+  const mgdNFTName = "Mint Gold Dust NFT";
+  const mgdNFTSymbol = "MGD";
 
-//   let _feePercent = 10;
-//   let URI = "sample URI";
+  let _feePercent = 10;
+  let URI = "sample URI";
 
-//   beforeEach(async function () {
-//     // Get the ContractFactories and Signers here.
-//     MGD = await ethers.getContractFactory("MGD");
-//     GDNFT = await ethers.getContractFactory("GDNFT");
-//     [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
+  const SALE_FEE_PERCENT: any = 15;
+  const OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+  beforeEach(async function () {
+    // Get the ContractFactories and Signers here.
+    Teste = await ethers.getContractFactory("Teste");
+    [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
 
-//     // To deploy our contracts
-//     mgd = await MGD.deploy(_feePercent);
-//     gdnft = await GDNFT.deploy();
-//   });
+    // To deploy our contracts
+    mgd = await Teste.deploy();
+  });
 
-//   describe("Deployment", function () {
-//     it("Should contract owner be equal to deployer address", async function () {
-//       expect(await mgd.owner()).to.equal(deployer.address);
-//     });
+  describe("Deployment", function () {
+    it("Should contract owner be equal to deployer address", async function () {
+      expect(await mgd.owner()).to.equal(deployer.address);
+    });
 
-//     it("Should match the feePercent value with the value passed to the constructor", async function () {
-//       expect(await mgd._getFeePercent()).to.equal(_feePercent);
-//     });
-//   });
+    it("Should match the feePercent value with the value passed to the constructor", async function () {
+      const _SALE_FEE_PERCENT = parseInt(fromWei(await mgd.SALE_FEE_PERCENT()));
+      expect(_SALE_FEE_PERCENT).to.equal(SALE_FEE_PERCENT);
+    });
+
+    it("Should track name and symbol of the mdg collection", async function () {
+      expect(await mgd.name()).to.equal(mgdNFTName);
+      expect(await mgd.symbol()).to.equal(mgdNFTSymbol);
+    });
+  });
+
+  describe("Minting NFTs", function () {
+    it("Should track each minted NFT", async function () {
+      // addr1 mints a nft
+      await mgd.connect(deployer).whitelist(addr1.address, true);
+      await mgd.connect(addr1).mintNFT(URI);
+      //expect(await mgd.getTokenCount()).to.equal(1);
+      expect(await mgd.artistTokenCount(addr1.address)).to.equal(1);
+      expect(await mgd.tokenURI(1)).to.equal(URI);
+
+      // addr2 mints a nft
+      await mgd.connect(deployer).whitelist(addr2.address, true);
+      await mgd.connect(addr2).mintNFT(URI);
+      //expect(await mgd.getTokenCount()).to.equal(1);
+      expect(await mgd.artistTokenCount(addr2.address)).to.equal(1);
+      expect(await mgd.tokenURI(1)).to.equal(URI);
+    });
+
+    it("Should revert if the artist was not whitelisted", async function () {
+      // addr1 mints a nft
+      await expect(
+        mgd.connect(addr1).mintNFT(URI)
+      ).to.be.revertedWithCustomError(mgd, "MDG__Unauthorized");
+    });
+  });
+});
 
 //   describe("Listing a NFT", function () {
 //     let price = 1;
 
 //     beforeEach(async () => {
-//       await gdnft.connect(addr1).mint(URI);
+//       await mgd.connect(addr1).mint(URI);
 
-//       await gdnft.connect(addr1).setApprovalForAll(mgd.address, true);
+//       await mgd.connect(addr1).setApprovalForAll(mgd.address, true);
 //     });
 //     it("Should track newly listed item, transfer NFT from seller to MGD marketplace and emmit the Listed event", async function () {
 //       // addr1 mints an mgd

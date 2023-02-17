@@ -1,8 +1,29 @@
-//SPDX-License-Identifier: Unlicense
-pragma solidity 0.8.17;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.17;
 
 interface IMGD {
-    event RoleAdded(address _address, uint256 _roleID, bool _state);
+    event NFT_Minted(uint256 indexed tokenId, address owner);
 
-    event Minted(address _address, uint256 _tokenID, string _tokenUri);
+    event NFT_Listed(uint256 indexed tokenId, address seller, uint256 price);
+
+    event NFT_ListedItemUpdated(
+        uint256 indexed tokenId,
+        address seller,
+        uint256 price
+    );
+
+    event NFT_Purchased(
+        uint256 indexed tokenId,
+        address seller,
+        address newOwner,
+        uint256 price
+    );
+
+    event NFT_RemovedFromMarketplace(uint256 indexed tokenId, address seller);
+
+    event NFT_SentToAuction(uint256 indexed tokenId, address seller);
+
+    event ArtistWhitelisted(address artistAddress);
+
+    event ArtistBlacklisted(address artistAddress);
 }
