@@ -49,6 +49,22 @@ describe("MGD Smart Contract", function () {
   });
 
   describe("Minting NFTs", function () {
+    it("Should update the sale fee percent if the address is the owner", async () => {
+      const NEW_SALE_FEE_PERCENT = 20;
+      mgd.connect(deployer).updateSaleFeePercent(toWei(NEW_SALE_FEE_PERCENT));
+      const _SALE_FEE_PERCENT = parseInt(fromWei(await mgd.SALE_FEE_PERCENT()));
+      expect(_SALE_FEE_PERCENT).to.equal(NEW_SALE_FEE_PERCENT);
+    });
+
+    it("Should revert if a not owner address try to update the sale fee percent", async () => {
+      const NEW_SALE_FEE_PERCENT = 20;
+      expect(
+        mgd.connect(deployer).updateSaleFeePercent(toWei(NEW_SALE_FEE_PERCENT))
+      ).to.be.revertedWithCustomError(mgd, "MDG__Unauthorized");
+    });
+  });
+
+  describe("Minting NFTs", function () {
     it("Should track each minted NFT", async function () {
       // addr1 mints a nft
       await mgd.connect(deployer).whitelist(addr1.address, true);
