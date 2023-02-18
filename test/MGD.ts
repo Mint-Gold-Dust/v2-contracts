@@ -48,7 +48,7 @@ describe("MGD Smart Contract", function () {
     });
   });
 
-  describe("Minting NFTs", function () {
+  describe("Update Percente Fee", function () {
     it("Should update the sale fee percent if the address is the owner", async () => {
       const NEW_SALE_FEE_PERCENT = 20;
       mgd.connect(deployer).updateSaleFeePercent(toWei(NEW_SALE_FEE_PERCENT));
@@ -88,37 +88,37 @@ describe("MGD Smart Contract", function () {
       ).to.be.revertedWithCustomError(mgd, "MDG__Unauthorized");
     });
   });
+
+  describe("Listing a NFT", function () {
+    let price = 1;
+
+    beforeEach(async () => {
+      // MGD owner whitelist the artist
+      await mgd.connect(deployer).whitelist(addr1.address, true);
+      // addr1 mints a nft
+      await mgd.connect(addr1).mintNFT(URI);
+      // Artist approve mgd marketplace to exchange its NFT
+      await mgd.connect(addr1).setApprovalForAll(mgd.address, true);
+    });
+    it("Should track newly listed item, transfer NFT from seller to MGD marketplace and emmit the Listed event", async function () {
+      // addr1 mints an mgd
+      expect(mgd.connect(addr1).listNFT(mgd.address, 1, toWei(price)))
+        .to.emit(mgd, "Listed")
+        .withArgs(1, mgd.address, 1, toWei(price), addr1.address);
+
+      // owner should be the marketplace
+      expect(await mgd.ownerOf(1)).to.equal(mgd.address);
+
+      // Get item from items mapping then check fields to ensure they are correct
+      const item = await mgd.idMarketItem(1);
+      // expect(item.itemId).to.equal(1);
+      // expect(item.nft).to.equal(mgd.address);
+      // expect(item.tokenId).to.equal(1);
+      // expect(item.price).to.equal(toWei(price));
+      // expect(item.sold).to.equal(false);
+    });
+  });
 });
-
-//   describe("Listing a NFT", function () {
-//     let price = 1;
-
-//     beforeEach(async () => {
-//       await mgd.connect(addr1).mint(URI);
-
-//       await mgd.connect(addr1).setApprovalForAll(mgd.address, true);
-//     });
-//     it("Should track newly listed item, transfer NFT from seller to MGD marketplace and emmit the Listed event", async function () {
-//       // addr1 mints an mgd
-//       expect(mgd.connect(addr1)._listItem(gdnft.address, 1, toWei(price)))
-//         .to.emit(mgd, "Listed")
-//         .withArgs(1, gdnft.address, 1, toWei(price), addr1.address);
-
-//       // owner should be the marketplace
-//       expect(await gdnft.ownerOf(1)).to.equal(mgd.address);
-
-//       // Item count should now equal 1
-//       expect(await mgd._getTokenCount()).to.equal(1);
-
-//       // Get item from items mapping then check fields to ensure they are correct
-//       const item = await mgd.items(1);
-//       expect(item.itemId).to.equal(1);
-//       expect(item.nft).to.equal(gdnft.address);
-//       expect(item.tokenId).to.equal(1);
-//       expect(item.price).to.equal(toWei(price));
-//       expect(item.sold).to.equal(false);
-//     });
-//   });
 
 //   describe("Purchasing marketplace items", function () {
 //     let price = 20;

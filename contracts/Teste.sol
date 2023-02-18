@@ -19,18 +19,19 @@ error MDG__InvalidInput();
 contract Teste is ERC721URIStorage, IMGD {
     using Counters for Counters.Counter;
 
-    Counters.Counter private _tokenIds;
-    Counters.Counter private _itemsSold;
+    Counters.Counter private tokenIds;
+    Counters.Counter private itemsSold;
 
     uint256 public SALE_FEE_PERCENT = 15000000000000000000;
     address private OWNER;
-    mapping(uint256 => MarketItem) private idMarketItem;
+    mapping(uint256 => MarketItem) public idMarketItem;
     mapping(address => bool) private isArtistApproved;
     mapping(uint256 => address) public tokenIdArtist;
     mapping(address => mapping(uint256 => string)) private artistTokenIdMemoir;
     mapping(address => uint256) public artistTokenCount;
 
     struct MarketItem {
+        uint256 itemId;
         uint256 tokenId;
         address seller;
         uint256 price;
@@ -65,8 +66,8 @@ contract Teste is ERC721URIStorage, IMGD {
     function mintNFT(
         string memory _tokenURI
     ) public isApproved returns (uint256) {
-        _tokenIds.increment();
-        uint256 newTokenId = _tokenIds.current();
+        tokenIds.increment();
+        uint256 newTokenId = tokenIds.current();
         _mint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, _tokenURI);
         tokenIdArtist[newTokenId] = msg.sender;
@@ -88,7 +89,9 @@ contract Teste is ERC721URIStorage, IMGD {
         if (_price < 0) {
             revert MDG__InvalidInput();
         }
+        itemsSold.increment();
         idMarketItem[_tokenId] = MarketItem(
+            itemsSold.current(),
             _tokenId,
             payable(msg.sender),
             _price,
@@ -112,6 +115,7 @@ contract Teste is ERC721URIStorage, IMGD {
             revert MDG__Unauthorized();
         }
         idMarketItem[_tokenId] = MarketItem(
+            idMarketItem[_tokenId].tokenId,
             _tokenId,
             msg.sender,
             _price,
@@ -134,7 +138,7 @@ contract Teste is ERC721URIStorage, IMGD {
         idMarketItem[_tokenId].sold = false;
         idMarketItem[_tokenId].price = _price;
         idMarketItem[_tokenId].seller = msg.sender;
-        _itemsSold.decrement();
+        itemsSold.decrement();
         //send 5% to mgd
         _transfer(msg.sender, address(this), _tokenId);
         emit NFT_Listed(_tokenId, msg.sender, _price);
@@ -150,7 +154,7 @@ contract Teste is ERC721URIStorage, IMGD {
             revert MDG__Unauthorized();
         }
         idMarketItem[_tokenId].sold = true;
-        _itemsSold.increment();
+        itemsSold.increment();
         _transfer(address(this), msg.sender, _tokenId);
         emit NFT_RemovedFromMarketplace(_tokenId, msg.sender);
     }
@@ -180,7 +184,7 @@ contract Teste is ERC721URIStorage, IMGD {
             revert MDG__InsufficientFunds();
         }
         idMarketItem[_tokenId].sold = true;
-        _itemsSold.increment();
+        itemsSold.increment();
 
         _transfer(address(this), msg.sender, _tokenId);
         uint256 fee = (msg.value * SALE_FEE_PERCENT) / (100 * 10 ** 18);
@@ -193,7 +197,7 @@ contract Teste is ERC721URIStorage, IMGD {
     function fetchUserNFTs(
         address _address
     ) public view returns (MarketItem[] memory) {
-        uint256 totalItemCount = _tokenIds.current();
+        uint256 totalItemCount = tokenIds.current();
         uint256 itemCount = 0;
         uint256 currentIndex = 0;
 
@@ -217,7 +221,7 @@ contract Teste is ERC721URIStorage, IMGD {
 
     /// @notice Get all listed items
     function fetchItemsListed() public view returns (MarketItem[] memory) {
-        uint256 totalItemCount = _tokenIds.current();
+        uint256 totalItemCount = tokenIds.current();
         uint256 itemCount = 0;
         uint256 currentIndex = 0;
 
