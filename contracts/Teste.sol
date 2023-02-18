@@ -76,6 +76,28 @@ contract Teste is ERC721URIStorage, IMGD {
         return newTokenId;
     }
 
+    function _listItem(
+        IERC721 nft,
+        uint256 tokenId,
+        uint256 price
+    ) public isArtist(tokenId) {
+        require(price > 0, "Price must be greater than zero");
+        // increment itemCount
+        itemsSold.increment();
+        // transfer nft
+        nft.transferFrom(msg.sender, address(this), tokenId);
+        // add new item to items mapping
+        idMarketItem[itemsSold.current()] = MarketItem(
+            itemsSold.current(),
+            tokenId,
+            payable(msg.sender),
+            price,
+            false
+        );
+        // emit Listed event
+        emit NFT_Listed(itemsSold.current(), tokenId, msg.sender, price);
+    }
+
     /**
      * List a new MGD token and lists on the msrketplace
      * @notice Caller can mark the token as restricted to prevent flipping
@@ -90,15 +112,16 @@ contract Teste is ERC721URIStorage, IMGD {
             revert MDG__InvalidInput();
         }
         itemsSold.increment();
-        idMarketItem[_tokenId] = MarketItem(
+        transferFrom(msg.sender, address(this), _tokenId);
+        idMarketItem[itemsSold.current()] = MarketItem(
             itemsSold.current(),
             _tokenId,
             payable(msg.sender),
             _price,
             false
         );
-        _transfer(msg.sender, address(this), _tokenId);
-        emit NFT_Listed(_tokenId, msg.sender, _price);
+
+        emit NFT_Listed(itemsSold.current(), _tokenId, msg.sender, _price);
     }
 
     /**
@@ -121,8 +144,12 @@ contract Teste is ERC721URIStorage, IMGD {
             _price,
             false
         );
-
-        emit NFT_ListedItemUpdated(_tokenId, msg.sender, _price);
+        emit NFT_ListedItemUpdated(
+            itemsSold.current(),
+            _tokenId,
+            msg.sender,
+            _price
+        );
     }
 
     /**
@@ -141,7 +168,7 @@ contract Teste is ERC721URIStorage, IMGD {
         itemsSold.decrement();
         //send 5% to mgd
         _transfer(msg.sender, address(this), _tokenId);
-        emit NFT_Listed(_tokenId, msg.sender, _price);
+        emit NFT_Listed(itemsSold.current(), _tokenId, msg.sender, _price);
     }
 
     /**

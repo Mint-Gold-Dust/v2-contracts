@@ -4,18 +4,24 @@ pragma solidity ^0.8.17;
 interface IMGD {
     event NFT_Minted(uint256 indexed tokenId, address owner);
 
-    event NFT_Listed(uint256 indexed tokenId, address seller, uint256 price);
+    event NFT_Listed(
+        uint256 itemId,
+        uint256 indexed tokenId,
+        address indexed seller,
+        uint256 price
+    );
 
     event NFT_ListedItemUpdated(
+        uint256 itemId,
         uint256 indexed tokenId,
-        address seller,
+        address indexed seller,
         uint256 price
     );
 
     event NFT_Purchased(
         uint256 indexed tokenId,
-        address seller,
-        address newOwner,
+        address indexed seller,
+        address indexed newOwner,
         uint256 price
     );
 

@@ -104,7 +104,7 @@ describe("MGD Smart Contract", function () {
       // addr1 mints an mgd
       expect(mgd.connect(addr1).listNFT(mgd.address, 1, toWei(price)))
         .to.emit(mgd, "Listed")
-        .withArgs(1, mgd.address, 1, toWei(price), addr1.address);
+        .withArgs(1, 1, mgd.address, toWei(price), addr1.address);
 
       // owner should be the marketplace
       expect(await mgd.ownerOf(1)).to.equal(mgd.address);
