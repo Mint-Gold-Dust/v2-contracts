@@ -22,11 +22,15 @@ contract MGD_NFTMarketplace is ERC721URIStorage, IMGD {
     Counters.Counter private _tokenIds;
     Counters.Counter private _itemsSold;
 
-    uint256 public SALE_FEE_PERCENT = 15000000000000000000;
+    uint256 public SALE_FEE_PERCENT_0 = 15000000000000000000;
+    uint256 public SALE_FEE_PERCENT_1 = 5000000000000000000;
     address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
     mapping(uint256 => MarketItem) private id_marketItem;
     mapping(address => bool) private artist_IsApproved;
+    mapping(address => bool) private address_isValidator;
     mapping(uint256 => address) public tokenID_Artist;
+    mapping(uint256 => uint256) public tokenID_RoyaltyPercent;
+    mapping(uint256 => bool) public tokenID_SecondarySale;
     mapping(address => mapping(uint256 => string))
         private artist_tokenID_memoir;
 
@@ -45,8 +49,20 @@ contract MGD_NFTMarketplace is ERC721URIStorage, IMGD {
      * @notice Only contract deployer can call this function
      * @param _percentage The ID of the token being updated
      */
-    function updateSaleFeePercent(uint256 _percentage) public isOwner {
-        SALE_FEE_PERCENT = _percentage;
+    function updatePrimarySaleFeePercent0(uint256 _percentage) public isOwner {
+        SALE_FEE_PERCENT_0 = _percentage;
+    }
+
+    /**
+     * Update platform fee percentage
+     * This fee is taken from each sale on the marketplace
+     * @notice Only contract deployer can call this function
+     * @param _percentage The ID of the token being updated
+     */
+    function updateSecondarySaleFeePercent1(
+        uint256 _percentage
+    ) public isOwner {
+        SALE_FEE_PERCENT_1 = _percentage;
     }
 
     /**
@@ -56,14 +72,17 @@ contract MGD_NFTMarketplace is ERC721URIStorage, IMGD {
      * @param _tokenURI The uri of the the token metadata
      */
     function mintNFT(
-        string memory _tokenURI
+        string memory _tokenURI,
+        uint256 _royaltyPercent
     ) public isApproved returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, _tokenURI);
         tokenID_Artist[newTokenId] = msg.sender;
-        emit NFT_Minted(newTokenId, msg.sender);
+        tokenID_RoyaltyPercent[newTokenId] = _royaltyPercent;
+
+        emit NFT_Minted(newTokenId, msg.sender, _tokenURI);
         return newTokenId;
     }
 
@@ -127,7 +146,6 @@ contract MGD_NFTMarketplace is ERC721URIStorage, IMGD {
         id_marketItem[_tokenId].price = _price;
         id_marketItem[_tokenId].seller = msg.sender;
         _itemsSold.decrement();
-        //send 5% to mgd
         _transfer(msg.sender, address(this), _tokenId);
         emit NFT_Listed(_tokenId, msg.sender, _price);
     }
@@ -171,69 +189,56 @@ contract MGD_NFTMarketplace is ERC721URIStorage, IMGD {
         if (msg.value != price) {
             revert MGD_NFTMarketplace__InsufficientFunds();
         }
+
         id_marketItem[_tokenId].sold = true;
         _itemsSold.increment();
 
+        uint256 fee;
+        uint256 royalty;
+        uint256 balance;
+
+        if (tokenID_SecondarySale[_tokenId] == false) {
+            fee = (msg.value * SALE_FEE_PERCENT_0) / (100 * 10 ** 18);
+            balance = msg.value - fee;
+            payable(OWNER).transfer(fee);
+            payable(id_marketItem[_tokenId].seller).transfer(balance);
+            tokenID_SecondarySale[_tokenId] = true;
+        } else {
+            fee = (msg.value * SALE_FEE_PERCENT_1) / (100 * 10 ** 18);
+            royalty =
+                (msg.value * tokenID_RoyaltyPercent[_tokenId]) /
+                (100 * 10 ** 18);
+
+            balance = msg.value - (fee + royalty);
+            payable(OWNER).transfer(fee);
+            payable(tokenID_Artist[_tokenId]).transfer(royalty);
+            payable(id_marketItem[_tokenId].seller).transfer(balance);
+        }
+
         _transfer(address(this), msg.sender, _tokenId);
-        uint256 fee = (msg.value * SALE_FEE_PERCENT) / (100 * 10 ** 18);
-        uint256 balance = msg.value - fee;
-        payable(OWNER).transfer(fee);
-        payable(id_marketItem[_tokenId].seller).transfer(balance);
+
+        emit NFT_Purchased(
+            _tokenId,
+            id_marketItem[_tokenId].seller,
+            msg.sender,
+            price,
+            tokenID_RoyaltyPercent[_tokenId],
+            royalty,
+            tokenID_Artist[_tokenId],
+            fee
+        );
     }
 
-    /// @notice Get all user NFTs
-    function fetchUserNFTs(
-        address _address
-    ) public view returns (MarketItem[] memory) {
-        uint256 totalItemCount = _tokenIds.current();
-        uint256 itemCount = 0;
-        uint256 currentIndex = 0;
-
-        for (uint256 i = 0; i < totalItemCount; i++) {
-            if (id_marketItem[i + 1].seller == _address) {
-                itemCount += 1;
-            }
-        }
-
-        MarketItem[] memory items = new MarketItem[](itemCount);
-        for (uint256 i = 0; i < totalItemCount; i++) {
-            if (id_marketItem[i + 1].seller == _address) {
-                uint256 currentId = i + 1;
-                MarketItem storage currentItem = id_marketItem[currentId];
-                items[currentIndex] = currentItem;
-                currentIndex += 1;
-            }
-        }
-        return items;
-    }
-
-    /// @notice Get all listed items
-    function fetchItemsListed() public view returns (MarketItem[] memory) {
-        uint256 totalItemCount = _tokenIds.current();
-        uint256 itemCount = 0;
-        uint256 currentIndex = 0;
-
-        for (uint256 i = 0; i < totalItemCount; i++) {
-            if (id_marketItem[i + 1].seller == msg.sender) {
-                itemCount += 1;
-            }
-        }
-
-        MarketItem[] memory items = new MarketItem[](itemCount);
-        for (uint256 i = 0; i < totalItemCount; i++) {
-            if (id_marketItem[i + 1].seller == msg.sender) {
-                uint256 currentId = i + 1;
-                MarketItem storage currentItem = id_marketItem[currentId];
-                items[currentIndex] = currentItem;
-                currentIndex += 1;
-            }
-        }
-
-        return items;
+    /// @notice Whitelist/Blacklist validator
+    function setValidator(address _address, bool _state) public isOwner {
+        address_isValidator[_address] = _state;
     }
 
     /// @notice Whitelist/Blacklist artist
-    function whitelist(address _address, bool _state) public isOwner {
+    function whitelist(
+        address _address,
+        bool _state
+    ) public isOwnerOrValidator {
         artist_IsApproved[_address] = _state;
     }
 
@@ -246,6 +251,13 @@ contract MGD_NFTMarketplace is ERC721URIStorage, IMGD {
 
     modifier isOwner() {
         if (msg.sender != OWNER) {
+            revert MGD_NFTMarketplace__Unauthorized();
+        }
+        _;
+    }
+
+    modifier isOwnerOrValidator() {
+        if (msg.sender != OWNER || address_isValidator[msg.sender] != true) {
             revert MGD_NFTMarketplace__Unauthorized();
         }
         _;
