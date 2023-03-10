@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-interface IMGD {
+interface IGDMarketplace {
     event NFT_Minted(uint256 indexed tokenId, address owner);
 
     event NFT_Listed(

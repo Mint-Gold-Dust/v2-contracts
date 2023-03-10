@@ -9,21 +9,23 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "./IMGD.sol";
-import "hardhat/console.sol";
+import "./IGDMarketplace.sol";
+import "../node_modules/hardhat/console.sol";
 
-error MDG__Unauthorized();
-error MDG__InsufficientFunds();
-error MDG__InvalidInput();
+error Unauthorized();
+error InsufficientFunds();
+error InvalidInput();
+error InexistentItem();
+error ItemAlreadySold();
 
-contract Teste is ERC721URIStorage, IMGD {
+contract GDMarketplace is ERC721URIStorage, IGDMarketplace {
     using Counters for Counters.Counter;
 
     Counters.Counter private tokenIds;
-    Counters.Counter private itemsSold;
+    Counters.Counter private itemsListed;
 
-    uint256 public SALE_FEE_PERCENT = 15000000000000000000;
-    address private OWNER;
+    uint256 public SALE_FEE_PERCENT = 15;
+    address payable private OWNER;
     mapping(uint256 => MarketItem) public idMarketItem;
     mapping(address => bool) private isArtistApproved;
     mapping(uint256 => address) public tokenIdArtist;
@@ -33,18 +35,23 @@ contract Teste is ERC721URIStorage, IMGD {
     struct MarketItem {
         uint256 itemId;
         uint256 tokenId;
-        address seller;
+        address payable seller;
         uint256 price;
         bool sold;
     }
 
-    constructor() ERC721("Mint Gold Dust NFT", "MGD") {
-        OWNER = msg.sender;
+    constructor() ERC721("Gold Dust NFT", "GOLDUST") {
+        OWNER = payable(msg.sender);
     }
 
     /// @notice Get contract owner
     function owner() public view virtual returns (address) {
         return OWNER;
+    }
+
+    /// @notice Get an item of the marketplace
+    function getItem(uint256 _itemId) public view returns (MarketItem memory) {
+        return idMarketItem[_itemId];
     }
 
     /**
@@ -76,28 +83,6 @@ contract Teste is ERC721URIStorage, IMGD {
         return newTokenId;
     }
 
-    function _listItem(
-        IERC721 nft,
-        uint256 tokenId,
-        uint256 price
-    ) public isArtist(tokenId) {
-        require(price > 0, "Price must be greater than zero");
-        // increment itemCount
-        itemsSold.increment();
-        // transfer nft
-        nft.transferFrom(msg.sender, address(this), tokenId);
-        // add new item to items mapping
-        idMarketItem[itemsSold.current()] = MarketItem(
-            itemsSold.current(),
-            tokenId,
-            payable(msg.sender),
-            price,
-            false
-        );
-        // emit Listed event
-        emit NFT_Listed(itemsSold.current(), tokenId, msg.sender, price);
-    }
-
     /**
      * List a new MGD token and lists on the msrketplace
      * @notice Caller can mark the token as restricted to prevent flipping
@@ -108,47 +93,50 @@ contract Teste is ERC721URIStorage, IMGD {
         uint256 _tokenId,
         uint256 _price
     ) public isArtist(_tokenId) {
-        if (_price < 0) {
-            revert MDG__InvalidInput();
+        if (_price <= 0) {
+            revert InvalidInput();
         }
-        itemsSold.increment();
+        itemsListed.increment();
         transferFrom(msg.sender, address(this), _tokenId);
-        idMarketItem[itemsSold.current()] = MarketItem(
-            itemsSold.current(),
+        idMarketItem[itemsListed.current()] = MarketItem(
+            itemsListed.current(),
             _tokenId,
             payable(msg.sender),
             _price,
             false
         );
 
-        emit NFT_Listed(itemsSold.current(), _tokenId, msg.sender, _price);
+        emit NFT_Listed(itemsListed.current(), _tokenId, msg.sender, _price);
     }
 
     /**
      * Updates already listed NFT
      * @notice Only seller can call this function
-     * @param _tokenId The token ID of the the token to update
-     * @param _price The price of the NFT
+     * @param _itemId The item ID of the the token listed to update
+     * @param _newPrice The price of the NFT
      */
-    function updateListedNFT(uint256 _tokenId, uint256 _price) public {
-        if (_price < 0) {
-            revert MDG__InvalidInput();
+    function updateListedNFT(uint256 _itemId, uint256 _newPrice) public {
+        if (_newPrice <= 0) {
+            revert InvalidInput();
         }
-        if (idMarketItem[_tokenId].seller == msg.sender) {
-            revert MDG__Unauthorized();
+        if (_itemId > itemsListed.current()) {
+            revert InexistentItem();
         }
-        idMarketItem[_tokenId] = MarketItem(
-            idMarketItem[_tokenId].tokenId,
-            _tokenId,
-            msg.sender,
-            _price,
-            false
+        if (idMarketItem[_itemId].seller != address(msg.sender)) {
+            revert Unauthorized();
+        }
+        idMarketItem[_itemId] = MarketItem(
+            idMarketItem[_itemId].itemId,
+            idMarketItem[_itemId].tokenId,
+            idMarketItem[_itemId].seller,
+            _newPrice,
+            idMarketItem[_itemId].sold
         );
         emit NFT_ListedItemUpdated(
-            itemsSold.current(),
-            _tokenId,
+            _itemId,
+            idMarketItem[_itemId].tokenId,
             msg.sender,
-            _price
+            _newPrice
         );
     }
 
@@ -164,24 +152,25 @@ contract Teste is ERC721URIStorage, IMGD {
     ) public isNFTOwner(_tokenId) {
         idMarketItem[_tokenId].sold = false;
         idMarketItem[_tokenId].price = _price;
-        idMarketItem[_tokenId].seller = msg.sender;
-        itemsSold.decrement();
+        idMarketItem[_tokenId].seller = payable(msg.sender);
+        itemsListed.increment();
         //send 5% to mgd
         _transfer(msg.sender, address(this), _tokenId);
-        emit NFT_Listed(itemsSold.current(), _tokenId, msg.sender, _price);
+        emit NFT_Listed(itemsListed.current(), _tokenId, msg.sender, _price);
     }
 
     /**
      * Delist NFT from marketplace
      * @notice Only seller can call this function
-     * @param _tokenId The token ID of the the token to delist
+     * @param _itemId The token ID of the the token to delist
      */
-    function delistNFT(uint256 _tokenId) public {
-        if (idMarketItem[_tokenId].seller == msg.sender) {
-            revert MDG__Unauthorized();
+    function delistNFT(uint256 _itemId) public {
+        if (idMarketItem[_itemId].seller == msg.sender) {
+            revert Unauthorized();
         }
-        idMarketItem[_tokenId].sold = true;
-        itemsSold.increment();
+        // delete idMarketItem[_tokenId].sold = true;
+        uint256 _tokenId = idMarketItem[_itemId].tokenId;
+        delete idMarketItem[_itemId];
         _transfer(address(this), msg.sender, _tokenId);
         emit NFT_RemovedFromMarketplace(_tokenId, msg.sender);
     }
@@ -203,21 +192,35 @@ contract Teste is ERC721URIStorage, IMGD {
      * Acquire a listed NFT
      * Platform fee percentage from selling price is taken and sent to Mint Gold Dust
      * @notice Function will fail is artist has marked NFT as restricted
-     * @param _tokenId The token ID of the the token to acquire
+     * @param _itemId The token ID of the the token to acquire
      */
-    function buyNFT(uint256 _tokenId) public payable {
-        uint256 price = idMarketItem[_tokenId].price;
-        if (msg.value != price) {
-            revert MDG__InsufficientFunds();
-        }
-        idMarketItem[_tokenId].sold = true;
-        itemsSold.increment();
+    function purchaseNFT(uint256 _itemId) public payable {
+        MarketItem storage item = idMarketItem[_itemId];
+        uint256 totalPrice = getTotalPrice(item.tokenId);
 
-        _transfer(address(this), msg.sender, _tokenId);
-        uint256 fee = (msg.value * SALE_FEE_PERCENT) / (100 * 10 ** 18);
-        uint256 balance = msg.value - fee;
-        payable(OWNER).transfer(fee);
-        payable(idMarketItem[_tokenId].seller).transfer(balance);
+        if (item.sold == true) {
+            revert ItemAlreadySold();
+        }
+        if (msg.value < totalPrice) {
+            revert InsufficientFunds();
+        }
+        if (_itemId > itemsListed.current()) {
+            revert InexistentItem();
+        }
+        // pay seller and fee account
+        item.seller.transfer(item.price);
+        OWNER.transfer(totalPrice - item.price);
+
+        // update item to sold
+        item.sold = true;
+
+        // transfer nft to buyer
+        this.transferFrom(address(this), msg.sender, item.tokenId);
+        emit NFT_Purchased(item.tokenId, item.seller, msg.sender, item.price);
+    }
+
+    function getTotalPrice(uint256 _itemId) public view returns (uint256) {
+        return ((idMarketItem[_itemId].price * (100 + SALE_FEE_PERCENT)) / 100);
     }
 
     /// @notice Get all user NFTs
@@ -278,28 +281,28 @@ contract Teste is ERC721URIStorage, IMGD {
 
     modifier isNFTOwner(uint256 _tokenId) {
         if (ownerOf(_tokenId) != msg.sender) {
-            revert MDG__Unauthorized();
+            revert Unauthorized();
         }
         _;
     }
 
     modifier isOwner() {
         if (msg.sender != OWNER) {
-            revert MDG__Unauthorized();
+            revert Unauthorized();
         }
         _;
     }
 
     modifier isArtist(uint256 _tokenId) {
         if (tokenIdArtist[_tokenId] != msg.sender) {
-            revert MDG__Unauthorized();
+            revert Unauthorized();
         }
         _;
     }
 
     modifier isApproved() {
         if (isArtistApproved[msg.sender] == false) {
-            revert MDG__Unauthorized();
+            revert Unauthorized();
         }
         _;
     }

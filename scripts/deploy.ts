@@ -7,9 +7,9 @@ async function main() {
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
   // Get the ContractFactories and Signers here.
-  const Teste = await ethers.getContractFactory("Teste");
+  const GDMarketplace = await ethers.getContractFactory("GDMarketplace");
   // deploy contracts
-  const mgd = await Teste.deploy();
+  const gdDMarketplace = await GDMarketplace.deploy();
   // Save copies of each contracts abi and address to the frontend.
   //saveFrontendFiles(mgd, "MGD");
   //saveFrontendFiles(gdnft, "GDNFT");
