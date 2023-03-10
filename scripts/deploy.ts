@@ -10,7 +10,7 @@ async function main() {
   const GDNFT = await ethers.getContractFactory("GDNFT");
   const MGD = await ethers.getContractFactory("MGD");
   // deploy contracts
-  const mgd = await MGD.deploy(1);
+  const mgd = await MGD.deploy();
   const gdnft = await GDNFT.deploy();
   // Save copies of each contracts abi and address to the frontend.
   //saveFrontendFiles(mgd, "MGD");

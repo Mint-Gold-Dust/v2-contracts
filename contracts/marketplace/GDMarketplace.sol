@@ -9,21 +9,22 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "./IMGD.sol";
+import "./IGD.sol";
 import "hardhat/console.sol";
 
 error MGD_NFTMarketplace__Unauthorized();
 error MGD_NFTMarketplace__InsufficientFunds();
 error MGD_NFTMarketplace__InvalidInput();
 
-contract MGD_NFTMarketplace is ERC721URIStorage, IMGD {
+contract GDMarketplace is ERC721URIStorage, IGD {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIds;
     Counters.Counter private _itemsSold;
 
     uint256 public SALE_FEE_PERCENT = 15000000000000000000;
-    address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
+    // address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
+    address private constant OWNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     mapping(uint256 => MarketItem) private id_marketItem;
     mapping(address => bool) private artist_IsApproved;
     mapping(uint256 => address) public tokenID_Artist;
