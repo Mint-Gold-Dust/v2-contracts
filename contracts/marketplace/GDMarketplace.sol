@@ -12,10 +12,10 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./IGD.sol";
 import "hardhat/console.sol";
 
-error MGD_NFTMarketplace__Unauthorized();
-error MGD_NFTMarketplace__IncorrectAmountSent();
-error MGD_NFTMarketplace__InvalidInput();
-error InexistentItem();
+error GDNFTMarketplaceUnauthorized();
+error GDNFTMarketplaceIncorrectAmountSent();
+error GDNFTMarketplaceInvalidInput();
+error GDNFTMarketplaceInexistentItem();
 error NFTNotListedForSale();
 
 contract GDMarketplace is ERC721URIStorage, IGD {
@@ -66,7 +66,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         _mint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, _tokenURI);
         tokenID_Artist[newTokenId] = msg.sender;
-        emit NFT_Minted(newTokenId, msg.sender);
+        emit NFTMinted(newTokenId, msg.sender);
         return newTokenId;
     }
 
@@ -81,7 +81,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         uint256 _price
     ) public isArtist(_tokenId) {
         if (_price <= 0) {
-            revert MGD_NFTMarketplace__InvalidInput();
+            revert GDNFTMarketplaceInvalidInput();
         }
         id_marketItem[_tokenId] = MarketItem(
             _tokenId,
@@ -90,7 +90,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
             false
         );
         _transfer(msg.sender, address(this), _tokenId);
-        emit NFT_Listed(_tokenId, msg.sender, _price);
+        emit NFTListed(_tokenId, msg.sender, _price);
     }
 
     /**
@@ -101,13 +101,13 @@ contract GDMarketplace is ERC721URIStorage, IGD {
      */
     function updateListedNFT(uint256 _tokenId, uint256 _price) public {
         if (_price <= 0) {
-            revert MGD_NFTMarketplace__InvalidInput();
+            revert GDNFTMarketplaceInvalidInput();
         }
         if (_tokenId > _tokenIds.current()) {
-            revert InexistentItem();
+            revert GDNFTMarketplaceInexistentItem();
         }
         if (id_marketItem[_tokenId].seller != msg.sender) {
-            revert MGD_NFTMarketplace__Unauthorized();
+            revert GDNFTMarketplaceUnauthorized();
         }
         if (id_marketItem[_tokenId].sold == true) {
             revert NFTNotListedForSale();
@@ -120,7 +120,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
             false
         );
 
-        emit NFT_ListedItemUpdated(_tokenId, msg.sender, _price);
+        emit NFTListedItemUpdated(_tokenId, msg.sender, _price);
     }
 
     /**
@@ -134,7 +134,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         uint256 _price
     ) public isNFTOwner(_tokenId) {
         if (_price <= 0) {
-            revert MGD_NFTMarketplace__InvalidInput();
+            revert GDNFTMarketplaceInvalidInput();
         }
         id_marketItem[_tokenId].sold = false;
         id_marketItem[_tokenId].price = _price;
@@ -142,7 +142,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         _itemsSold.decrement();
         //send 5% to mgd
         _transfer(msg.sender, address(this), _tokenId);
-        emit NFT_Relisted(_tokenId, msg.sender, _price);
+        emit NFTRelisted(_tokenId, msg.sender, _price);
     }
 
     /**
@@ -152,12 +152,12 @@ contract GDMarketplace is ERC721URIStorage, IGD {
      */
     function delistNFT(uint256 _tokenId) public {
         if (id_marketItem[_tokenId].seller != msg.sender) {
-            revert MGD_NFTMarketplace__Unauthorized();
+            revert GDNFTMarketplaceUnauthorized();
         }
         id_marketItem[_tokenId].sold = true;
         _itemsSold.increment();
         _transfer(address(this), msg.sender, _tokenId);
-        emit NFT_RemovedFromMarketplace(_tokenId, msg.sender);
+        emit NFTRemovedFromMarketplace(_tokenId, msg.sender);
     }
 
     /**
@@ -181,11 +181,11 @@ contract GDMarketplace is ERC721URIStorage, IGD {
      */
     function buyNFT(uint256 _tokenId) public payable {
         if (_tokenId > _tokenIds.current()) {
-            revert InexistentItem();
+            revert GDNFTMarketplaceInexistentItem();
         }
         uint256 price = id_marketItem[_tokenId].price;
         if (msg.value != price) {
-            revert MGD_NFTMarketplace__IncorrectAmountSent();
+            revert GDNFTMarketplaceIncorrectAmountSent();
         }
         if (id_marketItem[_tokenId].sold == true) {
             revert NFTNotListedForSale();
@@ -200,7 +200,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         id_marketItem[_tokenId].sold = true;
         _itemsSold.increment();
 
-        emit NFT_Purchased(
+        emit NFTPurchased(
             _tokenId,
             id_marketItem[_tokenId].seller,
             msg.sender,
@@ -266,28 +266,28 @@ contract GDMarketplace is ERC721URIStorage, IGD {
 
     modifier isNFTOwner(uint256 _tokenId) {
         if (ownerOf(_tokenId) != msg.sender) {
-            revert MGD_NFTMarketplace__Unauthorized();
+            revert GDNFTMarketplaceUnauthorized();
         }
         _;
     }
 
     modifier isOwner() {
         if (msg.sender != OWNER) {
-            revert MGD_NFTMarketplace__Unauthorized();
+            revert GDNFTMarketplaceUnauthorized();
         }
         _;
     }
 
     modifier isArtist(uint256 _tokenId) {
         if (tokenID_Artist[_tokenId] != msg.sender) {
-            revert MGD_NFTMarketplace__Unauthorized();
+            revert GDNFTMarketplaceUnauthorized();
         }
         _;
     }
 
     modifier isApproved() {
         if (artist_IsApproved[msg.sender] == false) {
-            revert MGD_NFTMarketplace__Unauthorized();
+            revert GDNFTMarketplaceUnauthorized();
         }
         _;
     }

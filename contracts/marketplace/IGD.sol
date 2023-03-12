@@ -2,28 +2,28 @@
 pragma solidity 0.8.17;
 
 interface IGD {
-    event NFT_Minted(uint256 indexed tokenId, address owner);
+    event NFTMinted(uint256 indexed tokenId, address owner);
 
-    event NFT_Listed(uint256 indexed tokenId, address seller, uint256 price);
+    event NFTListed(uint256 indexed tokenId, address seller, uint256 price);
 
-    event NFT_Relisted(uint256 indexed tokenId, address seller, uint256 price);
+    event NFTRelisted(uint256 indexed tokenId, address seller, uint256 price);
 
-    event NFT_ListedItemUpdated(
+    event NFTListedItemUpdated(
         uint256 indexed tokenId,
         address seller,
         uint256 price
     );
 
-    event NFT_Purchased(
+    event NFTPurchased(
         uint256 indexed tokenId,
         address seller,
         address newOwner,
         uint256 price
     );
 
-    event NFT_RemovedFromMarketplace(uint256 indexed tokenId, address seller);
+    event NFTRemovedFromMarketplace(uint256 indexed tokenId, address seller);
 
-    event NFT_SentToAuction(uint256 indexed tokenId, address seller);
+    event NFTSentToAuction(uint256 indexed tokenId, address seller);
 
     event ArtistWhitelisted(address artistAddress);
 

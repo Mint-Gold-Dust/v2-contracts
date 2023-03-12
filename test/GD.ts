@@ -68,7 +68,7 @@ describe("MGD Smart Contract", function () {
           .updateSaleFeePercent(toWei(NEW_SALE_FEE_PERCENT))
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__Unauthorized"
+        "GDNFTMarketplaceUnauthorized"
       );
     });
   });
@@ -77,19 +77,25 @@ describe("MGD Smart Contract", function () {
     it("Should track each minted NFT.", async function () {
       // addr1 mints a nft
       await gdMarketPlace.connect(deployer).whitelist(addr1.address, true);
-      await gdMarketPlace.connect(addr1).mintNFT(URI);
+      expect(await gdMarketPlace.connect(addr1).mintNFT(URI))
+        .to.emit(gdMarketPlace, "NFTMinted")
+        .withArgs(1, addr1.address);
       expect(await gdMarketPlace.tokenURI(1)).to.equal(URI);
       expect(await gdMarketPlace.tokenID_Artist(1)).to.equal(addr1.address);
 
       // addr2 mints a nft
       await gdMarketPlace.connect(deployer).whitelist(addr2.address, true);
-      await gdMarketPlace.connect(addr2).mintNFT(URI);
+      expect(await gdMarketPlace.connect(addr2).mintNFT(URI))
+        .to.emit(gdMarketPlace, "NFTMinted")
+        .withArgs(1, addr1.address);
       expect(await gdMarketPlace.tokenURI(2)).to.equal(URI);
       expect(await gdMarketPlace.tokenID_Artist(2)).to.not.equal(addr1.address);
 
       // addr1 mints another nft
       await gdMarketPlace.connect(deployer).whitelist(addr1.address, true);
-      await gdMarketPlace.connect(addr1).mintNFT(URI);
+      expect(await gdMarketPlace.connect(addr1).mintNFT(URI))
+        .to.emit(gdMarketPlace, "NFTMinted")
+        .withArgs(1, addr1.address);
       expect(await gdMarketPlace.tokenURI(3)).to.equal(URI);
       expect(await gdMarketPlace.tokenID_Artist(3)).to.equal(addr1.address);
 
@@ -97,13 +103,13 @@ describe("MGD Smart Contract", function () {
       expect(await gdMarketPlace.balanceOf(addr2.address)).to.be.equal(1);
     });
 
-    it("Should revert with a MGD_NFTMarketplace__Unauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
+    it("Should revert with a GDNFTMarketplaceUnauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
       // addr1 try to mint a NFT without be whitelisted
       await expect(
         gdMarketPlace.connect(addr1).mintNFT(URI)
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__Unauthorized"
+        "GDNFTMarketplaceUnauthorized"
       );
     });
   });
@@ -122,10 +128,10 @@ describe("MGD Smart Contract", function () {
         .setApprovalForAll(gdMarketPlace.address, true);
     });
 
-    it("Should track newly listed item, transfer NFT from seller to MGD marketplace and emmit the NFT_Listed event.", async function () {
+    it("Should track newly listed item, transfer NFT from seller to MGD marketplace and emmit the NFTListed event.", async function () {
       // addr1 list the NFT with tokenID on gdMarketplace
       await expect(gdMarketPlace.connect(addr1).listNFT(1, toWei(price)))
-        .to.emit(gdMarketPlace, "NFT_Listed")
+        .to.emit(gdMarketPlace, "NFTListed")
         .withArgs(1, addr1.address, toWei(price));
 
       // owner should be the marketplace
@@ -143,7 +149,7 @@ describe("MGD Smart Contract", function () {
         gdMarketPlace.connect(addr1).listNFT(1, 0)
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__InvalidInput"
+        "GDNFTMarketplaceInvalidInput"
       );
     });
 
@@ -152,7 +158,7 @@ describe("MGD Smart Contract", function () {
         gdMarketPlace.connect(addr2).listNFT(1, toWei(price))
       ).to.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__Unauthorized"
+        "GDNFTMarketplaceUnauthorized"
       );
     });
   });
@@ -174,7 +180,7 @@ describe("MGD Smart Contract", function () {
       await gdMarketPlace.connect(addr1).listNFT(1, toWei(primaryPrice));
     });
 
-    it("Should track if a listed item was correct updated and emmit the NFT_ListedItemUpdated event. We should remember that in this moment the owner of the NFT is the marketplace.", async function () {
+    it("Should track if a listed item was correct updated and emmit the NFTListedItemUpdated event. We should remember that in this moment the owner of the NFT is the marketplace.", async function () {
       // Get item from items mapping then check fields to ensure they are correct before update
       let userNFTs = await gdMarketPlace.fetchUserNFTs(addr1.address);
       expect(userNFTs[0].price).to.equal(toWei(primaryPrice));
@@ -182,7 +188,7 @@ describe("MGD Smart Contract", function () {
       expect(
         await gdMarketPlace.connect(addr1).updateListedNFT(1, toWei(newPrice))
       )
-        .to.emit(gdMarketPlace, "NFT_ListedItemUpdated")
+        .to.emit(gdMarketPlace, "NFTListedItemUpdated")
         .withArgs(1, addr1.address, toWei(newPrice));
 
       // Get item from items mapping then check fields to ensure they are correct
@@ -197,7 +203,7 @@ describe("MGD Smart Contract", function () {
         gdMarketPlace.connect(addr1).updateListedNFT(1, toWei(0))
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__InvalidInput"
+        "GDNFTMarketplaceInvalidInput"
       );
     });
 
@@ -205,10 +211,13 @@ describe("MGD Smart Contract", function () {
       // try to list with price less than zero
       await expect(
         gdMarketPlace.connect(addr1).updateListedNFT(2, toWei(2))
-      ).to.be.revertedWithCustomError(gdMarketPlace, "InexistentItem");
+      ).to.be.revertedWithCustomError(
+        gdMarketPlace,
+        "GDNFTMarketplaceInexistentItem"
+      );
     });
 
-    it("Should revert the transaction with an MGD_NFTMarketplace__Unauthorized error if some address that is not the seller try to update the NFT listed.", async function () {
+    it("Should revert the transaction with an GDNFTMarketplaceUnauthorized error if some address that is not the seller try to update the NFT listed.", async function () {
       // addr1 mints another NFT
       await gdMarketPlace.connect(addr1).mintNFT(URI);
 
@@ -217,7 +226,7 @@ describe("MGD Smart Contract", function () {
         gdMarketPlace.connect(addr2).updateListedNFT(1, toWei(newPrice))
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__Unauthorized"
+        "GDNFTMarketplaceUnauthorized"
       );
     });
 
@@ -226,7 +235,7 @@ describe("MGD Smart Contract", function () {
       await expect(
         gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(primaryPrice) })
       )
-        .to.emit(gdMarketPlace, "NFT_Purchased")
+        .to.emit(gdMarketPlace, "NFTPurchased")
         .withArgs(1, addr1.address, addr2.address, toWei(primaryPrice));
 
       await expect(
@@ -255,24 +264,24 @@ describe("MGD Smart Contract", function () {
       await expect(
         gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(primaryPrice) })
       )
-        .to.emit(gdMarketPlace, "NFT_Purchased")
+        .to.emit(gdMarketPlace, "NFTPurchased")
         .withArgs(1, addr1.address, addr2.address, toWei(primaryPrice));
     });
 
-    it("Should track a relist of some purchased NFT and emmit the NFT_Relisted event.", async function () {
+    it("Should track a relist of some purchased NFT and emmit the NFTRelisted event.", async function () {
       // addr2 relist a purchased NFT
       expect(await gdMarketPlace.connect(addr2).reListNFT(1, toWei(newPrice)))
-        .to.emit(gdMarketPlace, "NFT_Relisted")
+        .to.emit(gdMarketPlace, "NFTRelisted")
         .withArgs(1, addr1.address, toWei(newPrice));
     });
 
-    it("Should revert with a MGD_NFTMarketplace__Unauthorized error if an address that is not the NFT's owner try to relist it on the marketplace.", async function () {
+    it("Should revert with a GDNFTMarketplaceUnauthorized error if an address that is not the NFT's owner try to relist it on the marketplace.", async function () {
       // addr2 relist a purchased NFT
       await expect(
         gdMarketPlace.connect(addr1).reListNFT(1, toWei(newPrice))
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__Unauthorized"
+        "GDNFTMarketplaceUnauthorized"
       );
     });
 
@@ -281,7 +290,7 @@ describe("MGD Smart Contract", function () {
         gdMarketPlace.connect(addr2).reListNFT(1, toWei(0))
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__InvalidInput"
+        "GDNFTMarketplaceInvalidInput"
       );
     });
   });
@@ -302,14 +311,14 @@ describe("MGD Smart Contract", function () {
       await gdMarketPlace.connect(addr1).listNFT(1, toWei(primaryPrice));
     });
 
-    it("Should delist a NFT from marketplace and emmit the NFT_RemovedFromMarketplace event.", async function () {
+    it("Should delist a NFT from marketplace and emmit the NFTRemovedFromMarketplace event.", async function () {
       // the market item should be not sold
       expect(
         (await gdMarketPlace.connect(addr1).id_marketItem(1)).sold
       ).to.be.equal(false);
       // addr2 relist a purchased NFT
       expect(await gdMarketPlace.connect(addr1).delistNFT(1))
-        .to.emit(gdMarketPlace, "NFT_RemovedFromMarketplace")
+        .to.emit(gdMarketPlace, "NFTRemovedFromMarketplace")
         .withArgs(1, addr1.address);
       // the market item should be sold
       expect(
@@ -317,7 +326,7 @@ describe("MGD Smart Contract", function () {
       ).to.be.equal(true);
     });
 
-    it("Should revert with a MGD_NFTMarketplace__Unauthorized error if some address that is not the item seller try to delist its NFT from marketplace.", async function () {
+    it("Should revert with a GDNFTMarketplaceUnauthorized error if some address that is not the item seller try to delist its NFT from marketplace.", async function () {
       // the market item should be not sold
       expect(
         (await gdMarketPlace.connect(addr1).id_marketItem(1)).sold
@@ -327,7 +336,7 @@ describe("MGD Smart Contract", function () {
         gdMarketPlace.connect(addr2).delistNFT(1)
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__Unauthorized"
+        "GDNFTMarketplaceUnauthorized"
       );
       // the market item should still be not sold
       expect(
@@ -359,7 +368,7 @@ describe("MGD Smart Contract", function () {
       await expect(
         gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(price) })
       )
-        .to.emit(gdMarketPlace, "NFT_Purchased")
+        .to.emit(gdMarketPlace, "NFTPurchased")
         .withArgs(1, addr1.address, addr2.address, toWei(price));
 
       const item = await gdMarketPlace.id_marketItem(1);
@@ -380,7 +389,7 @@ describe("MGD Smart Contract", function () {
       await expect(
         gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(price) })
       )
-        .to.emit(gdMarketPlace, "NFT_Purchased")
+        .to.emit(gdMarketPlace, "NFTPurchased")
         .withArgs(1, addr1.address, addr2.address, toWei(price));
 
       await expect(
@@ -388,27 +397,30 @@ describe("MGD Smart Contract", function () {
       ).to.be.revertedWithCustomError(gdMarketPlace, "NFTNotListedForSale");
     });
 
-    it("Should revert with an InexistentItem error if the user try to buy an itemId that doesn't exists on the marketplace.", async () => {
+    it("Should revert with an GDNFTMarketplaceInexistentItem error if the user try to buy an itemId that doesn't exists on the marketplace.", async () => {
       await expect(
         gdMarketPlace.connect(addr3).buyNFT(2, { value: toWei(price) })
-      ).to.be.revertedWithCustomError(gdMarketPlace, "InexistentItem");
+      ).to.be.revertedWithCustomError(
+        gdMarketPlace,
+        "GDNFTMarketplaceInexistentItem"
+      );
     });
 
-    it("Should revert with MGD_NFTMarketplace__IncorrectAmountSent if the user try to buy an itemId with an amount greater than the item's price.", async () => {
+    it("Should revert with GDNFTMarketplaceIncorrectAmountSent if the user try to buy an itemId with an amount greater than the item's price.", async () => {
       await expect(
         gdMarketPlace.connect(addr3).buyNFT(1, { value: toWei(price + 10) })
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__IncorrectAmountSent"
+        "GDNFTMarketplaceIncorrectAmountSent"
       );
     });
 
-    it("Should revert with MGD_NFTMarketplace__IncorrectAmountSent if the user try to buy an itemId with an amount less than the item's price.", async () => {
+    it("Should revert with GDNFTMarketplaceIncorrectAmountSent if the user try to buy an itemId with an amount less than the item's price.", async () => {
       await expect(
         gdMarketPlace.connect(addr3).buyNFT(1, { value: toWei(price - 10) })
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
-        "MGD_NFTMarketplace__IncorrectAmountSent"
+        "GDNFTMarketplaceIncorrectAmountSent"
       );
     });
   });
