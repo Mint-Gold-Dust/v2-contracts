@@ -180,6 +180,7 @@ contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
      * @param _tokenId The token ID of the the token to acquire
      */
     function buyNFT(uint256 _tokenId) public payable nonReentrant {
+        MarketItem memory marketItem = idMarketItem[_tokenId];
         if (_tokenId > tokenIds.current()) {
             revert GDNFTMarketplaceInexistentItem();
         }
@@ -191,21 +192,18 @@ contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
             revert NFTNotListedForSale();
         }
 
+        delete idMarketItem[_tokenId];
+
         _transfer(address(this), msg.sender, _tokenId);
         uint256 fee = (msg.value * saleFeePercent) / (100 * 10 ** 18);
         uint256 balance = msg.value - fee;
         payable(OWNER).transfer(fee);
-        payable(idMarketItem[_tokenId].seller).transfer(balance);
+        payable(marketItem.seller).transfer(balance);
 
-        idMarketItem[_tokenId].sold = true;
+        marketItem.sold = true;
         itemsSold.increment();
 
-        emit NFTPurchased(
-            _tokenId,
-            idMarketItem[_tokenId].seller,
-            msg.sender,
-            msg.value
-        );
+        emit NFTPurchased(_tokenId, marketItem.seller, msg.sender, msg.value);
     }
 
     /// @notice Get all user NFTs
