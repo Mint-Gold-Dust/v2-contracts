@@ -6,6 +6,8 @@ interface IGD {
 
     event NFT_Listed(uint256 indexed tokenId, address seller, uint256 price);
 
+    event NFT_Relisted(uint256 indexed tokenId, address seller, uint256 price);
+
     event NFT_ListedItemUpdated(
         uint256 indexed tokenId,
         address seller,

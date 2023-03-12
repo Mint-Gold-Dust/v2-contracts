@@ -13,8 +13,10 @@ import "./IGD.sol";
 import "hardhat/console.sol";
 
 error MGD_NFTMarketplace__Unauthorized();
-error MGD_NFTMarketplace__InsufficientFunds();
+error MGD_NFTMarketplace__IncorrectAmountSent();
 error MGD_NFTMarketplace__InvalidInput();
+error InexistentItem();
+error NFTNotListedForSale();
 
 contract GDMarketplace is ERC721URIStorage, IGD {
     using Counters for Counters.Counter;
@@ -25,7 +27,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
     uint256 public SALE_FEE_PERCENT = 15000000000000000000;
     // address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
     address private constant OWNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    mapping(uint256 => MarketItem) private id_marketItem;
+    mapping(uint256 => MarketItem) public id_marketItem;
     mapping(address => bool) private artist_IsApproved;
     mapping(uint256 => address) public tokenID_Artist;
     mapping(address => mapping(uint256 => string))
@@ -78,7 +80,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         uint256 _tokenId,
         uint256 _price
     ) public isArtist(_tokenId) {
-        if (_price < 0) {
+        if (_price <= 0) {
             revert MGD_NFTMarketplace__InvalidInput();
         }
         id_marketItem[_tokenId] = MarketItem(
@@ -98,12 +100,19 @@ contract GDMarketplace is ERC721URIStorage, IGD {
      * @param _price The price of the NFT
      */
     function updateListedNFT(uint256 _tokenId, uint256 _price) public {
-        if (_price < 0) {
+        if (_price <= 0) {
             revert MGD_NFTMarketplace__InvalidInput();
         }
-        if (id_marketItem[_tokenId].seller == msg.sender) {
+        if (_tokenId > _tokenIds.current()) {
+            revert InexistentItem();
+        }
+        if (id_marketItem[_tokenId].seller != msg.sender) {
             revert MGD_NFTMarketplace__Unauthorized();
         }
+        if (id_marketItem[_tokenId].sold == true) {
+            revert NFTNotListedForSale();
+        }
+
         id_marketItem[_tokenId] = MarketItem(
             _tokenId,
             msg.sender,
@@ -124,13 +133,16 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         uint256 _tokenId,
         uint256 _price
     ) public isNFTOwner(_tokenId) {
+        if (_price <= 0) {
+            revert MGD_NFTMarketplace__InvalidInput();
+        }
         id_marketItem[_tokenId].sold = false;
         id_marketItem[_tokenId].price = _price;
         id_marketItem[_tokenId].seller = msg.sender;
         _itemsSold.decrement();
         //send 5% to mgd
         _transfer(msg.sender, address(this), _tokenId);
-        emit NFT_Listed(_tokenId, msg.sender, _price);
+        emit NFT_Relisted(_tokenId, msg.sender, _price);
     }
 
     /**
@@ -139,7 +151,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
      * @param _tokenId The token ID of the the token to delist
      */
     function delistNFT(uint256 _tokenId) public {
-        if (id_marketItem[_tokenId].seller == msg.sender) {
+        if (id_marketItem[_tokenId].seller != msg.sender) {
             revert MGD_NFTMarketplace__Unauthorized();
         }
         id_marketItem[_tokenId].sold = true;
@@ -168,18 +180,32 @@ contract GDMarketplace is ERC721URIStorage, IGD {
      * @param _tokenId The token ID of the the token to acquire
      */
     function buyNFT(uint256 _tokenId) public payable {
+        if (_tokenId > _tokenIds.current()) {
+            revert InexistentItem();
+        }
         uint256 price = id_marketItem[_tokenId].price;
         if (msg.value != price) {
-            revert MGD_NFTMarketplace__InsufficientFunds();
+            revert MGD_NFTMarketplace__IncorrectAmountSent();
         }
-        id_marketItem[_tokenId].sold = true;
-        _itemsSold.increment();
+        if (id_marketItem[_tokenId].sold == true) {
+            revert NFTNotListedForSale();
+        }
 
         _transfer(address(this), msg.sender, _tokenId);
         uint256 fee = (msg.value * SALE_FEE_PERCENT) / (100 * 10 ** 18);
         uint256 balance = msg.value - fee;
         payable(OWNER).transfer(fee);
         payable(id_marketItem[_tokenId].seller).transfer(balance);
+
+        id_marketItem[_tokenId].sold = true;
+        _itemsSold.increment();
+
+        emit NFT_Purchased(
+            _tokenId,
+            id_marketItem[_tokenId].seller,
+            msg.sender,
+            msg.value
+        );
     }
 
     /// @notice Get all user NFTs
