@@ -21,17 +21,16 @@ error NFTNotListedForSale();
 contract GDMarketplace is ERC721URIStorage, IGD {
     using Counters for Counters.Counter;
 
-    Counters.Counter private _tokenIds;
-    Counters.Counter private _itemsSold;
+    Counters.Counter private tokenIds;
+    Counters.Counter private itemsSold;
 
     uint256 public SALE_FEE_PERCENT = 15000000000000000000;
     // address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
     address private constant OWNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-    mapping(uint256 => MarketItem) public id_marketItem;
-    mapping(address => bool) private artist_IsApproved;
-    mapping(uint256 => address) public tokenID_Artist;
-    mapping(address => mapping(uint256 => string))
-        private artist_tokenID_memoir;
+    mapping(uint256 => MarketItem) public idMarketItem;
+    mapping(address => bool) private isArtistApproved;
+    mapping(uint256 => address) public tokenIdArtist;
+    mapping(address => mapping(uint256 => string)) private artistTokenIdMemoir;
 
     struct MarketItem {
         uint256 tokenId;
@@ -55,19 +54,19 @@ contract GDMarketplace is ERC721URIStorage, IGD {
     /**
      * Mints a new MGD token and lists on the msrketplace
      * @notice Fails if artist is not whitelisted
-     * @dev tokenID_Artist keeps track of the work of each artist
+     * @dev tokenIdArtist keeps track of the work of each artist
      * @param _tokenURI The uri of the the token metadata
      */
     function mintNFT(
         string memory _tokenURI
     ) public isApproved returns (uint256) {
-        _tokenIds.increment();
-        uint256 newTokenId = _tokenIds.current();
-        _mint(msg.sender, newTokenId);
-        _setTokenURI(newTokenId, _tokenURI);
-        tokenID_Artist[newTokenId] = msg.sender;
-        emit NFTMinted(newTokenId, msg.sender);
-        return newTokenId;
+        tokenIds.increment();
+        uint256 _newTokenId = tokenIds.current();
+        _mint(msg.sender, _newTokenId);
+        _setTokenURI(_newTokenId, _tokenURI);
+        tokenIdArtist[_newTokenId] = msg.sender;
+        emit NFTMinted(_newTokenId, msg.sender);
+        return _newTokenId;
     }
 
     /**
@@ -83,7 +82,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         if (_price <= 0) {
             revert GDNFTMarketplaceInvalidInput();
         }
-        id_marketItem[_tokenId] = MarketItem(
+        idMarketItem[_tokenId] = MarketItem(
             _tokenId,
             payable(msg.sender),
             _price,
@@ -103,17 +102,17 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         if (_price <= 0) {
             revert GDNFTMarketplaceInvalidInput();
         }
-        if (_tokenId > _tokenIds.current()) {
+        if (_tokenId > tokenIds.current()) {
             revert GDNFTMarketplaceInexistentItem();
         }
-        if (id_marketItem[_tokenId].seller != msg.sender) {
+        if (idMarketItem[_tokenId].seller != msg.sender) {
             revert GDNFTMarketplaceUnauthorized();
         }
-        if (id_marketItem[_tokenId].sold == true) {
+        if (idMarketItem[_tokenId].sold == true) {
             revert NFTNotListedForSale();
         }
 
-        id_marketItem[_tokenId] = MarketItem(
+        idMarketItem[_tokenId] = MarketItem(
             _tokenId,
             msg.sender,
             _price,
@@ -136,10 +135,10 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         if (_price <= 0) {
             revert GDNFTMarketplaceInvalidInput();
         }
-        id_marketItem[_tokenId].sold = false;
-        id_marketItem[_tokenId].price = _price;
-        id_marketItem[_tokenId].seller = msg.sender;
-        _itemsSold.decrement();
+        idMarketItem[_tokenId].sold = false;
+        idMarketItem[_tokenId].price = _price;
+        idMarketItem[_tokenId].seller = msg.sender;
+        itemsSold.decrement();
         //send 5% to mgd
         _transfer(msg.sender, address(this), _tokenId);
         emit NFTRelisted(_tokenId, msg.sender, _price);
@@ -151,11 +150,11 @@ contract GDMarketplace is ERC721URIStorage, IGD {
      * @param _tokenId The token ID of the the token to delist
      */
     function delistNFT(uint256 _tokenId) public {
-        if (id_marketItem[_tokenId].seller != msg.sender) {
+        if (idMarketItem[_tokenId].seller != msg.sender) {
             revert GDNFTMarketplaceUnauthorized();
         }
-        id_marketItem[_tokenId].sold = true;
-        _itemsSold.increment();
+        idMarketItem[_tokenId].sold = true;
+        itemsSold.increment();
         _transfer(address(this), msg.sender, _tokenId);
         emit NFTRemovedFromMarketplace(_tokenId, msg.sender);
     }
@@ -180,14 +179,14 @@ contract GDMarketplace is ERC721URIStorage, IGD {
      * @param _tokenId The token ID of the the token to acquire
      */
     function buyNFT(uint256 _tokenId) public payable {
-        if (_tokenId > _tokenIds.current()) {
+        if (_tokenId > tokenIds.current()) {
             revert GDNFTMarketplaceInexistentItem();
         }
-        uint256 price = id_marketItem[_tokenId].price;
+        uint256 price = idMarketItem[_tokenId].price;
         if (msg.value != price) {
             revert GDNFTMarketplaceIncorrectAmountSent();
         }
-        if (id_marketItem[_tokenId].sold == true) {
+        if (idMarketItem[_tokenId].sold == true) {
             revert NFTNotListedForSale();
         }
 
@@ -195,14 +194,14 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         uint256 fee = (msg.value * SALE_FEE_PERCENT) / (100 * 10 ** 18);
         uint256 balance = msg.value - fee;
         payable(OWNER).transfer(fee);
-        payable(id_marketItem[_tokenId].seller).transfer(balance);
+        payable(idMarketItem[_tokenId].seller).transfer(balance);
 
-        id_marketItem[_tokenId].sold = true;
-        _itemsSold.increment();
+        idMarketItem[_tokenId].sold = true;
+        itemsSold.increment();
 
         emit NFTPurchased(
             _tokenId,
-            id_marketItem[_tokenId].seller,
+            idMarketItem[_tokenId].seller,
             msg.sender,
             msg.value
         );
@@ -212,21 +211,21 @@ contract GDMarketplace is ERC721URIStorage, IGD {
     function fetchUserNFTs(
         address _address
     ) public view returns (MarketItem[] memory) {
-        uint256 totalItemCount = _tokenIds.current();
+        uint256 totalItemCount = tokenIds.current();
         uint256 itemCount = 0;
         uint256 currentIndex = 0;
 
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (id_marketItem[i + 1].seller == _address) {
+            if (idMarketItem[i + 1].seller == _address) {
                 itemCount += 1;
             }
         }
 
         MarketItem[] memory items = new MarketItem[](itemCount);
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (id_marketItem[i + 1].seller == _address) {
+            if (idMarketItem[i + 1].seller == _address) {
                 uint256 currentId = i + 1;
-                MarketItem storage currentItem = id_marketItem[currentId];
+                MarketItem storage currentItem = idMarketItem[currentId];
                 items[currentIndex] = currentItem;
                 currentIndex += 1;
             }
@@ -236,21 +235,21 @@ contract GDMarketplace is ERC721URIStorage, IGD {
 
     /// @notice Get all listed items
     function fetchItemsListed() public view returns (MarketItem[] memory) {
-        uint256 totalItemCount = _tokenIds.current();
+        uint256 totalItemCount = tokenIds.current();
         uint256 itemCount = 0;
         uint256 currentIndex = 0;
 
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (id_marketItem[i + 1].seller == msg.sender) {
+            if (idMarketItem[i + 1].seller == msg.sender) {
                 itemCount += 1;
             }
         }
 
         MarketItem[] memory items = new MarketItem[](itemCount);
         for (uint256 i = 0; i < totalItemCount; i++) {
-            if (id_marketItem[i + 1].seller == msg.sender) {
+            if (idMarketItem[i + 1].seller == msg.sender) {
                 uint256 currentId = i + 1;
-                MarketItem storage currentItem = id_marketItem[currentId];
+                MarketItem storage currentItem = idMarketItem[currentId];
                 items[currentIndex] = currentItem;
                 currentIndex += 1;
             }
@@ -261,7 +260,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
 
     /// @notice Whitelist/Blacklist artist
     function whitelist(address _address, bool _state) public isOwner {
-        artist_IsApproved[_address] = _state;
+        isArtistApproved[_address] = _state;
     }
 
     modifier isNFTOwner(uint256 _tokenId) {
@@ -279,14 +278,14 @@ contract GDMarketplace is ERC721URIStorage, IGD {
     }
 
     modifier isArtist(uint256 _tokenId) {
-        if (tokenID_Artist[_tokenId] != msg.sender) {
+        if (tokenIdArtist[_tokenId] != msg.sender) {
             revert GDNFTMarketplaceUnauthorized();
         }
         _;
     }
 
     modifier isApproved() {
-        if (artist_IsApproved[msg.sender] == false) {
+        if (isArtistApproved[msg.sender] == false) {
             revert GDNFTMarketplaceUnauthorized();
         }
         _;

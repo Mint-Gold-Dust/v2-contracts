@@ -81,7 +81,7 @@ describe("MGD Smart Contract", function () {
         .to.emit(gdMarketPlace, "NFTMinted")
         .withArgs(1, addr1.address);
       expect(await gdMarketPlace.tokenURI(1)).to.equal(URI);
-      expect(await gdMarketPlace.tokenID_Artist(1)).to.equal(addr1.address);
+      expect(await gdMarketPlace.tokenIdArtist(1)).to.equal(addr1.address);
 
       // addr2 mints a nft
       await gdMarketPlace.connect(deployer).whitelist(addr2.address, true);
@@ -89,7 +89,7 @@ describe("MGD Smart Contract", function () {
         .to.emit(gdMarketPlace, "NFTMinted")
         .withArgs(1, addr1.address);
       expect(await gdMarketPlace.tokenURI(2)).to.equal(URI);
-      expect(await gdMarketPlace.tokenID_Artist(2)).to.not.equal(addr1.address);
+      expect(await gdMarketPlace.tokenIdArtist(2)).to.not.equal(addr1.address);
 
       // addr1 mints another nft
       await gdMarketPlace.connect(deployer).whitelist(addr1.address, true);
@@ -97,7 +97,7 @@ describe("MGD Smart Contract", function () {
         .to.emit(gdMarketPlace, "NFTMinted")
         .withArgs(1, addr1.address);
       expect(await gdMarketPlace.tokenURI(3)).to.equal(URI);
-      expect(await gdMarketPlace.tokenID_Artist(3)).to.equal(addr1.address);
+      expect(await gdMarketPlace.tokenIdArtist(3)).to.equal(addr1.address);
 
       expect(await gdMarketPlace.balanceOf(addr1.address)).to.be.equal(2);
       expect(await gdMarketPlace.balanceOf(addr2.address)).to.be.equal(1);
@@ -314,7 +314,7 @@ describe("MGD Smart Contract", function () {
     it("Should delist a NFT from marketplace and emmit the NFTRemovedFromMarketplace event.", async function () {
       // the market item should be not sold
       expect(
-        (await gdMarketPlace.connect(addr1).id_marketItem(1)).sold
+        (await gdMarketPlace.connect(addr1).idMarketItem(1)).sold
       ).to.be.equal(false);
       // addr2 relist a purchased NFT
       expect(await gdMarketPlace.connect(addr1).delistNFT(1))
@@ -322,14 +322,14 @@ describe("MGD Smart Contract", function () {
         .withArgs(1, addr1.address);
       // the market item should be sold
       expect(
-        (await gdMarketPlace.connect(addr1).id_marketItem(1)).sold
+        (await gdMarketPlace.connect(addr1).idMarketItem(1)).sold
       ).to.be.equal(true);
     });
 
     it("Should revert with a GDNFTMarketplaceUnauthorized error if some address that is not the item seller try to delist its NFT from marketplace.", async function () {
       // the market item should be not sold
       expect(
-        (await gdMarketPlace.connect(addr1).id_marketItem(1)).sold
+        (await gdMarketPlace.connect(addr1).idMarketItem(1)).sold
       ).to.be.equal(false);
       // addr2 relist a purchased NFT
       await expect(
@@ -340,7 +340,7 @@ describe("MGD Smart Contract", function () {
       );
       // the market item should still be not sold
       expect(
-        (await gdMarketPlace.connect(addr1).id_marketItem(1)).sold
+        (await gdMarketPlace.connect(addr1).idMarketItem(1)).sold
       ).to.be.equal(false);
     });
   });
@@ -371,7 +371,7 @@ describe("MGD Smart Contract", function () {
         .to.emit(gdMarketPlace, "NFTPurchased")
         .withArgs(1, addr1.address, addr2.address, toWei(price));
 
-      const item = await gdMarketPlace.id_marketItem(1);
+      const item = await gdMarketPlace.idMarketItem(1);
       expect(item.sold).to.equal(true);
       // Seller should receive payment for the price of the gdnft sold.
       expect(+fromWei(await addr1.getBalance())).to.equal(
