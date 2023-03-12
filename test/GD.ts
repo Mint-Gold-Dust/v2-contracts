@@ -26,7 +26,7 @@ describe("MGD Smart Contract", function () {
   let URI = "sample URI";
 
   let saleFeePercent: number;
-  const owner = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+  const OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
 
   beforeEach(async function () {
     // Get the ContractFactories and Signers here.

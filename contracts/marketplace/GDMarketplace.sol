@@ -26,8 +26,8 @@ contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
     Counters.Counter private itemsSold;
 
     uint256 public saleFeePercent = 15000000000000000000;
-    // address private constant owner = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
-    address private constant owner = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    // address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
+    address private constant OWNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     mapping(uint256 => MarketItem) public idMarketItem;
     mapping(address => bool) private isArtistApproved;
     mapping(uint256 => address) public tokenIdArtist;
@@ -125,7 +125,7 @@ contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
 
     /**
      * List an NFT bought from the marketplace
-     * @notice Only NFT owner can call this function
+     * @notice Only NFT OWNER can call this function
      * @param _tokenId The token ID of the the token to list
      * @param _price The list price of the NFT
      */
@@ -162,7 +162,7 @@ contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
 
     /**
      * Move token to auction contract
-     * @notice Only NFT owner can call this function
+     * @notice Only NFT OWNER can call this function
      * @param _tokenId The token ID of the the token to list
      * @param _auctionContract The GBM contract address
      */
@@ -194,7 +194,7 @@ contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
         _transfer(address(this), msg.sender, _tokenId);
         uint256 fee = (msg.value * saleFeePercent) / (100 * 10 ** 18);
         uint256 balance = msg.value - fee;
-        payable(owner).transfer(fee);
+        payable(OWNER).transfer(fee);
         payable(idMarketItem[_tokenId].seller).transfer(balance);
 
         idMarketItem[_tokenId].sold = true;
@@ -272,7 +272,7 @@ contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
     }
 
     modifier isOwner() {
-        if (msg.sender != owner) {
+        if (msg.sender != OWNER) {
             revert GDNFTMarketplaceUnauthorized();
         }
         _;
@@ -294,11 +294,11 @@ contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust
     fallback() external payable {
-        payable(owner).transfer(msg.value);
+        payable(OWNER).transfer(msg.value);
     }
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust
     receive() external payable {
-        payable(owner).transfer(msg.value);
+        payable(OWNER).transfer(msg.value);
     }
 }
