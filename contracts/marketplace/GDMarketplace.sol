@@ -9,6 +9,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./IGD.sol";
 import "hardhat/console.sol";
 
@@ -18,15 +19,15 @@ error GDNFTMarketplaceInvalidInput();
 error GDNFTMarketplaceInexistentItem();
 error NFTNotListedForSale();
 
-contract GDMarketplace is ERC721URIStorage, IGD {
+contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
     using Counters for Counters.Counter;
 
     Counters.Counter private tokenIds;
     Counters.Counter private itemsSold;
 
-    uint256 public SALE_FEE_PERCENT = 15000000000000000000;
-    // address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
-    address private constant OWNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    uint256 public saleFeePercent = 15000000000000000000;
+    // address private constant owner = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
+    address private constant owner = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     mapping(uint256 => MarketItem) public idMarketItem;
     mapping(address => bool) private isArtistApproved;
     mapping(uint256 => address) public tokenIdArtist;
@@ -48,7 +49,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
      * @param _percentage The ID of the token being updated
      */
     function updateSaleFeePercent(uint256 _percentage) public isOwner {
-        SALE_FEE_PERCENT = _percentage;
+        saleFeePercent = _percentage;
     }
 
     /**
@@ -178,7 +179,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
      * @notice Function will fail is artist has marked NFT as restricted
      * @param _tokenId The token ID of the the token to acquire
      */
-    function buyNFT(uint256 _tokenId) public payable {
+    function buyNFT(uint256 _tokenId) public payable nonReentrant {
         if (_tokenId > tokenIds.current()) {
             revert GDNFTMarketplaceInexistentItem();
         }
@@ -191,9 +192,9 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         }
 
         _transfer(address(this), msg.sender, _tokenId);
-        uint256 fee = (msg.value * SALE_FEE_PERCENT) / (100 * 10 ** 18);
+        uint256 fee = (msg.value * saleFeePercent) / (100 * 10 ** 18);
         uint256 balance = msg.value - fee;
-        payable(OWNER).transfer(fee);
+        payable(owner).transfer(fee);
         payable(idMarketItem[_tokenId].seller).transfer(balance);
 
         idMarketItem[_tokenId].sold = true;
@@ -271,7 +272,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
     }
 
     modifier isOwner() {
-        if (msg.sender != OWNER) {
+        if (msg.sender != owner) {
             revert GDNFTMarketplaceUnauthorized();
         }
         _;
@@ -293,11 +294,11 @@ contract GDMarketplace is ERC721URIStorage, IGD {
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust
     fallback() external payable {
-        payable(OWNER).transfer(msg.value);
+        payable(owner).transfer(msg.value);
     }
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust
     receive() external payable {
-        payable(OWNER).transfer(msg.value);
+        payable(owner).transfer(msg.value);
     }
 }

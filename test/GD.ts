@@ -25,8 +25,8 @@ describe("MGD Smart Contract", function () {
   let _feePercent = 15;
   let URI = "sample URI";
 
-  let SALE_FEE_PERCENT: number;
-  const OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+  let saleFeePercent: number;
+  const owner = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
 
   beforeEach(async function () {
     // Get the ContractFactories and Signers here.
@@ -36,36 +36,36 @@ describe("MGD Smart Contract", function () {
     // To deploy our contracts
     gdMarketPlace = await GDMarketplace.deploy();
 
-    SALE_FEE_PERCENT = parseFloat(
-      fromWei(await gdMarketPlace.connect(deployer).SALE_FEE_PERCENT())
+    saleFeePercent = parseFloat(
+      fromWei(await gdMarketPlace.connect(deployer).saleFeePercent())
     );
   });
 
   describe("Deployment", function () {
     it("Should match the feePercent value with the value passed to the constructor.", async function () {
       expect(
-        parseInt(fromWei((await gdMarketPlace.SALE_FEE_PERCENT()).toString()))
-      ).to.equal(SALE_FEE_PERCENT);
+        parseInt(fromWei((await gdMarketPlace.saleFeePercent()).toString()))
+      ).to.equal(saleFeePercent);
     });
   });
 
   describe("Update Percente Fee", function () {
     it("Should update the sale fee percent if the address is the owner.", async () => {
-      const NEW_SALE_FEE_PERCENT = 20;
+      const NEW_saleFeePercent = 20;
       gdMarketPlace
         .connect(deployer)
-        .updateSaleFeePercent(toWei(NEW_SALE_FEE_PERCENT));
-      const _SALE_FEE_PERCENT = parseInt(
-        fromWei(await gdMarketPlace.SALE_FEE_PERCENT())
+        .updateSaleFeePercent(toWei(NEW_saleFeePercent));
+      const _saleFeePercent = parseInt(
+        fromWei(await gdMarketPlace.saleFeePercent())
       );
-      expect(_SALE_FEE_PERCENT).to.equal(NEW_SALE_FEE_PERCENT);
+      expect(_saleFeePercent).to.equal(NEW_saleFeePercent);
     });
     it("Should revert if a not owner address try to update the sale fee percent.", async () => {
-      const NEW_SALE_FEE_PERCENT = 20;
+      const NEW_saleFeePercent = 20;
       await expect(
         gdMarketPlace
           .connect(addr1)
-          .updateSaleFeePercent(toWei(NEW_SALE_FEE_PERCENT))
+          .updateSaleFeePercent(toWei(NEW_saleFeePercent))
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
         "GDNFTMarketplaceUnauthorized"
@@ -375,11 +375,11 @@ describe("MGD Smart Contract", function () {
       expect(item.sold).to.equal(true);
       // Seller should receive payment for the price of the gdnft sold.
       expect(+fromWei(await addr1.getBalance())).to.equal(
-        +price + +fromWei(sellerInitalEthBal) - (price * SALE_FEE_PERCENT) / 100
+        +price + +fromWei(sellerInitalEthBal) - (price * saleFeePercent) / 100
       );
       // The feeAccount should receive fee
       expect(+fromWei(await deployer.getBalance())).to.equal(
-        (price * SALE_FEE_PERCENT) / 100 + +fromWei(feeAccountInitialEthBal)
+        (price * saleFeePercent) / 100 + +fromWei(feeAccountInitialEthBal)
       );
       // The buyer should now own the NFT
       expect(await gdMarketPlace.ownerOf(1)).to.equal(addr2.address);
