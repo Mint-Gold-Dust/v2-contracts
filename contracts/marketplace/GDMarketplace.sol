@@ -9,7 +9,6 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./IGD.sol";
 import "hardhat/console.sol";
 
@@ -19,7 +18,7 @@ error GDNFTMarketplaceInvalidInput();
 error GDNFTMarketplaceInexistentItem();
 error NFTNotListedForSale();
 
-contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
+contract GDMarketplace is ERC721URIStorage, IGD {
     using Counters for Counters.Counter;
 
     Counters.Counter private tokenIds;
