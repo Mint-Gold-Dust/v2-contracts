@@ -1,31 +1,40 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity 0.8.17;
 
+/// @title Gold Dust NFT
+/// @author Gold Dust LLC
+/// @custom:contact klvh@mintgolddust.io
+
 interface IGD {
-    event NFTMinted(uint256 indexed tokenId, address owner);
+    event NftMinted(
+        uint256 indexed tokenId,
+        address owner,
+        string tokenURI,
+        uint256 royalty
+    );
 
-    event NFTListed(uint256 indexed tokenId, address seller, uint256 price);
+    event NftListed(uint256 indexed tokenId, address seller, uint256 price);
 
-    event NFTRelisted(uint256 indexed tokenId, address seller, uint256 price);
-
-    event NFTListedItemUpdated(
+    event NftListedItemUpdated(
         uint256 indexed tokenId,
         address seller,
         uint256 price
     );
 
-    event NFTPurchased(
+    event NftPurchased(
         uint256 indexed tokenId,
         address seller,
         address newOwner,
-        uint256 price
+        uint256 buyPrice,
+        uint256 royaltyPercent,
+        uint256 royaltyAmount,
+        address royaltyRecipient,
+        uint256 feeAmount
     );
 
-    event NFTRemovedFromMarketplace(uint256 indexed tokenId, address seller);
+    event NftRemovedFromMarketplace(uint256 indexed tokenId, address seller);
 
-    event NFTSentToAuction(uint256 indexed tokenId, address seller);
+    event NftSentToAuction(uint256 indexed tokenId, address seller);
 
-    event ArtistWhitelisted(address artistAddress);
-
-    event ArtistBlacklisted(address artistAddress);
+    event ArtistWhitelisted(address artistAddress, bool state);
 }
