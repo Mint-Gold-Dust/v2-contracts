@@ -179,7 +179,7 @@ contract GDMarketplace is ERC721URIStorage, ReentrancyGuard, IGD {
      * @notice Function will fail is artist has marked NFT as restricted
      * @param _tokenId The token ID of the the token to acquire
      */
-    function buyNFT(uint256 _tokenId) public payable nonReentrant {
+    function buyNFT(uint256 _tokenId) public payable {
         if (_tokenId > tokenIds.current()) {
             revert GDNFTMarketplaceInexistentItem();
         }
