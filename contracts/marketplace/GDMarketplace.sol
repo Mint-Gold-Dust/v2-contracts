@@ -261,7 +261,7 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
 
     modifier isArtist(uint256 _tokenId) {
         if (
-            tokenID_Artist[_tokenId] != msg.sender ||
+            tokenID_Artist[_tokenId] == msg.sender ||
             address_isValidator[msg.sender] == true
         ) {
             _;
