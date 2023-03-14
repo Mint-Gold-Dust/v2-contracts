@@ -28,7 +28,7 @@ contract GDMarketplace is ERC721URIStorage, IGD {
     // address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
     address private constant OWNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
     mapping(uint256 => MarketItem) public idMarketItem;
-    mapping(address => bool) private isArtistApproved;
+    mapping(address => bool) public isArtistApproved;
     mapping(uint256 => address) public tokenIdArtist;
     mapping(address => mapping(uint256 => string)) private artistTokenIdMemoir;
 
@@ -207,8 +207,8 @@ contract GDMarketplace is ERC721URIStorage, IGD {
         );
     }
 
-    /// @notice Get all user NFTs
-    function fetchUserNFTs(
+    /// @notice Get all user's NFTs listed on the marketplace
+    function fetchUserListedNFTs(
         address _address
     ) public view returns (MarketItem[] memory) {
         uint256 totalItemCount = tokenIds.current();

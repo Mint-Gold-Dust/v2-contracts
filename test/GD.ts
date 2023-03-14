@@ -49,7 +49,7 @@ describe("MGD Smart Contract", function () {
     });
   });
 
-  describe("Update Percente Fee", function () {
+  describe("Update Percent Fee", function () {
     it("Should update the sale fee percent if the address is the owner.", async () => {
       const NEW_saleFeePercent = 20;
       gdMarketPlace
@@ -128,7 +128,7 @@ describe("MGD Smart Contract", function () {
         .setApprovalForAll(gdMarketPlace.address, true);
     });
 
-    it("Should track newly listed item, transfer NFT from seller to MGD marketplace and emmit the NFTListed event.", async function () {
+    it("Should track newly listed item, transfer NFT from seller to MGD marketplace and emit the NFTListed event.", async function () {
       // addr1 list the NFT with tokenID on gdMarketplace
       await expect(gdMarketPlace.connect(addr1).listNFT(1, toWei(price)))
         .to.emit(gdMarketPlace, "NFTListed")
@@ -138,13 +138,13 @@ describe("MGD Smart Contract", function () {
       expect(await gdMarketPlace.ownerOf(1)).to.equal(gdMarketPlace.address);
 
       // Get item from items mapping then check fields to ensure they are correct
-      const userNFTs = await gdMarketPlace.fetchUserNFTs(addr1.address);
+      const userNFTs = await gdMarketPlace.fetchUserListedNFTs(addr1.address);
       expect(userNFTs[0].tokenId).to.equal(1);
       expect(userNFTs[0].price).to.equal(toWei(price));
       expect(userNFTs[0].sold).to.equal(false);
     });
 
-    it("Should revert the transaction if an artist try to list its nft with price less than or equal zero.", async function () {
+    it("Should revert the transaction if an artist tries to list its nft with price less than or equal zero.", async function () {
       await expect(
         gdMarketPlace.connect(addr1).listNFT(1, 0)
       ).to.be.revertedWithCustomError(
@@ -153,7 +153,7 @@ describe("MGD Smart Contract", function () {
       );
     });
 
-    it("Should revert the transaction if an artist not the owner of the token and try to list on the gold dust marketplace.", async function () {
+    it("Should revert the transaction if an artist is not the owner of the token and try to list on the gold dust marketplace.", async function () {
       expect(
         gdMarketPlace.connect(addr2).listNFT(1, toWei(price))
       ).to.revertedWithCustomError(
@@ -180,9 +180,9 @@ describe("MGD Smart Contract", function () {
       await gdMarketPlace.connect(addr1).listNFT(1, toWei(primaryPrice));
     });
 
-    it("Should track if a listed item was correct updated and emmit the NFTListedItemUpdated event. We should remember that in this moment the owner of the NFT is the marketplace.", async function () {
+    it("Should track if a listed item was correctly updated and emit the NFTListedItemUpdated event. We should remember that in this moment the owner of the NFT is the marketplace.", async function () {
       // Get item from items mapping then check fields to ensure they are correct before update
-      let userNFTs = await gdMarketPlace.fetchUserNFTs(addr1.address);
+      let userNFTs = await gdMarketPlace.fetchUserListedNFTs(addr1.address);
       expect(userNFTs[0].price).to.equal(toWei(primaryPrice));
       // addr1 mints an gdMarketPlace
       expect(
@@ -192,12 +192,12 @@ describe("MGD Smart Contract", function () {
         .withArgs(1, addr1.address, toWei(newPrice));
 
       // Get item from items mapping then check fields to ensure they are correct
-      userNFTs = await gdMarketPlace.fetchUserNFTs(addr1.address);
+      userNFTs = await gdMarketPlace.fetchUserListedNFTs(addr1.address);
       // Get item from items mapping then check fields to ensure they are correct before update
       expect(userNFTs[0].price).to.equal(toWei(newPrice));
     });
 
-    it("Should revert the transaction with InvalidInput error if the marketplace owner try to update some listed nft with price less than or equal zero.", async function () {
+    it("Should revert the transaction with InvalidInput error if the marketplace owner tries to update some listed nft with price less than or equal zero.", async function () {
       // try to list with price less than zero
       await expect(
         gdMarketPlace.connect(addr1).updateListedNFT(1, toWei(0))
@@ -207,7 +207,7 @@ describe("MGD Smart Contract", function () {
       );
     });
 
-    it("Should revert the transaction with an InexistItem error if the marketplace owner try to update an item that doesn't exists.", async function () {
+    it("Should revert the transaction with an InexistItem error if the marketplace owner tries to update an item that doesn't exists.", async function () {
       // try to list with price less than zero
       await expect(
         gdMarketPlace.connect(addr1).updateListedNFT(2, toWei(2))
@@ -230,7 +230,7 @@ describe("MGD Smart Contract", function () {
       );
     });
 
-    it("Should revert the transaction with an NFTNotListedForSale error if some user try to update an item that its not on sale.", async function () {
+    it("Should revert the transaction with an NFTNotListedForSale error if some user tries to update an item that is not on sale.", async function () {
       // addr2 buy the NFT listed
       await expect(
         gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(primaryPrice) })
@@ -268,7 +268,7 @@ describe("MGD Smart Contract", function () {
         .withArgs(1, addr1.address, addr2.address, toWei(primaryPrice));
     });
 
-    it("Should track a relist of some purchased NFT and emmit the NFTRelisted event.", async function () {
+    it("Should track a relist of some purchased NFT and emit the NFTRelisted event.", async function () {
       // addr2 relist a purchased NFT
       expect(await gdMarketPlace.connect(addr2).reListNFT(1, toWei(newPrice)))
         .to.emit(gdMarketPlace, "NFTRelisted")
@@ -285,7 +285,7 @@ describe("MGD Smart Contract", function () {
       );
     });
 
-    it("Should revert the transaction if an artist try to list its nft with price less than or equal zero.", async function () {
+    it("Should revert the transaction if an artist tries to list its nft with price less than or equal zero.", async function () {
       await expect(
         gdMarketPlace.connect(addr2).reListNFT(1, toWei(0))
       ).to.be.revertedWithCustomError(
@@ -311,7 +311,7 @@ describe("MGD Smart Contract", function () {
       await gdMarketPlace.connect(addr1).listNFT(1, toWei(primaryPrice));
     });
 
-    it("Should delist a NFT from marketplace and emmit the NFTRemovedFromMarketplace event.", async function () {
+    it("Should delist a NFT from the marketplace and emit the NFTRemovedFromMarketplace event.", async function () {
       // the market item should be not sold
       expect(
         (await gdMarketPlace.connect(addr1).idMarketItem(1)).sold
@@ -361,7 +361,7 @@ describe("MGD Smart Contract", function () {
       await gdMarketPlace.connect(addr1).listNFT(1, toWei(price));
     });
 
-    it("Should buy a NFT and change the ownership of the token, verify if the item chage status for sold, verify if the seller balance increase and also if the marketplace's owner receive the fee.", async function () {
+    it("Should buy a NFT and change the ownership of the token, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee.", async function () {
       const sellerInitalEthBal = await addr1.getBalance();
       const feeAccountInitialEthBal = await deployer.getBalance();
 
@@ -385,7 +385,7 @@ describe("MGD Smart Contract", function () {
       expect(await gdMarketPlace.ownerOf(1)).to.equal(addr2.address);
     });
 
-    it("Should revert with NFTNotListedForSale error if the user try to buy a NFT that was already sold.", async () => {
+    it("Should revert with NFTNotListedForSale error if the user tries to buy a NFT that was already sold.", async () => {
       await expect(
         gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(price) })
       )
@@ -397,7 +397,7 @@ describe("MGD Smart Contract", function () {
       ).to.be.revertedWithCustomError(gdMarketPlace, "NFTNotListedForSale");
     });
 
-    it("Should revert with an GDNFTMarketplaceInexistentItem error if the user try to buy an itemId that doesn't exists on the marketplace.", async () => {
+    it("Should revert with an GDNFTMarketplaceInexistentItem error if the user tries to buy an itemId that doesn't exists on the marketplace.", async () => {
       await expect(
         gdMarketPlace.connect(addr3).buyNFT(2, { value: toWei(price) })
       ).to.be.revertedWithCustomError(
@@ -406,7 +406,7 @@ describe("MGD Smart Contract", function () {
       );
     });
 
-    it("Should revert with GDNFTMarketplaceIncorrectAmountSent if the user try to buy an itemId with an amount greater than the item's price.", async () => {
+    it("Should revert with GDNFTMarketplaceIncorrectAmountSent if the user tries to buy an itemId with an amount greater than the item's price.", async () => {
       await expect(
         gdMarketPlace.connect(addr3).buyNFT(1, { value: toWei(price + 10) })
       ).to.be.revertedWithCustomError(
@@ -415,7 +415,7 @@ describe("MGD Smart Contract", function () {
       );
     });
 
-    it("Should revert with GDNFTMarketplaceIncorrectAmountSent if the user try to buy an itemId with an amount less than the item's price.", async () => {
+    it("Should revert with GDNFTMarketplaceIncorrectAmountSent if the user tries to buy an itemId with an amount less than the item's price.", async () => {
       await expect(
         gdMarketPlace.connect(addr3).buyNFT(1, { value: toWei(price - 10) })
       ).to.be.revertedWithCustomError(
@@ -424,78 +424,30 @@ describe("MGD Smart Contract", function () {
       );
     });
   });
-});
 
-//   describe("Purchasing marketplace items", function () {
-//     let price = 20;
-//     let fee: any;
-//     let totalPriceInWei: any;
-//     beforeEach(async function () {
-//       fee = (_feePercent / 100) * price;
-//       // addr1 mints an nft
-//       await gdnft.connect(addr1).mint(URI);
-//       // addr1 approves marketplace to spend tokens
-//       await gdnft.connect(addr1).setApprovalForAll(gdMarketplace.address, true);
-//       // addr1 makes their gdnft a gdMarketplace item.
-//       await gdMarketplace.connect(addr1)._listItem(gdnft.address, 1, toWei(price));
-//     });
-//     it("Should update item as sold, pay seller, transfer gdnft to buyer, charge fees and emit a Bought event", async function () {
-//       const sellerInitalEthBal = await addr1.getBalance();
-//       const feeAccountInitialEthBal = await deployer.getBalance();
-//       // fetch items total price (market fees + item price)
-//       totalPriceInWei = await gdMarketplace.getTotalPrice(1);
-//       console.log("TOTALPRICE: ", +fromWei(totalPriceInWei) - fee);
-//       // addr 2 purchases item.
-//       await expect(
-//         gdMarketplace.connect(addr2).purchaseItem(1, { value: totalPriceInWei })
-//       )
-//         .to.emit(gdMarketplace, "Bought")
-//         .withArgs(
-//           1,
-//           gdnft.address,
-//           1,
-//           toWei(price),
-//           addr1.address,
-//           addr2.address
-//         );
-//       const sellerFinalEthBal = await addr1.getBalance();
-//       const feeAccountFinalEthBal = await deployer.getBalance();
-//       // Item should be marked as sold
-//       expect((await gdMarketplace.items(1)).sold).to.equal(true);
-//       // Seller should receive payment for the price of the gdnft sold.
-//       expect(+fromWei(sellerFinalEthBal)).to.equal(
-//         +price + +fromWei(sellerInitalEthBal)
-//       );
-//       // feeAccount should receive fee
-//       expect(+fromWei(await deployer.getBalance())).to.equal(
-//         fee + +fromWei(feeAccountInitialEthBal)
-//       );
-//       // The buyer should now own the gdnft
-//       expect(await gdnft.ownerOf(1)).to.equal(addr2.address);
-//     });
-//     it("Should fail for invalid item ids, sold items and when not enough ether is paid", async function () {
-//       // fails for invalid item ids
-//       await expect(
-//         gdMarketplace.connect(addr2).purchaseItem(2, { value: totalPriceInWei })
-//       ).to.be.revertedWith("item doesn't exist");
-//       await expect(
-//         gdMarketplace.connect(addr2).purchaseItem(0, { value: totalPriceInWei })
-//       ).to.be.revertedWith("item doesn't exist");
-//       // Fails when not enough ether is paid with the transaction.
-//       // In this instance, fails when buyer only sends enough ether to cover the price of the gdnft
-//       // not the additional market fee.
-//       await expect(
-//         gdMarketplace.connect(addr2).purchaseItem(1, { value: toWei(price) })
-//       ).to.be.revertedWith(
-//         "not enough ether to cover item price and market fee"
-//       );
-//       // addr2 purchases item 1
-//       await gdMarketplace.connect(addr2).purchaseItem(1, { value: totalPriceInWei });
-//       // addr3 tries purchasing item 1 after its been sold
-//       const addr3 = addrs[0];
-//       await expect(
-//         gdMarketplace.connect(addr3).purchaseItem(1, { value: totalPriceInWei })
-//       ).to.be.revertedWith("item already sold");
-//     });
-//   });
-// });
+  describe("Whitelist/Blacklist artist", function () {
+    it("Should whitelist an after blacklist artist.", async () => {
+      // MGD owner whitelist the artist
+      await gdMarketPlace.connect(deployer).whitelist(addr1.address, true);
+      expect(
+        await gdMarketPlace.connect(deployer).isArtistApproved(addr1.address)
+      ).to.be.equal(true);
+
+      // MGD owner blacklist the artist
+      await gdMarketPlace.connect(deployer).whitelist(addr1.address, false);
+      expect(
+        await gdMarketPlace.connect(deployer).isArtistApproved(addr1.address)
+      ).to.be.equal(false);
+    });
+
+    it("Should revert with a GDNFTMarketplaceUnauthorized error if an address that is not the owner try to whitelist or blacklist an artist.", async () => {
+      // MGD owner whitelist the artist
+      await expect(
+        gdMarketPlace.connect(addr1).whitelist(addr1.address, true)
+      ).to.be.revertedWithCustomError(
+        gdMarketPlace,
+        "GDNFTMarketplaceUnauthorized"
+      );
+    });
+  });
+});
