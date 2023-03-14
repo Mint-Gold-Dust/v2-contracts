@@ -10,7 +10,6 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./IGD.sol";
-import "hardhat/console.sol";
 
 error GDNFTMarketplace__Unauthorized();
 error GDNFTMarketplace__InsufficientFunds();
@@ -140,6 +139,9 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
         uint256 _tokenId,
         uint256 _price
     ) public isNFTOwner(_tokenId) {
+        if (_price <= 0) {
+            revert GDNFTMarketplace__InvalidInput();
+        }
         id_MarketItem[_tokenId].sold = false;
         id_MarketItem[_tokenId].price = _price;
         id_MarketItem[_tokenId].seller = msg.sender;
@@ -231,10 +233,7 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     }
 
     /// @notice Whitelist/Blacklist artist
-    function whitelist(
-        address _address,
-        bool _state
-    ) public isOwnerOrValidator {
+    function whitelist(address _address, bool _state) public isValidator {
         artist_IsApproved[_address] = _state;
     }
 
@@ -252,8 +251,8 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
         _;
     }
 
-    modifier isOwnerOrValidator() {
-        if (msg.sender == OWNER || address_isValidator[msg.sender] == true) {
+    modifier isValidator() {
+        if (address_isValidator[msg.sender] == true) {
             _;
         } else {
             revert GDNFTMarketplace__Unauthorized();
@@ -261,17 +260,25 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     }
 
     modifier isArtist(uint256 _tokenId) {
-        if (tokenID_Artist[_tokenId] != msg.sender) {
+        if (
+            tokenID_Artist[_tokenId] != msg.sender ||
+            address_isValidator[msg.sender] == true
+        ) {
+            _;
+        } else {
             revert GDNFTMarketplace__Unauthorized();
         }
-        _;
     }
 
     modifier isSeller(uint256 _tokenId) {
-        if (id_MarketItem[_tokenId].seller != msg.sender) {
+        if (
+            msg.sender == id_MarketItem[_tokenId].seller ||
+            address_isValidator[msg.sender] == true
+        ) {
+            _;
+        } else {
             revert GDNFTMarketplace__Unauthorized();
         }
-        _;
     }
 
     modifier isListed(uint256 _tokenId) {
