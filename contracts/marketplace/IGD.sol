@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity 0.8.17;
+pragma solidity ^0.8.17;
 
 /// @title Gold Dust NFT
 /// @author Gold Dust LLC
@@ -29,12 +29,19 @@ interface IGD {
         uint256 royaltyPercent,
         uint256 royaltyAmount,
         address royaltyRecipient,
-        uint256 feeAmount
+        uint256 feeAmount,
+        uint256 collectorFeeAmount
     );
 
     event NftRemovedFromMarketplace(uint256 indexed tokenId, address seller);
 
-    event NftSentToAuction(uint256 indexed tokenId, address seller);
+    event NftSentToAuction(
+        uint256 indexed tokenId,
+        address seller,
+        address auctionAddress
+    );
 
     event ArtistWhitelisted(address artistAddress, bool state);
+
+    event ValidatorAdded(address artistAddress, bool state);
 }
