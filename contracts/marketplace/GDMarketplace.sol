@@ -12,9 +12,10 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./IGD.sol";
 
 error GDNFTMarketplace__Unauthorized();
-error GDNFTMarketplace__InsufficientFunds();
+error GDNFTMarketplace__IncorrectAmountSent();
 error GDNFTMarketplace__InvalidInput();
 error GDNFTMarketplace__NotAListedItem();
+error InvalidPercentage();
 
 contract GDNFTMarketplace is ERC721URIStorage, IGD {
     using Counters for Counters.Counter;
@@ -24,8 +25,9 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
 
     uint256 public SALE_FEE_PERCENT_0 = 15000000000000000000;
     uint256 public SALE_FEE_PERCENT_1 = 5000000000000000000;
-    address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
-    mapping(uint256 => MarketItem) private id_MarketItem;
+    //   address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
+    address private constant OWNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    mapping(uint256 => MarketItem) public id_MarketItem;
     mapping(address => bool) public artist_IsApproved;
     mapping(address => bool) public address_isValidator;
     mapping(uint256 => address) public tokenID_Artist;
@@ -39,7 +41,9 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
         bool sold;
     }
 
-    constructor() ERC721("Gold Dust NFT", "GDNFT") {}
+    constructor() ERC721("Gold Dust NFT", "GDNFT") {
+        address_isValidator[OWNER] = true;
+    }
 
     /**
      * Update platform primary fee percentage
@@ -72,7 +76,7 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     function mintNft(
         string memory _tokenURI,
         uint256 _royaltyPercent
-    ) public isApproved returns (uint256) {
+    ) public validPercentage(_royaltyPercent) isApproved returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(msg.sender, newTokenId);
@@ -185,7 +189,7 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     function buyNFT(uint256 _tokenId) public payable isListed(_tokenId) {
         uint256 price = id_MarketItem[_tokenId].price;
         if (msg.value != price) {
-            revert GDNFTMarketplace__InsufficientFunds();
+            revert GDNFTMarketplace__IncorrectAmountSent();
         }
 
         id_MarketItem[_tokenId].sold = true;
@@ -235,6 +239,13 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     /// @notice Whitelist/Blacklist artist
     function whitelist(address _address, bool _state) public isValidator {
         artist_IsApproved[_address] = _state;
+    }
+
+    modifier validPercentage(uint256 percentage) {
+        if (percentage >= 100000000000000000000) {
+            revert InvalidPercentage();
+        }
+        _;
     }
 
     modifier isNFTOwner(uint256 _tokenId) {
