@@ -25,8 +25,8 @@ describe("GD Smart Contract", function () {
   let max_royalty = 30;
   let royalty = 5;
 
-  // const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
-  // const TEST_OWNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+  //const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+  const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
 
   beforeEach(async function () {
     // Get the ContractFactories and Signers here.
@@ -34,7 +34,7 @@ describe("GD Smart Contract", function () {
     [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
 
     // To deploy our contracts
-    gdMarketPlace = await GDMarketplace.deploy();
+    gdMarketPlace = await GDMarketplace.deploy(TEST_OWNER);
 
     await gdMarketPlace.connect(deployer).setValidator(deployer.address, true);
   });

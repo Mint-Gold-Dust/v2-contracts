@@ -27,7 +27,7 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     uint256 public secondary_sale_fee_percent = 5000000000000000000;
     uint256 public collector_fee = 3000000000000000000;
     uint256 public max_royalty = 30000000000000000000;
-    address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
+    address private OWNER;
     mapping(uint256 => MarketItem) public id_MarketItem;
     mapping(address => bool) public artist_IsApproved;
     mapping(address => bool) public address_isValidator;
@@ -42,7 +42,9 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
         bool sold;
     }
 
-    constructor() ERC721("Gold Dust NFT", "GDNFT") {}
+    constructor(address _owner) ERC721("Gold Dust NFT", "GDNFT") {
+        OWNER = _owner;
+    }
 
     /**
      * Update platform primary fee percentage
