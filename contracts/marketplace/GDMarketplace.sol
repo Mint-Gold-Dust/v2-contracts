@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
-/// @title Gold Dust NFT
-/// @author Gold Dust LLC
+/// @title Mint Gold Dust NFT
+/// @author Mint Gold Dust LLC
 /// @notice Contains functions for minting and selling GDNFT ERC721 tokens
 /// @custom:contact klvh@mintgolddust.io
 
@@ -15,7 +15,7 @@ error GDNFTMarketplace__Unauthorized();
 error GDNFTMarketplace__IncorrectAmountSent();
 error GDNFTMarketplace__InvalidInput();
 error GDNFTMarketplace__NotAListedItem();
-error InvalidPercentage();
+error GDNFTMarketplace__InvalidPercentage();
 
 contract GDNFTMarketplace is ERC721URIStorage, IGD {
     using Counters for Counters.Counter;
@@ -23,10 +23,11 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     Counters.Counter private _tokenIds;
     Counters.Counter private _itemsSold;
 
-    uint256 public SALE_FEE_PERCENT_0 = 15000000000000000000;
-    uint256 public SALE_FEE_PERCENT_1 = 5000000000000000000;
-    //   address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
-    address private constant OWNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
+    uint256 public primary_sale_fee_percent = 15000000000000000000;
+    uint256 public secondary_sale_fee_percent = 5000000000000000000;
+    uint256 public collector_fee = 3000000000000000000;
+    uint256 public max_royalty = 30000000000000000000;
+    address private constant OWNER = 0x46ab5D1518688f66286aF7c6C9f5552edd050d15;
     mapping(uint256 => MarketItem) public id_MarketItem;
     mapping(address => bool) public artist_IsApproved;
     mapping(address => bool) public address_isValidator;
@@ -41,9 +42,7 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
         bool sold;
     }
 
-    constructor() ERC721("Gold Dust NFT", "GDNFT") {
-        address_isValidator[OWNER] = true;
-    }
+    constructor() ERC721("Gold Dust NFT", "GDNFT") {}
 
     /**
      * Update platform primary fee percentage
@@ -51,8 +50,8 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
      * @notice Only contract deployer can call this function
      * @param _percentage The percentage in wei format
      */
-    function updatePrimarySaleFeePercent0(uint256 _percentage) public isOwner {
-        SALE_FEE_PERCENT_0 = _percentage;
+    function updatePrimarySaleFeePercent(uint256 _percentage) public isowner {
+        primary_sale_fee_percent = _percentage;
     }
 
     /**
@@ -61,10 +60,28 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
      * @notice Only contract deployer can call this function
      * @param _percentage The percentage in wei format
      */
-    function updateSecondarySaleFeePercent1(
-        uint256 _percentage
-    ) public isOwner {
-        SALE_FEE_PERCENT_1 = _percentage;
+    function updateSecondarySaleFeePercent(uint256 _percentage) public isowner {
+        secondary_sale_fee_percent = _percentage;
+    }
+
+    /**
+     * Update platform secondary fee percentage
+     * This fee is taken from each resale on the marketplace
+     * @notice Only contract deployer can call this function
+     * @param _percentage The percentage in wei format
+     */
+    function updateCollectorFee(uint256 _percentage) public isowner {
+        collector_fee = _percentage;
+    }
+
+    /**
+     * Update platform secondary fee percentage
+     * This fee is taken from each resale on the marketplace
+     * @notice Only contract deployer can call this function
+     * @param _percentage The percentage in wei format
+     */
+    function updateMaxRoyalty(uint256 _percentage) public isowner {
+        max_royalty = _percentage;
     }
 
     /**
@@ -97,7 +114,7 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     function listNft(
         uint256 _tokenId,
         uint256 _price
-    ) public isArtist(_tokenId) isNFTOwner(_tokenId) {
+    ) public isArtist(_tokenId) isNFTowner(_tokenId) {
         if (_price <= 0) {
             revert GDNFTMarketplace__InvalidInput();
         }
@@ -107,6 +124,7 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
             _price,
             false
         );
+        tokenID_SecondarySale[_tokenId] = false;
         _transfer(msg.sender, address(this), _tokenId);
         emit NftListed(_tokenId, msg.sender, _price);
     }
@@ -126,7 +144,7 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
         }
         id_MarketItem[_tokenId] = MarketItem(
             _tokenId,
-            msg.sender,
+            payable(msg.sender),
             _price,
             false
         );
@@ -142,13 +160,13 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     function reListNft(
         uint256 _tokenId,
         uint256 _price
-    ) public isNFTOwner(_tokenId) {
+    ) public isNFTowner(_tokenId) {
         if (_price <= 0) {
             revert GDNFTMarketplace__InvalidInput();
         }
         id_MarketItem[_tokenId].sold = false;
         id_MarketItem[_tokenId].price = _price;
-        id_MarketItem[_tokenId].seller = msg.sender;
+        id_MarketItem[_tokenId].seller = payable(msg.sender);
         _itemsSold.decrement();
         _transfer(msg.sender, address(this), _tokenId);
         emit NftListed(_tokenId, msg.sender, _price);
@@ -175,14 +193,15 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     function auction(
         uint256 _tokenId,
         address _auctionContract
-    ) public isNFTOwner(_tokenId) {
+    ) public isNFTowner(_tokenId) {
         _transfer(address(this), _auctionContract, _tokenId);
+        emit NftSentToAuction(_tokenId, msg.sender, _auctionContract);
     }
 
     /**
      * Acquire a listed NFT
-     * Primary fee percentage from primary sale is sent to Gold Dust LLC
-     * Secondary fee percentage from secondary sale is sent to Gold Dust LLC while royalty is sent to artist
+     * Primary fee percentage from primary sale is charged by the platform
+     * Secondary fee percentage from secondary sale is charged by the platform while royalty is sent to artist
      * @notice Function will fail is artist has marked NFT as restricted
      * @param _tokenId The token ID of the the token to acquire
      */
@@ -191,31 +210,31 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
         if (msg.value != price) {
             revert GDNFTMarketplace__IncorrectAmountSent();
         }
-
         id_MarketItem[_tokenId].sold = true;
         _itemsSold.increment();
 
         uint256 fee;
+        uint256 collFee;
         uint256 royalty;
         uint256 balance;
 
         if (tokenID_SecondarySale[_tokenId] == false) {
-            fee = (msg.value * SALE_FEE_PERCENT_0) / (100 * 10 ** 18);
-            balance = msg.value - fee;
-            payable(OWNER).transfer(fee);
-            payable(id_MarketItem[_tokenId].seller).transfer(balance);
+            fee = (msg.value * primary_sale_fee_percent) / (100 * 10 ** 18);
+            collFee = (msg.value * collector_fee) / (100 * 10 ** 18);
+            balance = msg.value - (fee + collFee);
             tokenID_SecondarySale[_tokenId] = true;
+            payable(OWNER).transfer(collFee);
         } else {
-            fee = (msg.value * SALE_FEE_PERCENT_1) / (100 * 10 ** 18);
+            fee = (msg.value * secondary_sale_fee_percent) / (100 * 10 ** 18);
             royalty =
                 (msg.value * tokenID_RoyaltyPercent[_tokenId]) /
                 (100 * 10 ** 18);
 
             balance = msg.value - (fee + royalty);
-            payable(OWNER).transfer(fee);
             payable(tokenID_Artist[_tokenId]).transfer(royalty);
-            payable(id_MarketItem[_tokenId].seller).transfer(balance);
         }
+        payable(OWNER).transfer(fee);
+        payable(id_MarketItem[_tokenId].seller).transfer(balance);
 
         _transfer(address(this), msg.sender, _tokenId);
 
@@ -227,35 +246,38 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
             tokenID_RoyaltyPercent[_tokenId],
             royalty,
             tokenID_Artist[_tokenId],
-            fee
+            fee,
+            collFee
         );
     }
 
     /// @notice Whitelist/Blacklist validator
-    function setValidator(address _address, bool _state) public isOwner {
+    function setValidator(address _address, bool _state) public isowner {
         address_isValidator[_address] = _state;
+        emit ValidatorAdded(_address, _state);
     }
 
     /// @notice Whitelist/Blacklist artist
     function whitelist(address _address, bool _state) public isValidator {
         artist_IsApproved[_address] = _state;
+        emit ArtistWhitelisted(_address, _state);
     }
 
     modifier validPercentage(uint256 percentage) {
-        if (percentage >= 100000000000000000000) {
-            revert InvalidPercentage();
+        if (percentage > max_royalty) {
+            revert GDNFTMarketplace__InvalidPercentage();
         }
         _;
     }
 
-    modifier isNFTOwner(uint256 _tokenId) {
+    modifier isNFTowner(uint256 _tokenId) {
         if (ownerOf(_tokenId) != msg.sender) {
             revert GDNFTMarketplace__Unauthorized();
         }
         _;
     }
 
-    modifier isOwner() {
+    modifier isowner() {
         if (msg.sender != OWNER) {
             revert GDNFTMarketplace__Unauthorized();
         }
@@ -306,12 +328,12 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
         _;
     }
 
-    /// @notice Fallbacks will forward funds to Mint Gold Dust
+    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
     fallback() external payable {
         payable(OWNER).transfer(msg.value);
     }
 
-    /// @notice Fallbacks will forward funds to Mint Gold Dust
+    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
     receive() external payable {
         payable(OWNER).transfer(msg.value);
     }

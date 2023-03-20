@@ -7,12 +7,7 @@ import { ethers } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-const getTotalPrice = async (price: number, feePercent: number) => {
-  let totalPrice = price + (price * feePercent) / 100;
-  return totalPrice;
-};
-
-describe("MGD Smart Contract", function () {
+describe("GD Smart Contract", function () {
   let GDMarketplace: ContractFactory;
   let gdMarketPlace: Contract;
 
@@ -22,11 +17,16 @@ describe("MGD Smart Contract", function () {
   let addr3: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
-  let _feePercent = 15;
   let URI = "sample URI";
 
-  let SALE_FEE_PERCENT_0: number;
-  const OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+  let primary_sale_fee_percent = 15;
+  let secondary_sale_fee_percent = 5;
+  let collector_fee = 3;
+  let max_royalty = 30;
+  let royalty = 5;
+
+  // const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+  // const TEST_OWNER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
 
   beforeEach(async function () {
     // Get the ContractFactories and Signers here.
@@ -36,16 +36,16 @@ describe("MGD Smart Contract", function () {
     // To deploy our contracts
     gdMarketPlace = await GDMarketplace.deploy();
 
-    SALE_FEE_PERCENT_0 = parseFloat(
-      fromWei(await gdMarketPlace.connect(deployer).SALE_FEE_PERCENT_0())
-    );
+    await gdMarketPlace.connect(deployer).setValidator(deployer.address, true);
   });
 
   describe("Deployment", function () {
     it("Should match the feePercent value with the value passed to the constructor.", async function () {
       expect(
-        parseInt(fromWei((await gdMarketPlace.SALE_FEE_PERCENT_0()).toString()))
-      ).to.equal(SALE_FEE_PERCENT_0);
+        parseInt(
+          fromWei((await gdMarketPlace.primary_sale_fee_percent()).toString())
+        )
+      ).to.equal(primary_sale_fee_percent);
     });
   });
 
@@ -54,9 +54,9 @@ describe("MGD Smart Contract", function () {
       const NEW_saleFeePercent = 20;
       gdMarketPlace
         .connect(deployer)
-        .updatePrimarySaleFeePercent0(toWei(NEW_saleFeePercent));
+        .updatePrimarySaleFeePercent(toWei(NEW_saleFeePercent));
       const _saleFeePercent = parseInt(
-        fromWei(await gdMarketPlace.SALE_FEE_PERCENT_0())
+        fromWei(await gdMarketPlace.primary_sale_fee_percent())
       );
       expect(_saleFeePercent).to.equal(NEW_saleFeePercent);
     });
@@ -65,7 +65,7 @@ describe("MGD Smart Contract", function () {
       await expect(
         gdMarketPlace
           .connect(addr1)
-          .updatePrimarySaleFeePercent0(toWei(NEW_saleFeePercent))
+          .updatePrimarySaleFeePercent(toWei(NEW_saleFeePercent))
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
         "GDNFTMarketplace__Unauthorized"
@@ -116,11 +116,14 @@ describe("MGD Smart Contract", function () {
       ).to.be.equal(toWei(5));
     });
 
-    it("Should revert with a GDNFTMarketplace__InvalidInput error if some artist try to mint with a royalty percent greater than 100.", async function () {
+    it(`Should revert with a GDNFTMarketplace__InvalidPercentage error if some artist try to mint with a royalty percent greater than ${max_royalty}.`, async function () {
       await gdMarketPlace.connect(deployer).whitelist(addr1.address, true);
       await expect(
-        gdMarketPlace.connect(addr1).mintNft(URI, toWei(101))
-      ).to.be.revertedWithCustomError(gdMarketPlace, "InvalidPercentage");
+        gdMarketPlace.connect(addr1).mintNft(URI, toWei(max_royalty + 1))
+      ).to.be.revertedWithCustomError(
+        gdMarketPlace,
+        "GDNFTMarketplace__InvalidPercentage"
+      );
     });
 
     it("Should revert with a GDNFTMarketplace__Unauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
@@ -241,7 +244,7 @@ describe("MGD Smart Contract", function () {
       );
     });
 
-    it("Should revert the transaction with an NFTNotListedForSale error if some user tries to update an item that is not on sale.", async function () {
+    it("Should revert the transaction with an GDNFTMarketplace__NotAListedItem error if some user tries to update an item that is not on sale.", async function () {
       // addr2 buy the NFT listed
       await gdMarketPlace
         .connect(addr2)
@@ -359,10 +362,11 @@ describe("MGD Smart Contract", function () {
 
   describe("Purchase NFT", function () {
     let price = 20;
-    let royalty = 5;
     // Calculate the fee and balance values based on the price
     let fee: number;
     let balance: number;
+    let collFee: number;
+    let primarySaleFee: number;
 
     beforeEach(async () => {
       // MGD owner whitelist the artist
@@ -376,18 +380,26 @@ describe("MGD Smart Contract", function () {
       // Artist list its NFT on MGD marketplace
       await gdMarketPlace.connect(addr1).listNft(1, toWei(price));
 
-      fee = (price * SALE_FEE_PERCENT_0) / 100;
-      balance = price - fee;
+      fee = (price * primary_sale_fee_percent) / 100;
+      collFee = (price * collector_fee) / 100;
+      primarySaleFee = fee + collFee;
+      balance = price - primarySaleFee;
     });
 
     it("Should simulate a primary sale that transfer an NFT to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the flag to secondary sale was set to true.", async function () {
       // get the balances for the seller and the owner of the marketplace.
       const sellerInitalEthBal = await addr1.getBalance();
       const feeAccountInitialEthBal = await deployer.getBalance();
+      const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
+        feeAccountInitialEthBal
+      ).add(toWei(primarySaleFee));
+
+      // verify if the flag for secondary is false
+      expect(await gdMarketPlace.tokenID_SecondarySale(1)).to.equal(false);
 
       // execute the buyNft function
-      await expect(
-        gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(price) })
+      expect(
+        await gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(price) })
       )
         .to.emit(gdMarketPlace, "NftPurchased")
         .withArgs(
@@ -398,7 +410,8 @@ describe("MGD Smart Contract", function () {
           toWei(royalty),
           0,
           addr1.address,
-          toWei(fee)
+          toWei(fee),
+          toWei(collector_fee)
         );
 
       // verify if the owner of the NFT changed for the buyer
@@ -409,7 +422,7 @@ describe("MGD Smart Contract", function () {
 
       // verify if the marketplace owner's balance increased the fee
       expect(await deployer.getBalance()).to.be.equal(
-        ethers.BigNumber.from(feeAccountInitialEthBal).add(toWei(fee))
+        feeAccountAfterEthBalShouldBe
       );
       // verify if the seller received the balance
       expect(await addr1.getBalance()).to.be.equal(
@@ -421,8 +434,8 @@ describe("MGD Smart Contract", function () {
     });
 
     it("Should revert with GDNFTMarketplace__NotAListedItem error if the user tries to buy a NFT that was already sold.", async () => {
-      await expect(
-        gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(price) })
+      expect(
+        await gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(price) })
       )
         .to.emit(gdMarketPlace, "NftPurchased")
         .withArgs(
@@ -433,7 +446,8 @@ describe("MGD Smart Contract", function () {
           toWei(royalty),
           0,
           addr1.address,
-          toWei(fee)
+          toWei(fee),
+          toWei(collector_fee)
         );
 
       await expect(
@@ -463,98 +477,147 @@ describe("MGD Smart Contract", function () {
     });
   });
 
-  // describe("Purchase NFT on secondary market", function () {
-  //   let price = 20;
-  //   let royaltyPercent = 5;
-  //   // Calculate the fee and balance values based on the price
-  //   let fee: number;
-  //   let balance: number;
-  //   let royalty: number;
+  describe("Purchase NFT on secondary market", function () {
+    let price = 20;
+    // Calculate the fee and balance values based on the price
+    let fee: number;
+    let royaltyFee: number;
+    let balance: number;
+    let secondarySale: number;
 
-  //   beforeEach(async () => {
-  //     // MGD owner whitelist the artist
-  //     await gdMarketPlace.connect(deployer).whitelist(addr1.address, true);
-  //     // addr1 mints a NFT
-  //     await gdMarketPlace.connect(addr1).mintNft(URI, toWei(royaltyPercent));
-  //     // Artist approve MGD marketplace to exchange its NFT
-  //     await gdMarketPlace
-  //       .connect(addr1)
-  //       .setApprovalForAll(gdMarketPlace.address, true);
-  //     // Artist list its NFT on MGD marketplace
-  //     await gdMarketPlace.connect(addr1).listNft(1, toWei(price));
+    beforeEach(async () => {
+      // MGD owner whitelist the artist
+      await gdMarketPlace.connect(deployer).whitelist(addr1.address, true);
 
-  //     // addr2 buy the NFT
-  //     await gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(price) });
+      // addr1 mints a NFT
+      await gdMarketPlace.connect(addr1).mintNft(URI, toWei(royalty));
 
-  //     // addr2 relist a purchased NFT
-  //     await gdMarketPlace.connect(addr2).reListNft(1, toWei(price));
+      // Artist approve MGD marketplace to exchange its NFT
+      await gdMarketPlace
+        .connect(addr1)
+        .setApprovalForAll(gdMarketPlace.address, true);
 
-  //     fee = (price * SALE_FEE_PERCENT_0) / 100;
-  //     royalty = (price * royaltyPercent) / 100;
-  //     balance = price - fee - royalty;
-  //   });
+      // Artist list its NFT on MGD marketplace
+      await gdMarketPlace.connect(addr1).listNft(1, toWei(price));
 
-  //   it("Should simulate a secondary sale that transfer an NFT to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the flag to secondary sale was set to true.", async function () {
-  //     // get the balances for the seller and the owner of the marketplace.
-  //     const sellerInitalEthBal = await addr1.getBalance();
-  //     const feeAccountInitialEthBal = await deployer.getBalance();
-  //     const provider = new ethers.providers.JsonRpcProvider(
-  //       "http://localhost:8545"
-  //     ); // Replace with your Ethereum node URL
+      // addr2 buy the NFT
+      await gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(price) });
 
-  //     const artistAddress = await gdMarketPlace.tokenID_Artist(1);
-  //     const artistInitialBal = await provider.getBalance(artistAddress);
-  //     console.log("ARTIST BALANCE: ", artistInitialBal);
-  //     // execute the buyNft function
-  //     await expect(
-  //       gdMarketPlace.connect(addr3).buyNFT(1, { value: toWei(price) })
-  //     )
-  //       .to.emit(gdMarketPlace, "NftPurchased")
-  //       .withArgs(
-  //         1,
-  //         addr2.address,
-  //         addr3.address,
-  //         toWei(price),
-  //         toWei(royaltyPercent),
-  //         royalty,
-  //         addr1.address,
-  //         toWei(fee)
-  //       );
+      // addr2 relist a purchased NFT
+      await gdMarketPlace.connect(addr2).reListNft(1, toWei(price));
 
-  //     const artistAddress2 = await gdMarketPlace.tokenID_Artist(1);
-  //     const artistInitialBal2 = await provider.getBalance(artistAddress2);
-  //     console.log("ARTIST BALANCE AFTERRRRRRRRRR: ", artistInitialBal2);
+      fee = (price * secondary_sale_fee_percent) / 100;
+      royaltyFee = (price * royalty) / 100;
+      balance = price - (fee + royaltyFee);
+    });
 
-  //     // // verify if the owner of the NFT changed for the buyer
-  //     // expect(await gdMarketPlace.ownerOf(1)).to.equal(addr2.address);
+    it("Should simulate a secondary sale that transfer an NFT to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the artist creator have received the royalty.", async function () {
+      // verify if the flag for secondary market changed for true
+      expect(await gdMarketPlace.tokenID_SecondarySale(1)).to.equal(true);
 
-  //     // // verify if the flag for secondary market changed for true
-  //     // expect(await gdMarketPlace.tokenID_SecondarySale(1)).to.equal(true);
+      // get the balances for the seller and the owner of the marketplace.
+      const feeAccountInitialEthBal = await deployer.getBalance();
 
-  //     // // verify if the marketplace owner's balance increased the fee
-  //     // expect(await deployer.getBalance()).to.be.equal(
-  //     //   ethers.BigNumber.from(feeAccountInitialEthBal).add(toWei(fee))
-  //     // );
-  //     // // verify if the seller received the balance
-  //     // expect(await addr1.getBalance()).to.be.equal(
-  //     //   ethers.BigNumber.from(sellerInitalEthBal).add(toWei(balance))
-  //     // );
+      // prepare the future balance that the owner should have after the transaction
+      const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
+        feeAccountInitialEthBal
+      ).add(toWei(fee));
 
-  //     // // expect item sold to be true
-  //     // expect((await gdMarketPlace.id_MarketItem(1)).sold).to.be.equal(true);
-  //   });
-  // });
+      // get the NFT's artist creator balance
+      const provider = ethers.provider;
+      const artistCreatorAddress = await gdMarketPlace.tokenID_Artist(1);
+      const artistCreatorInitialBal = await provider.getBalance(
+        artistCreatorAddress
+      );
+
+      // get the addr2 buyer initial balance
+      const artistSellerInitialBal = await addr2.getBalance();
+
+      // execute the buyNft function
+      expect(
+        await gdMarketPlace.connect(addr3).buyNFT(1, { value: toWei(price) })
+      )
+        .to.emit(gdMarketPlace, "NftPurchased")
+        .withArgs(
+          1,
+          addr2.address,
+          addr3.address,
+          toWei(price),
+          toWei(royalty),
+          toWei(royaltyFee),
+          addr1.address,
+          toWei(fee),
+          toWei(collector_fee)
+        );
+
+      // verify if the owner of the NFT changed for the buyer
+      expect(await gdMarketPlace.ownerOf(1)).to.equal(addr3.address);
+
+      // verify if the marketplace owner's balance increased the fee
+      expect(await deployer.getBalance()).to.be.equal(
+        feeAccountAfterEthBalShouldBe
+      );
+
+      // verify if the seller received the balance
+      expect(await addr2.getBalance()).to.be.equal(
+        ethers.BigNumber.from(artistSellerInitialBal).add(toWei(balance))
+      );
+
+      // verify if the artist received the royalty
+      expect(await provider.getBalance(artistCreatorAddress)).to.be.equal(
+        ethers.BigNumber.from(artistCreatorInitialBal).add(toWei(royaltyFee))
+      );
+
+      // expect item sold to be true
+      expect((await gdMarketPlace.id_MarketItem(1)).sold).to.be.equal(true);
+    });
+  });
+
+  describe("Set validator functionality", function () {
+    const valueNewFee = 5;
+
+    it("Should set a new validator if is the owner and this new validator should can whitelist or blacklist an artist.", async () => {
+      // GD owner set a new validator
+      expect(
+        await gdMarketPlace.connect(deployer).setValidator(addr1.address, true)
+      )
+        .to.emit(gdMarketPlace, "ValidatorAdded")
+        .withArgs(addr1.address, true);
+
+      // The new validator should can whitelist
+      expect(await gdMarketPlace.connect(addr1).whitelist(addr1.address, true))
+        .to.emit(gdMarketPlace, "ArtistWhitelisted")
+        .withArgs(addr1.address, true);
+    });
+
+    it("Should revert with a GDNFTMarketplace__Unauthorized error if an address that is not the owner try to set a new validator.", async () => {
+      await expect(
+        gdMarketPlace.connect(addr1).setValidator(addr1.address, true)
+      ).to.be.revertedWithCustomError(
+        gdMarketPlace,
+        "GDNFTMarketplace__Unauthorized"
+      );
+    });
+  });
 
   describe("Whitelist/Blacklist artist", function () {
     it("Should whitelist an after blacklist artist.", async () => {
       // MGD owner whitelist the artist
-      await gdMarketPlace.connect(deployer).whitelist(addr1.address, true);
+      expect(
+        await gdMarketPlace.connect(deployer).whitelist(addr1.address, true)
+      )
+        .to.emit(gdMarketPlace, "ArtistWhitelisted")
+        .withArgs(addr1.address, true);
       expect(
         await gdMarketPlace.connect(deployer).artist_IsApproved(addr1.address)
       ).to.be.equal(true);
 
       // MGD owner blacklist the artist
-      await gdMarketPlace.connect(deployer).whitelist(addr1.address, false);
+      expect(
+        await gdMarketPlace.connect(deployer).whitelist(addr1.address, false)
+      )
+        .to.emit(gdMarketPlace, "ArtistWhitelisted")
+        .withArgs(addr1.address, false);
       expect(
         await gdMarketPlace.connect(deployer).artist_IsApproved(addr1.address)
       ).to.be.equal(false);
@@ -567,6 +630,146 @@ describe("MGD Smart Contract", function () {
       ).to.be.revertedWithCustomError(
         gdMarketPlace,
         "GDNFTMarketplace__Unauthorized"
+      );
+    });
+  });
+
+  describe("Update primary sale fee functionality", function () {
+    const valueNewFee = 30;
+
+    it("Should update the fee if is the owner.", async () => {
+      expect(await gdMarketPlace.primary_sale_fee_percent()).to.be.equal(
+        toWei(primary_sale_fee_percent)
+      );
+
+      // GD owner update the primary fee
+      await gdMarketPlace
+        .connect(deployer)
+        .updatePrimarySaleFeePercent(toWei(valueNewFee));
+
+      expect(await gdMarketPlace.primary_sale_fee_percent()).to.be.equal(
+        toWei(valueNewFee)
+      );
+    });
+
+    it("Should revert with a GDNFTMarketplace__Unauthorized error if an address that is not the owner try to update the primary sale fee.", async () => {
+      // MGD owner whitelist the artist
+      await expect(
+        gdMarketPlace
+          .connect(addr1)
+          .updatePrimarySaleFeePercent(toWei(valueNewFee))
+      ).to.be.revertedWithCustomError(
+        gdMarketPlace,
+        "GDNFTMarketplace__Unauthorized"
+      );
+    });
+  });
+
+  describe("Update secondary sale fee functionality", function () {
+    const valueNewFee = 10;
+
+    it("Should update the secondary fee if is the owner.", async () => {
+      expect(await gdMarketPlace.secondary_sale_fee_percent()).to.be.equal(
+        toWei(secondary_sale_fee_percent)
+      );
+
+      // GD owner update the secondary fee
+      await gdMarketPlace
+        .connect(deployer)
+        .updateSecondarySaleFeePercent(toWei(valueNewFee));
+
+      expect(await gdMarketPlace.secondary_sale_fee_percent()).to.be.equal(
+        toWei(valueNewFee)
+      );
+    });
+
+    it("Should revert with a GDNFTMarketplace__Unauthorized error if an address that is not the owner try to update the secondary sale fee.", async () => {
+      await expect(
+        gdMarketPlace
+          .connect(addr1)
+          .updatePrimarySaleFeePercent(toWei(valueNewFee))
+      ).to.be.revertedWithCustomError(
+        gdMarketPlace,
+        "GDNFTMarketplace__Unauthorized"
+      );
+    });
+  });
+
+  describe("Update collector fee functionality", function () {
+    const valueNewFee = 5;
+
+    it("Should update the collector fee if is the owner.", async () => {
+      expect(await gdMarketPlace.collector_fee()).to.be.equal(
+        toWei(collector_fee)
+      );
+
+      // GD owner update the collector fee
+      await gdMarketPlace
+        .connect(deployer)
+        .updateCollectorFee(toWei(valueNewFee));
+
+      expect(await gdMarketPlace.collector_fee()).to.be.equal(
+        toWei(valueNewFee)
+      );
+    });
+
+    it("Should revert with a GDNFTMarketplace__Unauthorized error if an address that is not the owner try to update the collector fee.", async () => {
+      await expect(
+        gdMarketPlace.connect(addr1).updateCollectorFee(toWei(valueNewFee))
+      ).to.be.revertedWithCustomError(
+        gdMarketPlace,
+        "GDNFTMarketplace__Unauthorized"
+      );
+    });
+  });
+
+  describe("Update max royalty fee functionality", function () {
+    const valueNewFee = 25;
+
+    it("Should update the max_royalty_fee if is the owner.", async () => {
+      expect(await gdMarketPlace.max_royalty()).to.be.equal(toWei(max_royalty));
+
+      // GD owner update the max_royalty_fee
+      await gdMarketPlace
+        .connect(deployer)
+        .updateMaxRoyalty(toWei(valueNewFee));
+
+      expect(await gdMarketPlace.max_royalty()).to.be.equal(toWei(valueNewFee));
+    });
+
+    it("Should revert with a GDNFTMarketplace__Unauthorized error if an address that is not the owner try to update the collector fee.", async () => {
+      await expect(
+        gdMarketPlace.connect(addr1).updateMaxRoyalty(toWei(valueNewFee))
+      ).to.be.revertedWithCustomError(
+        gdMarketPlace,
+        "GDNFTMarketplace__Unauthorized"
+      );
+    });
+
+    it(`Should be possible to mint a NFT with a new maximum royalty set.`, async function () {
+      // GD owner update the max_royalty_fee
+      await gdMarketPlace
+        .connect(deployer)
+        .updateMaxRoyalty(toWei(valueNewFee));
+
+      await gdMarketPlace.connect(deployer).whitelist(addr1.address, true);
+
+      await gdMarketPlace.connect(addr1).mintNft(URI, toWei(valueNewFee));
+    });
+
+    it(`Should revert with a GDNFTMarketplace__InvalidPercentage error if some artist try to mint with a royalty percent greater than new max royalty that is ${valueNewFee}.`, async function () {
+      // GD owner update the max_royalty_fee
+      await gdMarketPlace
+        .connect(deployer)
+        .updateMaxRoyalty(toWei(valueNewFee));
+
+      await gdMarketPlace.connect(deployer).whitelist(addr1.address, true);
+
+      await expect(
+        gdMarketPlace.connect(addr1).mintNft(URI, toWei(valueNewFee + 1))
+      ).to.be.revertedWithCustomError(
+        gdMarketPlace,
+        "GDNFTMarketplace__InvalidPercentage"
       );
     });
   });
