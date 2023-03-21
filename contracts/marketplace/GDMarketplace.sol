@@ -25,10 +25,10 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
     Counters.Counter private _tokenIds;
     Counters.Counter private _itemsSold;
 
-    uint256 public primary_sale_fee_percent = 15000000000000000000;
-    uint256 public secondary_sale_fee_percent = 5000000000000000000;
-    uint256 public collector_fee = 3000000000000000000;
-    uint256 public max_royalty = 30000000000000000000;
+    uint256 public primary_sale_fee_percent;
+    uint256 public secondary_sale_fee_percent;
+    uint256 public collector_fee;
+    uint256 public max_royalty;
     address private OWNER;
     mapping(uint256 => MarketItem) public id_MarketItem;
     mapping(address => bool) public artist_IsApproved;
@@ -44,9 +44,19 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
         bool sold;
     }
 
-    function initialize(address _owner) public initializer {
-        OWNER = _owner;
+    function initialize(
+        address _owner,
+        uint256 _primary_sale_fee_percent,
+        uint256 _secondary_sale_fee_percent,
+        uint256 _collector_fee,
+        uint256 _max_royalty
+    ) public initializer {
         __ERC721_init("Gold Dust NFT", "GDNFT");
+        OWNER = _owner;
+        primary_sale_fee_percent = _primary_sale_fee_percent;
+        secondary_sale_fee_percent = _secondary_sale_fee_percent;
+        collector_fee = _collector_fee;
+        max_royalty = _max_royalty;
     }
 
     /**
