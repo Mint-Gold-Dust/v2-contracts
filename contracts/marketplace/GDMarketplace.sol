@@ -15,6 +15,7 @@ error GDNFTMarketplace__Unauthorized();
 error GDNFTMarketplace__InsufficientFunds();
 error GDNFTMarketplace__InvalidInput();
 error GDNFTMarketplace__NotAListedItem();
+error GDNFTMarketplace__OutOfBounds();
 
 contract GDNFTMarketplace is ERC721URIStorage, IGD {
     using Counters for Counters.Counter;
@@ -64,8 +65,8 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     }
 
     /**
-     * Update platform secondary fee percentage
-     * This fee is taken from each resale on the marketplace
+     * Update collector fee percentage
+     * This fee is taken from each primary sale
      * @notice Only contract deployer can call this function
      * @param _percentage The percentage in wei format
      */
@@ -74,8 +75,8 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     }
 
     /**
-     * Update platform secondary fee percentage
-     * This fee is taken from each resale on the marketplace
+     * Update max royalty percentage
+     * The max value artist can set as royalty
      * @notice Only contract deployer can call this function
      * @param _percentage The percentage in wei format
      */
@@ -92,7 +93,7 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     function mintNft(
         string memory _tokenURI,
         uint256 _royaltyPercent
-    ) public isApproved returns (uint256) {
+    ) public isApproved royaltyValid(_royaltyPercent) returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(msg.sender, newTokenId);
@@ -315,6 +316,13 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
     modifier isApproved() {
         if (artist_IsApproved[msg.sender] == false) {
             revert GDNFTMarketplace__Unauthorized();
+        }
+        _;
+    }
+
+    modifier royaltyValid(uint256 _royalty) {
+        if (_royalty > max_royalty) {
+            revert GDNFTMarketplace__OutOfBounds();
         }
         _;
     }
