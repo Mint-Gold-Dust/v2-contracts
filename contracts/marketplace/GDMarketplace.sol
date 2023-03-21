@@ -9,6 +9,8 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "./IGD.sol";
 
 error GDNFTMarketplace__Unauthorized();
@@ -17,7 +19,7 @@ error GDNFTMarketplace__InvalidInput();
 error GDNFTMarketplace__NotAListedItem();
 error GDNFTMarketplace__InvalidPercentage();
 
-contract GDNFTMarketplace is ERC721URIStorage, IGD {
+contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIds;
@@ -42,8 +44,9 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
         bool sold;
     }
 
-    constructor(address _owner) ERC721("Gold Dust NFT", "GDNFT") {
+    function initialize(address _owner) public initializer {
         OWNER = _owner;
+        __ERC721_init("Gold Dust NFT", "GDNFT");
     }
 
     /**
