@@ -9,10 +9,10 @@ const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {},
-    // goerli: {
-    //   url: "https://eth-goerli.alchemyapi.io/v2/123abc123abc123abc123abc123abcde",
-    //   accounts: [privateKey1, privateKey2, ...]
-    // }
+    sepolia: {
+      url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      accounts: [`${process.env.PK}`],
+    },
   },
   solidity: {
     version: "0.8.17",
