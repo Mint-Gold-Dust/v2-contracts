@@ -47,7 +47,7 @@ The GDNFTMarketplace contract is an Ethereum smart contract that enables the min
 
 - `updateSecondarySaleFeePercent(uint256 _percentage)`: This function updates the platform's secondary sale fee percentage, which is taken from each resale on the marketplace. Only the contract deployer can call this function. The `_percentage` parameter is the new fee percentage in wei format.
 
-- `updateCollectorFee(uint256 _percentage)`: This function updates the collector fee percentage, which is taken from each secondary sale and transferred to the artist. Only the contract deployer can call this function. The `_percentage` parameter is the new fee percentage in wei format.
+- `updateCollectorFee(uint256 _percentage)`: This function updates the collector fee percentage, which is charged from each primary sale. Only the contract deployer can call this function. The `_percentage` parameter is the new fee percentage in wei format.
 
 - `updateMaxRoyalty(uint256 _percentage)`: This function updates the maximum royalty percentage that can be set by the artist when they mint their NFT. Only the contract deployer can call this function. The `_percentage` parameter is the new maximum royalty percentage in wei format.
 
@@ -57,11 +57,17 @@ The GDNFTMarketplace contract is an Ethereum smart contract that enables the min
 
 - `buyNft(uint256 _tokenId)`: This function allows buyers to purchase a GDNFT token from the marketplace. The `_tokenId` parameter is the ID of the token to be purchased. The function fails if the token is not listed on the marketplace, or if the buyer does not have sufficient funds to make the purchase.
 
-- `setTokenSecondarySale(uint256 _tokenId, bool _canBeResold)`: This function allows the artist to enable or disable the ability to resell a token. The `_tokenId` parameter is the ID of the token to be modified, and the `_canBeResold` parameter is a boolean that indicates whether the token can be resold or not.
+- `updateListedNft(uint256 _tokenId, uint256 _price)`: This function allows the seller to update the price of an already listed NFT the marketplace. The `_tokenId` parameter is the ID of the token to be updated. The `_price` parameter is the new price to be set. The function fails if the token is not listed on the marketplace, if the price is less or equal to zero or if the caller is not the seller.
 
-- `getMarketItems()`: This function returns an array of all the market items that are currently listed on the marketplace.
+- `reListNft(uint256 _tokenId, uint256 _price)`: This function allows an NFT owner(not original artist) to list the token on the secondary marketplace. The `_tokenId` parameter is the ID of the token to be listed, and the `_price` parameter is the price at which the token will be listed. The function fails if the price is less than or equal to 0 or the caller is not the owner of the token.
 
-- `getMarketItemById(uint256 _tokenId)`: This function returns the market item that matches the specified `_tokenId`.
+- `delistNft(uint256 _tokenId)`: This function allows the seller of an NFT to remove the token from the marketplace. The `_tokenId` parameter is the ID of the token to be removed. The function fails if the caller is not the seller of the token. When the token is removed, the `id_MarketItem[_tokenId]` struct is updated to reflect that the token has been sold. The `_itemsSold` counter is incremented since the token is no longer listed for sale. The token is transferred from the marketplace contract to the seller, and an `NftRemovedFromMarketplace` event is emitted.
+
+- `auction(uint256 _tokenId, address _auctionContract)`: This function allows the owner of an NFT to move the token to an auction contract. The `_tokenId` parameter is the ID of the token to be moved, and the `_auctionContract` parameter is the address of the auction contract to which the token will be moved. The function fails if the caller is not the owner of the token. When the token is moved, it is transferred from the caller to the auction contract, and an `NftSentToAuction` event is emitted.
+
+- `setValidator(address _address, bool _state)`: This function allows the contract owner to whitelist or blacklist an address as a validator. The `_address` parameter is the address to be validated, and the \_state parameter is the boolean state of the validation. The function emits a `ValidatorAdded` event when an address is added to the validator list.
+
+- `whitelist(address _address, bool _state)`: This function allows a validator to whitelist or blacklist an artist. The `_address` parameter is the address of the artist to be whitelisted or blacklisted, and the `_state` parameter is the boolean state of the artist's approval. The function emits an `ArtistWhitelisted` event when an artist is added to the whitelist.
 
 # 🎉 Interface Functions 🎉
 
