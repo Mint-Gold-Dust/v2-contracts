@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 /// @title Mint Gold Dust NFT
 /// @author Mint Gold Dust LLC
@@ -9,6 +9,8 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "./IGD.sol";
 
 error GDNFTMarketplace__Unauthorized();
@@ -17,16 +19,16 @@ error GDNFTMarketplace__InvalidInput();
 error GDNFTMarketplace__NotAListedItem();
 error GDNFTMarketplace__InvalidPercentage();
 
-contract GDNFTMarketplace is ERC721URIStorage, IGD {
+contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIds;
     Counters.Counter private _itemsSold;
 
-    uint256 public primary_sale_fee_percent = 15000000000000000000;
-    uint256 public secondary_sale_fee_percent = 5000000000000000000;
-    uint256 public collector_fee = 3000000000000000000;
-    uint256 public max_royalty = 30000000000000000000;
+    uint256 public primary_sale_fee_percent;
+    uint256 public secondary_sale_fee_percent;
+    uint256 public collector_fee;
+    uint256 public max_royalty;
     address private OWNER;
     mapping(uint256 => MarketItem) public id_MarketItem;
     mapping(address => bool) public artist_IsApproved;
@@ -42,8 +44,19 @@ contract GDNFTMarketplace is ERC721URIStorage, IGD {
         bool sold;
     }
 
-    constructor(address _owner) ERC721("Gold Dust NFT", "GDNFT") {
+    function initialize(
+        address _owner,
+        uint256 _primary_sale_fee_percent,
+        uint256 _secondary_sale_fee_percent,
+        uint256 _collector_fee,
+        uint256 _max_royalty
+    ) public initializer {
+        __ERC721_init("Gold Dust NFT", "GDNFT");
         OWNER = _owner;
+        primary_sale_fee_percent = _primary_sale_fee_percent;
+        secondary_sale_fee_percent = _secondary_sale_fee_percent;
+        collector_fee = _collector_fee;
+        max_royalty = _max_royalty;
     }
 
     /**
