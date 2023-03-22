@@ -43,5 +43,5 @@ interface IGD {
 
     event ArtistWhitelisted(address artistAddress, bool state);
 
-    event ValidatorAdded(address artistAddress, bool state);
+    event ValidatorAdded(address validatorAddress, bool state);
 }
