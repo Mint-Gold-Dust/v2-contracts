@@ -1,5 +1,54 @@
 # MGD Smart Contracts V2
 
+# Introducution
+
+## What is Gold Dust platform?
+
+We're a platform that create a virtual environment for artists to expose and sell their artworks on web3.
+We have a marketplace, galleries and also curated spaces.
+For the next future versions we should have auctions available.
+At the moment we're allowing artists to mint ERC721 or ERC1155 and sell their items.
+Also the platform allow secondary market, so a collector can relist a purchased item and sell it paying a royalty for the artist creator.
+
+### Artists subscription
+
+An import flow that we have in our platform is the artist subscription. For this, the artist should fill a form and send us its personal info.
+After that, the artists subscribed will appear in the dashboard admin that is a frontend built only for management by the admin.
+At this frontend we should have a page to the admin whitelist or blacklist some artist. So only the whitelisted artists would can mint in our platform.
+
+### Mint NFT flow
+
+A whitelisted artist can mint a new NFT with a price and a royalty value for secondary market sales.
+The price cannot be less or equal zero and the royalty cannot be greater than a maximum set by the marketplace owner.
+
+### List NFT
+
+After mint a NFT. The artist can list it on our marketplace to be sold.
+If the artist want is possible to delist this NFT from the market.
+
+### Buy NFT
+
+Here we have two possible scenarios.
+
+#### Primary market
+
+The first one is the primary market sale. So the buyer need to pay the price required by the artist.
+This price will be divided in the collector fee that is 3%, the marketplace primary sale fee that is 15% and the rest is the amount that go to the seller.
+The collector fee and the marketplace primary sale fee go to the marketplace owner.
+
+#### Secondary market
+
+The other scenario is the secondary market. So here a collector is relisting a purchased item.
+So a buyer needs to pay a price required and here the price will be divided in:
+
+- secondary market fee that is 5% that goes to the marketplace's owner.
+- royalty fee that goes to the artist creator of the artwork.
+- and the rest goes to the collector seller.
+
+_So for our v2.0 these are our main functionalities that gonna be available._
+
+# Starting with the project
+
 If you starting now at this project, please do the next configurations:
 
 Install the VSCode extension:
