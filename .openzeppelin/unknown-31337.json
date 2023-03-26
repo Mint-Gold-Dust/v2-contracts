@@ -1,15 +1,10 @@
 {
   "manifestVersion": "3.2",
   "admin": {
-    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "txHash": "0x11b53ae7c9db61112a2948c6c9c166064cd5f442c4bb4ccafdb8e329792a546d"
+    "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "txHash": "0x32fcc795b2187b2eb7653396e6a5a0a1dab09a21b24bcce70e0847d68306e56b"
   },
   "proxies": [
-    {
-      "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-      "txHash": "0x919b8d0245666bed057094a584a5e2ac019cbf4007303c8d71b698f6c8dc4c91",
-      "kind": "transparent"
-    },
     {
       "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
       "txHash": "0xd91a2bd7aca07fc785ccc005056e3c080ad2d2fb411ed01192c0678eaf2a6ba8",
@@ -189,12 +184,27 @@
       "address": "0xD5ac451B0c50B9476107823Af206eD814a2e2580",
       "txHash": "0x684f82829b5ec84e410ef520699c694a71dad27bba4d435e6a8e0310c0fc8169",
       "kind": "transparent"
+    },
+    {
+      "address": "0x34B40BA116d5Dec75548a9e9A8f15411461E8c70",
+      "txHash": "0xfa9ef30044d660ed139319d80944097ab737211f65ecc8353ae450a71ccee4c8",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "txHash": "0x919b8d0245666bed057094a584a5e2ac019cbf4007303c8d71b698f6c8dc4c91",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "txHash": "0x5f4d5abb953ac63153fdd0ec83af04f45d38ffd0d01668566db6f49ebc103a67",
+      "kind": "transparent"
     }
   ],
   "impls": {
     "fd077def5fd4bea9ea35b51c818a97a215d89f13c06a12e9d1350c9780fa4f57": {
-      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-      "txHash": "0x844f3d1a3c8d1ce5d81b9fe28bb60085319614352cb0285b0e475b67deae40a2",
+      "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "txHash": "0x5833fb548389e0348037b1a81700804b94c2e140aa721852fe6636cb35c0b932",
       "layout": {
         "solcVersion": "0.8.17",
         "storage": [
