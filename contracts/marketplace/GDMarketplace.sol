@@ -17,7 +17,7 @@ error GDNFTMarketplace__Unauthorized();
 error GDNFTMarketplace__IncorrectAmountSent();
 error GDNFTMarketplace__InvalidInput();
 error GDNFTMarketplace__NotAListedItem();
-error GDNFTMarketplace__InvalidPercentage();
+error GDNFTMarketplace__OutOfBounds();
 
 contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
     using Counters for Counters.Counter;
@@ -34,6 +34,7 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
     mapping(address => bool) public artist_IsApproved;
     mapping(address => bool) public address_isValidator;
     mapping(uint256 => address) public tokenID_Artist;
+    mapping(uint256 => string) public tokenID_Memoir;
     mapping(uint256 => uint256) public tokenID_RoyaltyPercent;
     mapping(uint256 => bool) public tokenID_SecondarySale;
 
@@ -107,16 +108,24 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
      */
     function mintNft(
         string memory _tokenURI,
-        uint256 _royaltyPercent
-    ) public validPercentage(_royaltyPercent) isApproved returns (uint256) {
+        uint256 _royaltyPercent,
+        string memory _memoir
+    ) public royaltyValid(_royaltyPercent) isApproved returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, _tokenURI);
         tokenID_Artist[newTokenId] = msg.sender;
         tokenID_RoyaltyPercent[newTokenId] = _royaltyPercent;
+        tokenID_Memoir[newTokenId] = _memoir;
 
-        emit NftMinted(newTokenId, msg.sender, _tokenURI, _royaltyPercent);
+        emit NftMinted(
+            newTokenId,
+            msg.sender,
+            _tokenURI,
+            _royaltyPercent,
+            _memoir
+        );
         return newTokenId;
     }
 
@@ -200,6 +209,20 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
     }
 
     /**
+     * Updates a memoir
+     * @notice Caller must be artist and be the owner of the NFT
+     * @param _tokenId The token ID of the NFT
+     * @param _memoir The updated memoir
+     */
+    function updateMemoir(
+        uint256 _tokenId,
+        string memory _memoir
+    ) public isArtist(_tokenId) isNFTowner(_tokenId) {
+        tokenID_Memoir[_tokenId] = _memoir;
+        emit MemoirUpdated(_tokenId, _memoir);
+    }
+
+    /**
      * Move token to auction contract
      * @notice Only NFT owner can call this function
      * @param _tokenId The token ID of the the token to list
@@ -278,9 +301,9 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
         emit ArtistWhitelisted(_address, _state);
     }
 
-    modifier validPercentage(uint256 percentage) {
-        if (percentage > max_royalty) {
-            revert GDNFTMarketplace__InvalidPercentage();
+    modifier royaltyValid(uint256 _royalty) {
+        if (_royalty > max_royalty) {
+            revert GDNFTMarketplace__OutOfBounds();
         }
         _;
     }
