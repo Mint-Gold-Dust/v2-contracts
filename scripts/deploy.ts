@@ -26,7 +26,7 @@ async function main() {
   const primary_sale_fee_percent_initial = 15000000000000000000n;
   const secondary_sale_fee_percent_initial = 5000000000000000000n;
   const collector_fee_initial = 3000000000000000000n;
-  const max_royalty_initial = 30000000000000000000n;
+  const max_royalty_initial = 20000000000000000000n;
 
   console.log("Deploying contracts with the account:", deployer.address);
   console.log("Account balance:", (await deployer.getBalance()).toString());
