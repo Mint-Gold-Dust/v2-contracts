@@ -44,6 +44,10 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
         bool sold;
     }
 
+    function isTokenSecondarySale(uint256 _tokenId) public view returns (bool) {
+        return tokenID_SecondarySale[_tokenId];
+    }
+
     function initialize(
         address _owner,
         uint256 _primary_sale_fee_percent,

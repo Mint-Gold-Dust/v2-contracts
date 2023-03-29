@@ -6,6 +6,10 @@ pragma solidity ^0.8.17;
 /// @custom:contact klvh@mintgolddust.io
 
 interface IGD {
+    function isTokenSecondarySale(
+        uint256 _tokenId
+    ) external view returns (bool);
+
     event NftMinted(
         uint256 indexed tokenId,
         address owner,

@@ -7,68 +7,140 @@ pragma solidity 0.8.17;
 /// @custom:contact klvh@mintgolddust.io
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/IERC721MetadataUpgradeable.sol";
+import "./IGDAuction.sol";
+import "./GDMarketplace.sol";
+import "./IGD.sol";
 
-contract GDAuction {
-    constructor() {}
+error ChooseSetPriceOrReservePrice();
+error SetPriceMustBeGreaterThanZero();
+error AuctionEnded();
+error AuctionCancelled();
+error BidTooLow();
+
+contract GDAuction is IGDAuction {
+    constructor(uint256 _duration) {
+        duration = _duration;
+    }
 
     Auction[] public auctions;
+
+    uint256 private duration;
 
     struct Auction {
         address nftContract;
         uint256 tokenId;
         address payable seller;
-        uint256 startingPrice;
-        uint256 reservePrice;
+        uint256 price;
         uint256 endTime;
         address payable highestBidder;
         uint256 highestBid;
         bool cancelled;
         bool ended;
+        bool isSetPrice;
+        bool isReservePrice;
     }
 
     function createAuction(
         address _nftContract,
         uint256 _tokenId,
-        uint256 _startingPrice,
-        uint256 _reservePrice,
-        uint256 _duration
+        uint256 _price,
+        bool _isSetPrice,
+        bool _isReservePrice
     ) public {
+        uint256 _duration;
+
+        if (_isSetPrice == true && _isReservePrice == true) {
+            revert ChooseSetPriceOrReservePrice();
+        }
+
+        if (_isSetPrice == true && _price == 0) {
+            revert SetPriceMustBeGreaterThanZero();
+        }
+
+        require(
+            IERC721MetadataUpgradeable(_nftContract).ownerOf(_tokenId) !=
+                address(0),
+            "Token does not exist."
+        );
+
+        if (_isSetPrice) {
+            _duration = block.timestamp + duration;
+        } else {
+            _duration = 0;
+        }
+
         // Add new auction to array of auctions
         auctions.push(
             Auction({
                 nftContract: _nftContract,
                 tokenId: _tokenId,
                 seller: payable(msg.sender),
-                startingPrice: _startingPrice,
-                reservePrice: _reservePrice,
-                endTime: block.timestamp + _duration,
+                price: _price,
+                endTime: _duration,
                 highestBidder: payable(address(0)),
                 highestBid: 0,
                 cancelled: false,
-                ended: false
+                ended: false,
+                isSetPrice: _isSetPrice,
+                isReservePrice: _isReservePrice
             })
+        );
+
+        emit AuctionCreated(
+            _nftContract,
+            _tokenId,
+            payable(msg.sender),
+            _price,
+            _duration,
+            payable(address(0)),
+            0,
+            false,
+            false,
+            _isSetPrice,
+            _isReservePrice
         );
     }
 
     function placeBid(uint256 _auctionId) external payable {
-        // Retrieve the auction from the array of auctions
-        Auction storage auction = auctions[_auctionId];
+        if (
+            auctions[_auctionId].endTime != 0 &&
+            block.timestamp >= auctions[_auctionId].endTime
+        ) {
+            revert AuctionEnded();
+        }
 
-        // Ensure that the auction is active and not cancelled
-        require(block.timestamp < auction.endTime, "Auction has ended");
-        require(!auction.cancelled, "Auction has been cancelled");
+        if (auctions[_auctionId].cancelled) {
+            revert AuctionCancelled();
+        }
 
         // Ensure that the bid is higher than the current highest bid
-        require(msg.value > auction.highestBid, "Bid too low");
+        if (msg.value <= auctions[_auctionId].highestBid) {
+            revert BidTooLow();
+        }
+
+        /**
+         *
+         * @notice If is not a setPrice auction and it is without a reserve price,
+         * so the first bid greater than zero must start the auction time.
+         */
+        if (
+            !auctions[_auctionId].isSetPrice &&
+            auctions[_auctionId].price == 0 &&
+            auctions[_auctionId].highestBid == 0
+        ) {
+            auctions[_auctionId].endTime = block.timestamp + duration;
+        }
 
         // If there is a previous highest bidder, refund their bid
-        if (auction.highestBidder != address(0)) {
-            auction.highestBidder.transfer(auction.highestBid);
+        if (auctions[_auctionId].highestBidder != address(0)) {
+            auctions[_auctionId].highestBidder.transfer(
+                auctions[_auctionId].highestBid
+            );
         }
 
         // Update the highest bid and bidder
-        auction.highestBidder = payable(msg.sender);
-        auction.highestBid = msg.value;
+        auctions[_auctionId].highestBidder = payable(msg.sender);
+        auctions[_auctionId].highestBid = msg.value;
     }
 
     function endAuction(uint256 _auctionId) public {
