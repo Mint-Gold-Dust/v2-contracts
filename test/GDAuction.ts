@@ -209,7 +209,7 @@ describe("_____________GDAuction Smart Contract Tests_____________", function ()
   });
 
   describe("* Place a bid functionality suit of tests:", function () {
-    let price = 1;
+    let price = 4;
     let gdAuctionSmallTime: Contract;
     const _duration = 3; // seconds
     const _timeout = 4 * 1000; // seconds
@@ -262,19 +262,105 @@ describe("_____________GDAuction Smart Contract Tests_____________", function ()
       ).to.be.revertedWithCustomError(GDAuction, "BidTooLow");
     });
 
-    it("Should addr2 place a bid the test must verify the balances and after addr3 should place another bid and the test will verify the balances again to see if the addr2 have received its funds.", async function () {
+    it("Should \n - addr2 place a bid \n - verify if the addr2 balance have decreased the bid price plus the gas fee for the transaction \n - verify if the auction highest bid value is equal the value sent \n - verify if the auciton highest bidder have changed to addr2 \n - addr3 place another bid \n - verify if the addr3 balance have decreased the bid price plus the gas fee for the transaction \n - verify if the auction highest bid value have changed \n - verify if the auciton highest bidder have changed to addr3 \n - verify if the addr2 was refunded and its balance have increased.", async function () {
+      let auctionCreated;
+      let highestBid;
+
+      // Verify if the highestBid is zero at the beginning
+      auctionCreated = await gdAuctionSmallTime.auctions(0);
+      highestBid = auctionCreated.highestBid;
+      expect(highestBid).to.be.equal(0);
+
+      // Get the gas limit to be used for the placeBid function
+      let gasPrice = await gdAuctionSmallTime.signer.getGasPrice();
+      let gasLimit = await gdAuctionSmallTime.estimateGas.placeBid(0, {
+        value: toWei(price),
+      });
+
+      // Get the balance for the addr2 before place a bid in the auction
       const addr2BalanceBefore = await addr2.getBalance();
-      await gdAuctionSmallTime
+
+      // Get the transaction created by placeBid execution
+      const tx = await gdAuctionSmallTime
         .connect(addr2)
-        .placeBid(0, { value: toWei(price) });
+        .placeBid(0, { value: toWei(price), gasLimit, gasPrice });
+
+      // Get the gas used for the transaction above
+      let gasUsed = tx.gasLimit.mul(gasPrice);
+
+      // Get the balance for the addr2 after place a bid
       const addr2BalanceAfter = await addr2.getBalance();
-      const addr2ShouldBe = ethers.BigNumber.from(addr2BalanceBefore).sub(
-        toWei(price)
+
+      // Verify if the balance of the addr2 after place a bid is equals
+      // the balance of addr2 before the bid minus the bid price
+      // and the gas used
+      const addr2BalanceShouldBeAfterBid = ethers.BigNumber.from(
+        addr2BalanceBefore
+      )
+        .sub(toWei(price))
+        .sub(gasUsed);
+
+      expect(addr2BalanceAfter).to.be.equal(addr2BalanceShouldBeAfterBid);
+
+      auctionCreated = await gdAuctionSmallTime.auctions(0);
+
+      expect(auctionCreated.highestBid).to.be.equal(
+        ethers.BigNumber.from(highestBid).add(toWei(price))
       );
-      // expect(addr2BalanceAfter).to.be.equal(addr2ShouldBe);
-      // await expect(
-      //   gdAuctionSmallTime.connect(addr3).placeBid(0, { value: toWei(1) })
-      // ).to.be.revertedWithCustomError(GDAuction, "BidTooLow");
+      highestBid = auctionCreated.highestBid;
+      expect(auctionCreated.highestBidder).to.be.equal(addr2.address);
+
+      /********************** TEST SECOND PART *******************************/
+      // Here we'll verify if after a second bid highes than the last one
+      //  - The addr2 will be refunded with the price bidded
+      //  - The addr3 balance will change correctly after the bid
+      //  - The auction highesBid value was changed by the new bid
+
+      const bid2Price = price + 5;
+
+      // Get the gas limit to be used for the placeBid function
+      gasPrice = await gdAuctionSmallTime.signer.getGasPrice();
+      gasLimit = await gdAuctionSmallTime.estimateGas.placeBid(0, {
+        value: toWei(bid2Price),
+      });
+
+      // Get the balance for the addr2 before place a bid in the auction
+      const addr3BalanceBefore = await addr3.getBalance();
+
+      // Get the transaction created by placeBid execution
+      const tx2 = await gdAuctionSmallTime
+        .connect(addr3)
+        .placeBid(0, { value: toWei(bid2Price), gasLimit, gasPrice });
+
+      // Get the gas used for the transaction above
+      gasUsed = tx2.gasLimit.mul(gasPrice);
+
+      // Get the balance for the addr2 after place a bid
+      const addr3BalanceAfter = await addr3.getBalance();
+
+      // Verify if the balance of the addr2 after place a bid is equals
+      // the balance of addr2 before the bid minus the bid price
+      // and the gas used
+      const addr3BalanceShouldBeAfterBid = ethers.BigNumber.from(
+        addr3BalanceBefore
+      )
+        .sub(toWei(bid2Price))
+        .sub(gasUsed);
+
+      expect(addr3BalanceAfter).to.be.equal(addr3BalanceShouldBeAfterBid);
+
+      // Verify if the addr2 - the last highest bidder - was refunded
+      const addr2BalanceAfterRefund = await addr2.getBalance();
+      expect(addr2BalanceAfterRefund).to.be.equal(
+        ethers.BigNumber.from(addr2BalanceAfter).add(highestBid)
+      );
+
+      // Verify if the auction highest bid value have changed
+      auctionCreated = await gdAuctionSmallTime.auctions(0);
+      expect(auctionCreated.highestBid).to.be.equal(
+        ethers.BigNumber.from(highestBid).add(toWei(5))
+      );
+      highestBid = auctionCreated.highestBid;
     });
   });
 });
