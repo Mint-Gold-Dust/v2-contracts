@@ -19,4 +19,16 @@ interface IGDAuction {
         bool setPrice,
         bool reservePrice
     );
+
+    event NftPurchased(
+        uint256 indexed tokenId,
+        address seller,
+        address newOwner,
+        uint256 buyPrice,
+        uint256 royaltyPercent,
+        uint256 royaltyAmount,
+        address royaltyRecipient,
+        uint256 feeAmount,
+        uint256 collectorFeeAmount
+    );
 }

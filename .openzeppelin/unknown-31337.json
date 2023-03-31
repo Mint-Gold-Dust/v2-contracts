@@ -2,7 +2,7 @@
   "manifestVersion": "3.2",
   "admin": {
     "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "txHash": "0x953b8c117ae613de188205aae0b05a1dc1db1c2fbb512c50dca755e6452c2861"
+    "txHash": "0x576e22981c09315590f95a13986bec67c811d19db4cec4457b290817482bb133"
   },
   "proxies": [
     {
@@ -46,11 +46,6 @@
       "kind": "transparent"
     },
     {
-      "address": "0x5eb3Bc0a489C5A8288765d2336659EbCA68FCd00",
-      "txHash": "0x62bfdbb32a6669e1d4e529e7bcccad4b1b093e86a2c504630f9b59b7a1dc71a8",
-      "kind": "transparent"
-    },
-    {
       "address": "0x4c5859f0F772848b2D91F1D83E2Fe57935348029",
       "txHash": "0x45366f4ce3d20121cfce0e3de6ed21e0fba6fb1fd8c70834a2f05ac7c2bbb72b",
       "kind": "transparent"
@@ -58,11 +53,6 @@
     {
       "address": "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
       "txHash": "0xe9d0821f6ced241ea675a0406ddda38907b755f4d3c2ab174951c59f983b646b",
-      "kind": "transparent"
-    },
-    {
-      "address": "0x2bdCC0de6bE1f7D2ee689a0342D76F52E8EFABa3",
-      "txHash": "0x0768a34ef337b6c40a26305a4172ad3e6db6a0234fe087feb67246c67a0d9b21",
       "kind": "transparent"
     },
     {
@@ -191,60 +181,90 @@
       "kind": "transparent"
     },
     {
+      "address": "0x5eb3Bc0a489C5A8288765d2336659EbCA68FCd00",
+      "txHash": "0x0717c481d412cad336d5d3a8f49351c0a436457f5ad38c74092faa3e28c39b8b",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x1291Be112d480055DaFd8a610b7d1e203891C274",
+      "txHash": "0x3f1ec35f41fb397a6a90bff950336e92601009cdaf8bc1ace852154a77b92eaf",
+      "kind": "transparent"
+    },
+    {
       "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-      "txHash": "0x59c3d6bf88d7b592d91b67a534255adf7e7fb52cf401a2d1189c04f059408e7b",
+      "txHash": "0x671bbafb436ec9d93c48d39de9e831e3b4d53d45db52fb5de94c4ea42d8a3a48",
       "kind": "transparent"
     },
     {
       "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
-      "txHash": "0xb9efc0a1a9a97237971e9bc533f6e26530e102a06027889cfab25468e0a762d1",
+      "txHash": "0x5b9abdf4dada6583a9e5e272dd8cfc615febe8d742e6257c79f02a260340a7b6",
       "kind": "transparent"
     },
     {
       "address": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
-      "txHash": "0xa9ac79efc1086d4c36e094e7cb1f801b1ec5a55544a718ddf4b431e715803d0e",
+      "txHash": "0xc6a5a166b92e3f5a933131664ad8499a7e50c9efdb91f5f1caa53a47e629a52f",
       "kind": "transparent"
     },
     {
       "address": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
-      "txHash": "0xf3efa49eafa16c5bfdba99df789229a151c6618f254fb2b30edfd34b74f46e16",
+      "txHash": "0xa7c308c2ec6b76fe1a8c4044434e40f1cc98ef6d89127414fb12377e4739339a",
       "kind": "transparent"
     },
     {
       "address": "0x3Aa5ebB10DC797CAC828524e59A333d0A371443c",
-      "txHash": "0xb26341f24e46492c0063e5ba90c4dd54b10bc2dffc34f8789dcb397b15714d56",
+      "txHash": "0xbd05d61ca836531b45a3579c9106ed476aa84d90f8542d6a2ebbde342c2fbb9b",
       "kind": "transparent"
     },
     {
       "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
-      "txHash": "0xba5c2fa9bc39ed279d73298e579b1dee2626137ee5db5b8ce7491c7f0b2eb0a7",
+      "txHash": "0x5201476b726a0a4f1ad45c71ffe346dea0cb606f21568bb88a9de1e5f2f7518a",
       "kind": "transparent"
     },
     {
       "address": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
-      "txHash": "0x44196fd92f900a14c9467792f8edf495cc9debde1e205f216f34f6dd4016bad8",
+      "txHash": "0x43f4b09f5b6d5c8f2484d93f824e65873df1117ff3a091631f8dcf7afd516858",
       "kind": "transparent"
     },
     {
       "address": "0x84eA74d481Ee0A5332c457a4d796187F6Ba67fEB",
-      "txHash": "0xcd0576674a6ed3e6c365a46069ab9f22105cb5d2f525e3fab77b62b5c5145f35",
+      "txHash": "0xcc9a428dba1003a57028237acb4040f4b9e40d47c1bedfbf721591e829ababcd",
       "kind": "transparent"
     },
     {
       "address": "0xf5059a5D33d5853360D16C683c16e67980206f36",
-      "txHash": "0x5dbc74c6c0e1465e7fc3a36438ba683ac547751cf697ac99a0ec43867ba53793",
+      "txHash": "0xc8285278bdf7d27c32bbfab2383f80e9d915676b53021a5dbf5761c7cbe7a157",
       "kind": "transparent"
     },
     {
       "address": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf",
-      "txHash": "0xd8ad679d316a1f7594fdbb1362293213765eb26b062a4ec86333567e02868346",
+      "txHash": "0xa24b1ae9db0d89a99fb9df564b4aaa895668a3831f9a0b708d0892a81c8cc4fe",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x36C02dA8a0983159322a80FFE9F24b1acfF8B570",
+      "txHash": "0x2c1ea16be31eebbf85d81990669e82f3c00d223ba451302ef0f21e85ed0af209",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x5f3f1dBD7B74C6B46e8c44f98792A1dAf8d69154",
+      "txHash": "0x7ae49b6c3b2204e08f1ed5623ad116bb14e85517a20934b7c9723f8ad53fdfbf",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x2bdCC0de6bE1f7D2ee689a0342D76F52E8EFABa3",
+      "txHash": "0x111e407fc0b529d6418c00edac86ed02b8ca546c33a2e5f8f22dcbf1635efc23",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xFD471836031dc5108809D173A067e8486B9047A3",
+      "txHash": "0x1a93a05a3d862a833a06bb82813f3b5bda12f5224582d20569f3b4e6bb0ef0bf",
       "kind": "transparent"
     }
   ],
   "impls": {
-    "452cb7fff10e5fd3bf00538a812c55b9da255871f95f8a03c58b2f457fbec0ee": {
+    "a6305b7e11bae4d75e6ba3cb9398fe8252be921a79078f4d630df7061d2f878e": {
       "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-      "txHash": "0xb4d25305ab3db893a6cbb618fd91f39571d2b65c2df2220b99065bcaf6450650",
+      "txHash": "0xa538a2f51b20b0f93aa4287a57e367b8f1d6c9cd96c498aef3060130f36d653f",
       "layout": {
         "solcVersion": "0.8.17",
         "storage": [
@@ -413,7 +433,7 @@
             "label": "id_MarketItem",
             "offset": 0,
             "slot": "208",
-            "type": "t_mapping(t_uint256,t_struct(MarketItem)6121_storage)",
+            "type": "t_mapping(t_uint256,t_struct(MarketItem)6426_storage)",
             "contract": "GDNFTMarketplace",
             "src": "contracts/marketplace/GDMarketplace.sol:33"
           },
@@ -503,7 +523,7 @@
             "label": "mapping(uint256 => string)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(MarketItem)6121_storage)": {
+          "t_mapping(t_uint256,t_struct(MarketItem)6426_storage)": {
             "label": "mapping(uint256 => struct GDNFTMarketplace.MarketItem)",
             "numberOfBytes": "32"
           },
@@ -527,7 +547,7 @@
             ],
             "numberOfBytes": "32"
           },
-          "t_struct(MarketItem)6121_storage": {
+          "t_struct(MarketItem)6426_storage": {
             "label": "struct GDNFTMarketplace.MarketItem",
             "members": [
               {
