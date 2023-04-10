@@ -53,6 +53,11 @@ describe("GD Smart Contract", function () {
       }
     );
 
+    console.log(
+      "OWNER BALANCE BEFOOOOOOOOREEE: ",
+      fromWei(await deployer.getBalance())
+    );
+
     await gdMarketPlace.connect(deployer).setValidator(deployer.address, true);
   });
 

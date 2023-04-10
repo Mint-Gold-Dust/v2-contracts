@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 /// @title Mint Gold Dust NFT
 /// @author Mint Gold Dust LLC
@@ -177,13 +177,19 @@ contract GDAuction is IGDAuction {
      * @param _auctionId The token ID of the the token to acquire
      */
     function endAuction(uint256 _auctionId) public {
-        if (msg.sender == address(this)) {
-            revert ErrorTest();
-        }
         Auction memory auction = auctions[_auctionId];
+
         GDNFTMarketplace gdMarketplace = GDNFTMarketplace(
             payable(auction.nftContract)
         );
+
+        if (auction.highestBid == 0) {
+            gdMarketplace.safeTransferFrom(
+                gdMarketplace.ownerOf(auction.tokenId),
+                auction.seller,
+                auction.tokenId
+            );
+        }
 
         gdMarketplace.setItemSold(auction.tokenId, true);
 
@@ -221,11 +227,11 @@ contract GDAuction is IGDAuction {
         payable(gdMarketplace.OWNER()).transfer(fee);
         payable(auction.seller).transfer(balance);
 
-        // gdMarketplace.transferFrom(
-        //   address(this),
-        //   auction.highestBidder,
-        //   auction.tokenId
-        // );
+        gdMarketplace.safeTransferFrom(
+            gdMarketplace.ownerOf(auction.tokenId),
+            auction.highestBidder,
+            auction.tokenId
+        );
 
         emit NftPurchased(
             auction.tokenId,

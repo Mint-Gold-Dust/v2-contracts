@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 /// @title Mint Gold Dust NFT
 /// @author Mint Gold Dust LLC
@@ -223,6 +223,7 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
         address _auctionContract
     ) public isNFTowner(_tokenId) {
         _transfer(msg.sender, address(this), _tokenId);
+        _approve(_auctionContract, _tokenId);
         emit NftSentToAuction(_tokenId, msg.sender, address(this));
     }
 
@@ -277,6 +278,10 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
             fee,
             collFee
         );
+    }
+
+    function transfer(address from, address _to, uint256 _tokenId) public {
+        _transfer(address(this), _to, _tokenId);
     }
 
     /// @notice Whitelist/Blacklist validator
