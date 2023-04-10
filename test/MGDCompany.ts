@@ -8,8 +8,11 @@ const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
 describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis smart contract is responsible by the functionalities related with MGD Management.\n", function () {
-  let MGDMarketplace: ContractFactory;
-  let mgdMarketplace: Contract;
+  let MGDCompany: ContractFactory;
+  let mgdCompany: Contract;
+
+  let MGDnft: ContractFactory;
+  let mgdNft: Contract;
 
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
@@ -30,10 +33,12 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
   let maxRoyalty = 20;
 
   beforeEach(async function () {
+    MGDCompany = await ethers.getContractFactory("MGDCompany");
+    MGDnft = await ethers.getContractFactory("MGDnft");
+
     [deployer, addr1, ...addrs] = await ethers.getSigners();
 
-    MGDMarketplace = await ethers.getContractFactory("MGDMarketplace");
-    mgdMarketplace = await MGDMarketplace.deploy(
+    mgdCompany = await MGDCompany.deploy(
       TEST_OWNER,
       primary_sale_fee_percent_initial,
       secondary_sale_fee_percent_initial,
@@ -41,7 +46,9 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
       max_royalty_initial
     );
 
-    await mgdMarketplace.connect(deployer).setValidator(deployer.address, true);
+    mgdNft = await MGDnft.deploy(mgdCompany.address);
+
+    await mgdCompany.connect(deployer).setValidator(deployer.address, true);
   });
 
   describe("Tests related with the set validator functionality:", function () {
@@ -50,58 +57,48 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
     it("Should set a new validator if is the owner and this new validator should can whitelist or blacklist an artist.", async () => {
       // GD owner set a new validator
       expect(
-        await mgdMarketplace.connect(deployer).setValidator(addr1.address, true)
+        await mgdCompany.connect(deployer).setValidator(addr1.address, true)
       )
-        .to.emit(mgdMarketplace, "ValidatorAdded")
+        .to.emit(mgdCompany, "ValidatorAdded")
         .withArgs(addr1.address, true);
 
       // The new validator should can whitelist
-      expect(await mgdMarketplace.connect(addr1).whitelist(addr1.address, true))
-        .to.emit(mgdMarketplace, "ArtistWhitelisted")
+      expect(await mgdCompany.connect(addr1).whitelist(addr1.address, true))
+        .to.emit(mgdCompany, "ArtistWhitelisted")
         .withArgs(addr1.address, true);
     });
 
-    it("Should revert with a MGDMarketplaceUnauthorized error if an address that is not the owner try to set a new validator.", async () => {
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to set a new validator.", async () => {
       await expect(
-        mgdMarketplace.connect(addr1).setValidator(addr1.address, true)
-      ).to.be.revertedWithCustomError(
-        mgdMarketplace,
-        "MGDMarketplaceUnauthorized"
-      );
+        mgdCompany.connect(addr1).setValidator(addr1.address, true)
+      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
     });
   });
 
   describe("Tests related with whitelist/blacklist artist:", function () {
     it("Should whitelist an after blacklist artist.", async () => {
       // MGD owner whitelist the artist
-      expect(
-        await mgdMarketplace.connect(deployer).whitelist(addr1.address, true)
-      )
-        .to.emit(mgdMarketplace, "ArtistWhitelisted")
+      expect(await mgdCompany.connect(deployer).whitelist(addr1.address, true))
+        .to.emit(mgdCompany, "ArtistWhitelisted")
         .withArgs(addr1.address, true);
       expect(
-        await mgdMarketplace.connect(deployer).isArtistApproved(addr1.address)
+        await mgdCompany.connect(deployer).isArtistApproved(addr1.address)
       ).to.be.equal(true);
 
       // MGD owner blacklist the artist
-      expect(
-        await mgdMarketplace.connect(deployer).whitelist(addr1.address, false)
-      )
-        .to.emit(mgdMarketplace, "ArtistWhitelisted")
+      expect(await mgdCompany.connect(deployer).whitelist(addr1.address, false))
+        .to.emit(mgdCompany, "ArtistWhitelisted")
         .withArgs(addr1.address, false);
       expect(
-        await mgdMarketplace.connect(deployer).isArtistApproved(addr1.address)
+        await mgdCompany.connect(deployer).isArtistApproved(addr1.address)
       ).to.be.equal(false);
     });
 
-    it("Should revert with a MGDMarketplaceUnauthorized error if an address that is not the owner try to whitelist or blacklist an artist.", async () => {
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to whitelist or blacklist an artist.", async () => {
       // MGD owner whitelist the artist
       await expect(
-        mgdMarketplace.connect(addr1).whitelist(addr1.address, true)
-      ).to.be.revertedWithCustomError(
-        mgdMarketplace,
-        "MGDMarketplaceUnauthorized"
-      );
+        mgdCompany.connect(addr1).whitelist(addr1.address, true)
+      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
     });
   });
 
@@ -109,30 +106,27 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
     const valueNewFee = 30;
 
     it("Should update the fee if is the owner.", async () => {
-      expect(await mgdMarketplace.primarySaleFeePercent()).to.be.equal(
+      expect(await mgdCompany.primarySaleFeePercent()).to.be.equal(
         toWei(primarySaleFeePercent)
       );
 
       // GD owner update the primary fee
-      await mgdMarketplace
+      await mgdCompany
         .connect(deployer)
         .updatePrimarySaleFeePercent(toWei(valueNewFee));
 
-      expect(await mgdMarketplace.primarySaleFeePercent()).to.be.equal(
+      expect(await mgdCompany.primarySaleFeePercent()).to.be.equal(
         toWei(valueNewFee)
       );
     });
 
-    it("Should revert with a MGDMarketplaceUnauthorized error if an address that is not the owner try to update the primary sale fee.", async () => {
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the primary sale fee.", async () => {
       // MGD owner whitelist the artist
       await expect(
-        mgdMarketplace
+        mgdCompany
           .connect(addr1)
           .updatePrimarySaleFeePercent(toWei(valueNewFee))
-      ).to.be.revertedWithCustomError(
-        mgdMarketplace,
-        "MGDMarketplaceUnauthorized"
-      );
+      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
     });
   });
 
@@ -140,29 +134,26 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
     const valueNewFee = 10;
 
     it("Should update the secondary fee if is the owner.", async () => {
-      expect(await mgdMarketplace.secondarySaleFeePercent()).to.be.equal(
+      expect(await mgdCompany.secondarySaleFeePercent()).to.be.equal(
         toWei(secondarySaleFeePercent)
       );
 
       // GD owner update the secondary fee
-      await mgdMarketplace
+      await mgdCompany
         .connect(deployer)
         .updateSecondarySaleFeePercent(toWei(valueNewFee));
 
-      expect(await mgdMarketplace.secondarySaleFeePercent()).to.be.equal(
+      expect(await mgdCompany.secondarySaleFeePercent()).to.be.equal(
         toWei(valueNewFee)
       );
     });
 
-    it("Should revert with a MGDMarketplaceUnauthorized error if an address that is not the owner try to update the secondary sale fee.", async () => {
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the secondary sale fee.", async () => {
       await expect(
-        mgdMarketplace
+        mgdCompany
           .connect(addr1)
           .updatePrimarySaleFeePercent(toWei(valueNewFee))
-      ).to.be.revertedWithCustomError(
-        mgdMarketplace,
-        "MGDMarketplaceUnauthorized"
-      );
+      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
     });
   });
 
@@ -170,27 +161,18 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
     const valueNewFee = 5;
 
     it("Should update the collector fee if is the owner.", async () => {
-      expect(await mgdMarketplace.collectorFee()).to.be.equal(
-        toWei(collectorFee)
-      );
+      expect(await mgdCompany.collectorFee()).to.be.equal(toWei(collectorFee));
 
       // GD owner update the collector fee
-      await mgdMarketplace
-        .connect(deployer)
-        .updateCollectorFee(toWei(valueNewFee));
+      await mgdCompany.connect(deployer).updateCollectorFee(toWei(valueNewFee));
 
-      expect(await mgdMarketplace.collectorFee()).to.be.equal(
-        toWei(valueNewFee)
-      );
+      expect(await mgdCompany.collectorFee()).to.be.equal(toWei(valueNewFee));
     });
 
-    it("Should revert with a MGDMarketplaceUnauthorized error if an address that is not the owner try to update the collector fee.", async () => {
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the collector fee.", async () => {
       await expect(
-        mgdMarketplace.connect(addr1).updateCollectorFee(toWei(valueNewFee))
-      ).to.be.revertedWithCustomError(
-        mgdMarketplace,
-        "MGDMarketplaceUnauthorized"
-      );
+        mgdCompany.connect(addr1).updateCollectorFee(toWei(valueNewFee))
+      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
     });
   });
 
@@ -198,50 +180,38 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
     const valueNewFee = 25;
 
     it("Should update the max_royalty_fee if is the owner.", async () => {
-      expect(await mgdMarketplace.maxRoyalty()).to.be.equal(toWei(maxRoyalty));
+      expect(await mgdCompany.maxRoyalty()).to.be.equal(toWei(maxRoyalty));
 
       // GD owner update the max_royalty_fee
-      await mgdMarketplace
-        .connect(deployer)
-        .updateMaxRoyalty(toWei(valueNewFee));
+      await mgdCompany.connect(deployer).updateMaxRoyalty(toWei(valueNewFee));
 
-      expect(await mgdMarketplace.maxRoyalty()).to.be.equal(toWei(valueNewFee));
+      expect(await mgdCompany.maxRoyalty()).to.be.equal(toWei(valueNewFee));
     });
 
-    it("Should revert with a MGDMarketplaceUnauthorized error if an address that is not the owner try to update the collector fee.", async () => {
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the collector fee.", async () => {
       await expect(
-        mgdMarketplace.connect(addr1).updateMaxRoyalty(toWei(valueNewFee))
-      ).to.be.revertedWithCustomError(
-        mgdMarketplace,
-        "MGDMarketplaceUnauthorized"
-      );
+        mgdCompany.connect(addr1).updateMaxRoyalty(toWei(valueNewFee))
+      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
     });
 
     it(`Should be possible to mint a NFT with a new maximum royalty set.`, async function () {
       // GD owner update the max_royalty_fee
-      await mgdMarketplace
-        .connect(deployer)
-        .updateMaxRoyalty(toWei(valueNewFee));
+      await mgdCompany.connect(deployer).updateMaxRoyalty(toWei(valueNewFee));
 
-      await mgdMarketplace.connect(deployer).whitelist(addr1.address, true);
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
-      await mgdMarketplace.connect(addr1).mintNft(URI, toWei(valueNewFee));
+      await mgdNft.connect(addr1).mintNft(URI, toWei(valueNewFee));
     });
 
     it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than new max royalty that is ${valueNewFee}.`, async function () {
       // GD owner update the max_royalty_fee
-      await mgdMarketplace
-        .connect(deployer)
-        .updateMaxRoyalty(toWei(valueNewFee));
+      await mgdCompany.connect(deployer).updateMaxRoyalty(toWei(valueNewFee));
 
-      await mgdMarketplace.connect(deployer).whitelist(addr1.address, true);
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
       await expect(
-        mgdMarketplace.connect(addr1).mintNft(URI, toWei(valueNewFee + 1))
-      ).to.be.revertedWithCustomError(
-        mgdMarketplace,
-        "MGDnftRoyaltyInvalidPercentage"
-      );
+        mgdNft.connect(addr1).mintNft(URI, toWei(valueNewFee + 1))
+      ).to.be.revertedWithCustomError(mgdNft, "MGDnftRoyaltyInvalidPercentage");
     });
   });
 });
