@@ -254,12 +254,11 @@ describe("MGDSetPrice.sol Smart Contract \n___________________________\n \nThis 
       });
 
       console.log("GAS PRICE: ", gasPrice);
+      console.log("GAS LIMIT: ", gasLimit);
 
       // execute the buyNft function
       //expect(
-      await mgdSetPrice
-        .connect(addr2)
-        .purchaseNft(1, { value: toWei(price), gasPrice: 5500000 });
+      await mgdSetPrice.connect(addr2).purchaseNft(1, { value: toWei(price) });
       // )
       //   .to.emit(mgdSetPrice, "NftPurchased")
       //   .withArgs(
