@@ -13,10 +13,11 @@ error MGDMarketplaceItemIsNotListed();
 error MGDMarketplaceUnauthorized();
 error MGDMarketplaceInvalidInput();
 error MGDMarketplaceTokenForSecondSale();
+error MGDMarketErrorToTransfer();
 
 abstract contract MGDMarketplace is IMGDMarketplace {
     using Counters for Counters.Counter;
-    Counters.Counter public _itemsSold;
+    Counters.Counter public itemsSold;
 
     MGDCompany internal _mgdCompany;
     MGDnft internal _mgdNft;
@@ -34,7 +35,7 @@ abstract contract MGDMarketplace is IMGDMarketplace {
         uint256 price;
         bool sold;
         bool isAuction;
-        bool isPrimarySale;
+        bool isSecondarySale;
         AuctionProps auctionProps;
     }
 
@@ -48,14 +49,14 @@ abstract contract MGDMarketplace is IMGDMarketplace {
 
     function list(uint256 _tokenId, uint256 _price) public virtual;
 
-    function primarySale(
-        uint256 _value,
-        uint256 _tokenId
-    ) private isListed(_tokenId) {
+    function primarySale(uint256 _value, uint256 _tokenId) private {
         uint256 price = idMarketItem[_tokenId].price;
         if (msg.value != price) {
             revert MGDMarketplaceIncorrectAmountSent();
         }
+
+        idMarketItem[_tokenId].sold = true;
+        itemsSold.increment();
 
         uint256 fee;
         uint256 collFee;
@@ -65,7 +66,7 @@ abstract contract MGDMarketplace is IMGDMarketplace {
         collFee = (_value * _mgdCompany.collectorFee()) / (100 * 10 ** 18);
         balance = _value - (fee + collFee);
 
-        idMarketItem[_tokenId].isPrimarySale = false;
+        idMarketItem[_tokenId].isSecondarySale = true;
 
         payable(_mgdCompany.owner()).transfer(collFee);
 
@@ -90,10 +91,9 @@ abstract contract MGDMarketplace is IMGDMarketplace {
             revert MGDMarketplaceIncorrectAmountSent();
         }
         idMarketItem[_tokenId].sold = true;
-        _itemsSold.increment();
+        itemsSold.increment();
 
         uint256 fee;
-        uint256 collFee;
         uint256 royalty;
         uint256 balance;
 
@@ -106,7 +106,7 @@ abstract contract MGDMarketplace is IMGDMarketplace {
 
         balance = _value - (fee + royalty);
 
-        payable(idMarketItem[_tokenId].seller).transfer(royalty);
+        payable(_mgdNft.tokenIdArtist(_tokenId)).transfer(royalty);
 
         emit NftPurchasedSecondaryMarket(
             _tokenId,
@@ -116,8 +116,7 @@ abstract contract MGDMarketplace is IMGDMarketplace {
             _mgdNft.tokenIdRoyaltyPercent(_tokenId),
             royalty,
             _mgdNft.tokenIdArtist(_tokenId),
-            fee,
-            collFee
+            fee
         );
 
         payable(_mgdCompany.owner()).transfer(fee);
@@ -132,8 +131,8 @@ abstract contract MGDMarketplace is IMGDMarketplace {
      * @notice Function will fail is artist has marked NFT as restricted
      * @param _tokenId The token ID of the the token to acquire
      */
-    function purchaseNft(uint256 _tokenId) public payable {
-        if (idMarketItem[_tokenId].isPrimarySale == true) {
+    function purchaseNft(uint256 _tokenId) public payable isListed(_tokenId) {
+        if (!idMarketItem[_tokenId].isSecondarySale) {
             primarySale(msg.value, _tokenId);
             return;
         }
@@ -142,7 +141,7 @@ abstract contract MGDMarketplace is IMGDMarketplace {
     }
 
     function incrementItemsSold() internal {
-        _itemsSold.increment();
+        itemsSold.increment();
     }
 
     //   modifier isListed(uint256 _tokenId) {
@@ -189,7 +188,7 @@ abstract contract MGDMarketplace is IMGDMarketplace {
     }
 
     modifier isPrimarySale(uint256 _tokenId) {
-        if (!idMarketItem[_tokenId].isPrimarySale) {
+        if (idMarketItem[_tokenId].isSecondarySale) {
             revert MGDMarketplaceTokenForSecondSale();
         }
         _;

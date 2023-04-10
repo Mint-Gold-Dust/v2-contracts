@@ -52,8 +52,7 @@ interface IMGDMarketplace {
         uint256 royaltyPercent,
         uint256 royaltyAmount,
         address royaltyRecipient,
-        uint256 feeAmount,
-        uint256 collectorFeeAmount
+        uint256 feeAmount
     );
 
     event NftRemovedFromMarketplace(uint256 indexed tokenId, address seller);

@@ -7,7 +7,7 @@ import { ethers, upgrades } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("MGDSetPrice.sol Smart Contract \n___________________________\n \nThis smart contract is responsible by all functionalities related with the market like list and buy. \n", function () {
+describe("\nMGDSetPrice.sol Smart Contract \n___________________________\n \nThis smart contract is responsible by all functionalities related with the market like list and buy. \n", function () {
   let MGDnft: ContractFactory;
   let mgdNft: Contract;
 
@@ -20,6 +20,7 @@ describe("MGDSetPrice.sol Smart Contract \n___________________________\n \nThis 
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
+  let addr3: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
   let URI = "sample URI";
@@ -42,7 +43,7 @@ describe("MGDSetPrice.sol Smart Contract \n___________________________\n \nThis 
     MGDnft = await ethers.getContractFactory("MGDnft");
     MGDSetPrice = await ethers.getContractFactory("MGDSetPrice");
 
-    [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
+    [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
 
     mgdCompany = await MGDCompany.deploy(
       TEST_OWNER,
@@ -72,10 +73,42 @@ describe("MGDSetPrice.sol Smart Contract \n___________________________\n \nThis 
     });
 
     it("Should track newly listed item, transfer NFT from seller to MGD marketplace and emit the NftListed event.", async function () {
+      // let gasPrice = await mgdSetPrice.signer.getGasPrice();
+      // let gasLimit = await mgdSetPrice.estimateGas.list(1, toWei(price));
+
+      // console.log("\t GAS PRICE: ", gasPrice);
+      // console.log("\t GAS LIMIT: ", gasLimit);
+
+      // console.log(
+      //   "\t\t TOTAL GAS ESTIMATION (USD): ",
+      //   (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+      //     2500
+      // );
+      console.log(
+        "\t ARTIST BALANCE BEFORE LIST: ",
+        parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
+      );
+      let artistBalanceBefore = await addr1.getBalance();
       // addr1 list the NFT with tokenID on gdMarketplace
       await expect(mgdSetPrice.connect(addr1).list(1, toWei(price)))
         .to.emit(mgdSetPrice, "NftListedToSetPrice")
         .withArgs(1, addr1.address, toWei(price));
+
+      console.log(
+        "\t ARTIST BALANCE AFTER LIST: ",
+        parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
+      );
+
+      console.log(
+        "\t \tSo the gas estimation was more less:",
+        parseFloat(
+          fromWei(
+            ethers.BigNumber.from(artistBalanceBefore).sub(
+              await addr1.getBalance()
+            )
+          )
+        ) * 2500
+      );
 
       // owner should be the marketplace
       expect(await mgdNft.ownerOf(1)).to.equal(mgdSetPrice.address);
@@ -113,6 +146,20 @@ describe("MGDSetPrice.sol Smart Contract \n___________________________\n \nThis 
     });
 
     it("Should track if a listed item was correctly updated and emit the NftListedItemUpdated event. We should remember that in this moment the owner of the NFT is the marketplace.", async function () {
+      let gasPrice = await mgdSetPrice.signer.getGasPrice();
+      let gasLimit = await mgdSetPrice.estimateGas.updateListedNft(
+        1,
+        toWei(newPrice)
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
       // Get item from items mapping then check fields to ensure they are correct before update
       let marketItem = await mgdSetPrice.idMarketItem(1);
       expect(marketItem.price).to.equal(toWei(primaryPrice));
@@ -178,6 +225,17 @@ describe("MGDSetPrice.sol Smart Contract \n___________________________\n \nThis 
     });
 
     it("Should delist a NFT from the marketplace and emit the NFTRemovedFromMarketplace event.", async function () {
+      let gasPrice = await mgdSetPrice.signer.getGasPrice();
+      let gasLimit = await mgdSetPrice.estimateGas.delistNft(1);
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
       // the market item should be not sold
       expect(
         (await mgdSetPrice.connect(addr1).idMarketItem(1)).sold
@@ -235,7 +293,7 @@ describe("MGDSetPrice.sol Smart Contract \n___________________________\n \nThis 
       balance = price - primarySaleFee;
     });
 
-    it("Should simulate a primary sale that transfer an NFT to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the flag to secondary sale was set to true.", async function () {
+    it("Should:\n \t - Simulate a primary sale that transfer an NFT to the buyer;\n \t - Verify if the item changed status for sale;\n \t - Verify if the seller balance increases;\n \t - Verify if the marketplace's owner receives the fee;\n \t - Verify if the isSecondarySale attribute was set to true;\n \t - Verify if the buyer balance was deacresed exactly the gas fee + the token price;", async function () {
       // get the balances for the seller and the owner of the marketplace.
       const sellerInitalEthBal = await addr1.getBalance();
       const feeAccountInitialEthBal = await deployer.getBalance();
@@ -245,96 +303,298 @@ describe("MGDSetPrice.sol Smart Contract \n___________________________\n \nThis 
 
       // verify if the flag for secondary is false
       expect(
-        (await mgdSetPrice.connect(addr1).idMarketItem(1)).isPrimarySale
-      ).to.be.equal(true);
+        (await mgdSetPrice.connect(addr1).idMarketItem(1)).isSecondarySale
+      ).to.be.equal(false);
 
       let gasPrice = await mgdSetPrice.signer.getGasPrice();
       let gasLimit = await mgdSetPrice.estimateGas.purchaseNft(1, {
         value: toWei(price),
       });
 
-      console.log("GAS PRICE: ", gasPrice);
-      console.log("GAS LIMIT: ", gasLimit);
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
 
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
+
+      console.log("\n\t\t ITEM PRICE: ", price);
+      console.log("\t\t Primary Market fee: ", fee);
+      console.log("\t\t Collector fee: ", collFee);
+      console.log("\t\t Marketplace owner fee: ", primarySaleFee);
+      console.log("\t\t Balance to seller: ", balance);
+
+      let addr2BalanceBefore = await addr2.getBalance();
       // execute the buyNft function
-      //expect(
-      await mgdSetPrice.connect(addr2).purchaseNft(1, { value: toWei(price) });
-      // )
-      //   .to.emit(mgdSetPrice, "NftPurchased")
-      //   .withArgs(
-      //     1,
-      //     addr1.address,
-      //     addr2.address,
-      //     toWei(price),
-      //     toWei(royalty),
-      //     0,
-      //     addr1.address,
-      //     toWei(fee),
-      //     toWei(collector_fee)
-      //   );
+      expect(
+        await mgdSetPrice.connect(addr2).purchaseNft(1, { value: toWei(price) })
+      )
+        .to.emit(mgdSetPrice, "NftPurchasedPrimaryMarket")
+        .withArgs(
+          1,
+          addr1.address,
+          addr2.address,
+          toWei(price),
+          toWei(fee),
+          toWei(collector_fee)
+        );
 
-      // // verify if the owner of the NFT changed for the buyer
-      // expect(await mgdNft.ownerOf(1)).to.equal(addr2.address);
+      console.log(
+        "\n\t\t MARKETPLACE OWNER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(feeAccountInitialEthBal))
+      );
 
-      // // verify if the flag for secondary market changed for true
-      // expect(
-      //   (await mgdSetPrice.connect(addr1).idMarketItem(1)).isPrimarySale
-      // ).to.be.equal(false);
+      console.log(
+        "\t\t MARKETPLACE OWNER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await deployer.getBalance()))
+      );
 
-      // // verify if the marketplace owner's balance increased the fee
-      // expect(await deployer.getBalance()).to.be.equal(
-      //   feeAccountAfterEthBalShouldBe
-      // );
-      // // verify if the seller received the balance
-      // expect(await addr1.getBalance()).to.be.equal(
-      //   ethers.BigNumber.from(sellerInitalEthBal).add(toWei(balance))
-      // );
+      let addr2ShouldBeAfter = ethers.BigNumber.from(addr2BalanceBefore)
+        .sub(toWei(price))
+        .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
 
-      // // expect item sold to be true
-      // expect((await mgdSetPrice.idMarketItem(1)).sold).to.be.equal(true);
+      expect(
+        parseFloat(
+          (parseFloat(fromWei(await addr2.getBalance())) * 2500).toFixed(2)
+        )
+      ).to.be.closeTo(
+        parseFloat((parseFloat(fromWei(addr2ShouldBeAfter)) * 2500).toFixed(2)),
+        1
+      );
+
+      // verify if the owner of the NFT changed for the buyer
+      expect(await mgdNft.ownerOf(1)).to.equal(addr2.address);
+
+      // verify if the flag for secondary market changed for true
+      expect(
+        (await mgdSetPrice.connect(addr1).idMarketItem(1)).isSecondarySale
+      ).to.be.equal(true);
+
+      // verify if the marketplace owner's balance increased the fee
+      expect(await deployer.getBalance()).to.be.equal(
+        feeAccountAfterEthBalShouldBe
+      );
+      // verify if the seller received the balance
+      expect(await addr1.getBalance()).to.be.equal(
+        ethers.BigNumber.from(sellerInitalEthBal).add(toWei(balance))
+      );
+
+      // expect item sold to be true
+      expect((await mgdSetPrice.idMarketItem(1)).sold).to.be.equal(true);
+
+      // expect item sold to be true
+      expect(await mgdSetPrice.itemsSold()).to.be.equal(1);
+
+      console.log(
+        "\t\t SELLER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(sellerInitalEthBal))
+      );
+
+      console.log(
+        "\t\t SELLER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await addr1.getBalance()))
+      );
+
+      console.log(
+        "\t\t BUYER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(addr2BalanceBefore))
+      );
+
+      console.log(
+        "\t\t BUYER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await addr2.getBalance()))
+      );
     });
 
-    // it("Should revert with GDNFTMarketplace__NotAListedItem error if the user tries to buy a NFT that was already sold.", async () => {
-    //   expect(
-    //     await gdMarketPlace.connect(addr2).buyNFT(1, { value: toWei(price) })
-    //   )
-    //     .to.emit(gdMarketPlace, "NftPurchased")
-    //     .withArgs(
-    //       1,
-    //       addr1.address,
-    //       addr2.address,
-    //       toWei(price),
-    //       toWei(royalty),
-    //       0,
-    //       addr1.address,
-    //       toWei(fee),
-    //       toWei(collector_fee)
-    //     );
+    it("Should revert with MGDMarketplaceItemIsNotListed error if the user tries to buy a NFT that was already sold.", async () => {
+      await mgdSetPrice.connect(addr2).purchaseNft(1, { value: toWei(price) });
+      await expect(
+        mgdSetPrice.connect(addr3).purchaseNft(1, { value: toWei(price) })
+      ).to.be.revertedWithCustomError(
+        mgdSetPrice,
+        "MGDMarketplaceItemIsNotListed"
+      );
+    });
 
-    //   await expect(
-    //     gdMarketPlace.connect(addr3).buyNFT(1, { value: toWei(price) })
-    //   ).to.be.revertedWithCustomError(
-    //     gdMarketPlace,
-    //     "GDNFTMarketplace__NotAListedItem"
-    //   );
-    // });
+    it("Should revert with MGDMarketplaceIncorrectAmountSent if the user tries to buy an itemId with an amount greater than the item's price.", async () => {
+      await expect(
+        mgdSetPrice.connect(addr3).purchaseNft(1, { value: toWei(price + 10) })
+      ).to.be.revertedWithCustomError(
+        mgdSetPrice,
+        "MGDMarketplaceIncorrectAmountSent"
+      );
+    });
 
-    // it("Should revert with GDNFTMarketplace__IncorrectAmountSent if the user tries to buy an itemId with an amount greater than the item's price.", async () => {
-    //   await expect(
-    //     gdMarketPlace.connect(addr3).buyNFT(1, { value: toWei(price + 10) })
-    //   ).to.be.revertedWithCustomError(
-    //     gdMarketPlace,
-    //     "GDNFTMarketplace__IncorrectAmountSent"
-    //   );
-    // });
+    it("Should revert with MGDMarketplaceIncorrectAmountSent if the user tries to buy an itemId with an amount less than the item's price.", async () => {
+      await expect(
+        mgdSetPrice.connect(addr3).purchaseNft(1, { value: toWei(price - 10) })
+      ).to.be.revertedWithCustomError(
+        mgdSetPrice,
+        "MGDMarketplaceIncorrectAmountSent"
+      );
+    });
+  });
 
-    // it("Should revert with GDNFTMarketplace__IncorrectAmountSent if the user tries to buy an itemId with an amount less than the item's price.", async () => {
-    //   await expect(
-    //     gdMarketPlace.connect(addr3).buyNFT(1, { value: toWei(price - 10) })
-    //   ).to.be.revertedWithCustomError(
-    //     gdMarketPlace,
-    //     "GDNFTMarketplace__IncorrectAmountSent"
-    //   );
-    // });
+  describe("Purchase NFT on secondary market", function () {
+    let price = 20;
+
+    let royaltyFee: number;
+    let balance: number;
+    let secondarySaleFee: number;
+
+    beforeEach(async () => {
+      // MGD owner whitelist the artist
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+      // addr1 mints a NFT
+      await mgdNft.connect(addr1).mintNft(URI, toWei(royalty));
+      // Artist approve MGD marketplace to exchange its NFT
+      await mgdNft.connect(addr1).setApprovalForAll(mgdSetPrice.address, true);
+      // Artist list its NFT on MGD marketplace
+      await mgdSetPrice.connect(addr1).list(1, toWei(price));
+
+      await mgdSetPrice.connect(addr2).purchaseNft(1, { value: toWei(price) });
+
+      await mgdSetPrice.connect(addr2).list(1, toWei(price));
+
+      secondarySaleFee = (price * secondary_sale_fee_percent) / 100;
+      royaltyFee = (price * royalty) / 100;
+      balance = price - (secondarySaleFee + royaltyFee);
+    });
+
+    it("Should simulate a secondary sale that transfer an NFT to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the artist creator have received the royalty.", async function () {
+      // verify if the isSecondarySale sale attribute is true
+      expect((await mgdSetPrice.idMarketItem(1)).isSecondarySale).to.equal(
+        true
+      );
+
+      // get the balances for the seller and the owner of the marketplace.
+      const feeAccountInitialEthBal = await deployer.getBalance();
+
+      let addr3BalanceBefore = await addr3.getBalance();
+
+      // get the NFT's artist creator balance
+      const provider = ethers.provider;
+      const artistCreatorAddress = await mgdNft.tokenIdArtist(1);
+      const artistCreatorInitialBal = await provider.getBalance(
+        artistCreatorAddress
+      );
+
+      // get the addr2 buyer initial balance
+      const artistSellerInitialBal = await addr2.getBalance();
+
+      let gasPrice = await mgdSetPrice.signer.getGasPrice();
+      let gasLimit = await mgdSetPrice.estimateGas.purchaseNft(1, {
+        value: toWei(price),
+      });
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
+
+      // execute the buyNft function
+      expect(
+        await mgdSetPrice.connect(addr3).purchaseNft(1, { value: toWei(price) })
+      )
+        .to.emit(mgdSetPrice, "NftPurchased")
+        .withArgs(
+          1,
+          addr2.address,
+          addr3.address,
+          toWei(price),
+          toWei(royalty),
+          toWei(royaltyFee),
+          artistCreatorAddress,
+          toWei(secondarySaleFee)
+        );
+
+      // prepare the future balance that the owner should have after the transaction
+      const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
+        feeAccountInitialEthBal
+      ).add(toWei(secondarySaleFee));
+
+      // verify if the owner of the NFT changed for the buyer
+      expect(await mgdNft.ownerOf(1)).to.equal(addr3.address);
+
+      console.log("\n\t\t ITEM PRICE: ", price);
+      console.log("\t\t Secondary Market fee: ", secondarySaleFee);
+      console.log("\t\t Royalty fee: ", royaltyFee);
+      console.log("\t\t Balance to seller: ", balance);
+      console.log(
+        "\n\t\t MARKETPLACE OWNER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(feeAccountInitialEthBal))
+      );
+
+      console.log(
+        "\t\t MARKETPLACE OWNER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await deployer.getBalance()))
+      );
+
+      // verify if the marketplace owner's balance increased the fee
+      expect(await deployer.getBalance()).to.be.equal(
+        feeAccountAfterEthBalShouldBe
+      );
+
+      // verify if the seller received the balance
+      expect(await addr2.getBalance()).to.be.equal(
+        ethers.BigNumber.from(artistSellerInitialBal).add(toWei(balance))
+      );
+
+      console.log(
+        "\t\t SELLER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(artistSellerInitialBal))
+      );
+
+      console.log(
+        "\t\t SELLER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await addr2.getBalance()))
+      );
+
+      const artistCreatorAfterBal = await addr1.getBalance();
+
+      console.log(
+        "\t\t ARTIST BALANCE BEFORE: ",
+        parseFloat(fromWei(artistCreatorInitialBal))
+      );
+
+      console.log(
+        "\t\t ARTIST BALANCE AFTER ROYALTY: ",
+        parseFloat(fromWei(artistCreatorAfterBal))
+      );
+
+      console.log(
+        "\t\t BUYER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(addr3BalanceBefore))
+      );
+
+      console.log(
+        "\t\t BUYER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await addr3.getBalance()))
+      );
+
+      // verify if the artist received the royalty
+      expect(await provider.getBalance(artistCreatorAddress)).to.be.equal(
+        ethers.BigNumber.from(artistCreatorInitialBal).add(toWei(royaltyFee))
+      );
+
+      let addr3ShouldBeAfter = ethers.BigNumber.from(addr3BalanceBefore)
+        .sub(toWei(price))
+        .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
+
+      expect(
+        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(3))
+      ).to.be.equal(
+        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(3))
+      );
+
+      // expect item sold to be true
+      expect((await mgdSetPrice.idMarketItem(1)).sold).to.be.equal(true);
+    });
   });
 });

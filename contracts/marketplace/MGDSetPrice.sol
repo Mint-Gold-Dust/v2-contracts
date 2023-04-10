@@ -12,7 +12,7 @@ contract MGDSetPrice is MGDMarketplace {
     function list(
         uint256 _tokenId,
         uint256 _price
-    ) public override isArtist(_tokenId) isNFTowner(_tokenId) {
+    ) public override isNFTowner(_tokenId) {
         if (_price <= 0) {
             revert MGDMarketplaceInvalidInput();
         }
@@ -31,11 +31,13 @@ contract MGDSetPrice is MGDMarketplace {
             _price,
             false,
             false,
-            true,
+            idMarketItem[_tokenId].isSecondarySale,
             auctionProps
         );
 
-        _mgdNft.transfer(msg.sender, address(this), _tokenId);
+        try _mgdNft.transfer(msg.sender, address(this), _tokenId) {} catch {
+            revert MGDMarketErrorToTransfer();
+        }
 
         emit NftListedToSetPrice(_tokenId, payable(msg.sender), _price);
     }

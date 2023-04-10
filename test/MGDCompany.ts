@@ -7,7 +7,7 @@ import { ethers, upgrades } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis smart contract is responsible by the functionalities related with MGD Management.\n", function () {
+describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis smart contract is responsible by the functionalities related with MGD Management.\n", function () {
   let MGDCompany: ContractFactory;
   let mgdCompany: Contract;
 
@@ -55,6 +55,20 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
     const valueNewFee = 5;
 
     it("Should set a new validator if is the owner and this new validator should can whitelist or blacklist an artist.", async () => {
+      let gasPrice = await mgdCompany.signer.getGasPrice();
+      let gasLimit = await mgdCompany.estimateGas.setValidator(
+        addr1.address,
+        true
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
       // GD owner set a new validator
       expect(
         await mgdCompany.connect(deployer).setValidator(addr1.address, true)
@@ -77,6 +91,20 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
 
   describe("Tests related with whitelist/blacklist artist:", function () {
     it("Should whitelist an after blacklist artist.", async () => {
+      let gasPrice = await mgdCompany.signer.getGasPrice();
+      let gasLimit = await mgdCompany.estimateGas.whitelist(
+        addr1.address,
+        true
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
       // MGD owner whitelist the artist
       expect(await mgdCompany.connect(deployer).whitelist(addr1.address, true))
         .to.emit(mgdCompany, "ArtistWhitelisted")
@@ -102,10 +130,23 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
     });
   });
 
-  describe("Tests related with the ypdate primary sale fee functionality:", function () {
+  describe("Tests related with the update primary sale fee functionality:", function () {
     const valueNewFee = 30;
 
     it("Should update the fee if is the owner.", async () => {
+      let gasPrice = await mgdCompany.signer.getGasPrice();
+      let gasLimit = await mgdCompany.estimateGas.updatePrimarySaleFeePercent(
+        toWei(valueNewFee)
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
       expect(await mgdCompany.primarySaleFeePercent()).to.be.equal(
         toWei(primarySaleFeePercent)
       );
@@ -134,6 +175,20 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
     const valueNewFee = 10;
 
     it("Should update the secondary fee if is the owner.", async () => {
+      let gasPrice = await mgdCompany.signer.getGasPrice();
+      let gasLimit = await mgdCompany.estimateGas.updateSecondarySaleFeePercent(
+        toWei(valueNewFee)
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
+
       expect(await mgdCompany.secondarySaleFeePercent()).to.be.equal(
         toWei(secondarySaleFeePercent)
       );
@@ -161,6 +216,19 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
     const valueNewFee = 5;
 
     it("Should update the collector fee if is the owner.", async () => {
+      let gasPrice = await mgdCompany.signer.getGasPrice();
+      let gasLimit = await mgdCompany.estimateGas.updateCollectorFee(
+        toWei(valueNewFee)
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
       expect(await mgdCompany.collectorFee()).to.be.equal(toWei(collectorFee));
 
       // GD owner update the collector fee
@@ -180,6 +248,19 @@ describe("MGDCompany.sol Smart Contract \n___________________________\n \nThis s
     const valueNewFee = 25;
 
     it("Should update the max_royalty_fee if is the owner.", async () => {
+      let gasPrice = await mgdCompany.signer.getGasPrice();
+      let gasLimit = await mgdCompany.estimateGas.updateMaxRoyalty(
+        toWei(valueNewFee)
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
       expect(await mgdCompany.maxRoyalty()).to.be.equal(toWei(maxRoyalty));
 
       // GD owner update the max_royalty_fee

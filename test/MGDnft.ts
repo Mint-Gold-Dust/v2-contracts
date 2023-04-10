@@ -49,6 +49,12 @@ describe("\nMGDnft.sol Smart Contract \n___________________________\n \nThis sma
 
   describe("Teste related with the mint NFT functionality:", function () {
     it("Should track each minted NFT. This is verifying if: \n \t - The tokenURI was set correctly. \n \t - The tokenId was bound with the artist for future royalties payments. \n \t - The artist is the owner of the token. \n \t - The royalty percentage was set correctly. \n \t - The balanceOf the artists that mint an NFT was increased.", async function () {
+      console.log(
+        "\t ARTIST BALANCE BEFORE MINT: ",
+        parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
+      );
+      let artistBalanceBefore = await addr1.getBalance();
+
       // addr1 mints a nft
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
       await expect(mgdNft.connect(addr1).mintNft(URI, toWei(5)))
@@ -58,6 +64,22 @@ describe("\nMGDnft.sol Smart Contract \n___________________________\n \nThis sma
       expect(await mgdNft.tokenIdArtist(1)).to.equal(addr1.address);
       expect(await mgdNft.ownerOf(1)).to.equal(addr1.address);
       expect(await mgdNft.ownerOf(1)).to.equal(addr1.address);
+
+      console.log(
+        "\t ARTIST BALANCE AFTER MINT: ",
+        parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
+      );
+
+      console.log(
+        "\t \tSo the gas estimation was more less:",
+        parseFloat(
+          fromWei(
+            ethers.BigNumber.from(artistBalanceBefore).sub(
+              await addr1.getBalance()
+            )
+          )
+        ) * 2500
+      );
 
       // addr2 mints a nft
       await mgdCompany.connect(deployer).whitelist(addr2.address, true);
