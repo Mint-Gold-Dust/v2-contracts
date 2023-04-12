@@ -11,6 +11,8 @@ contract MGDCompany is IMGDCompany {
     uint256 public collectorFee;
     uint256 public maxRoyalty;
     address public owner;
+    uint256 public auctionDuration;
+    uint256 public auctionFinalMinutes;
     mapping(address => bool) public isArtistApproved;
     mapping(address => bool) public isAddressValidator;
 
@@ -26,6 +28,8 @@ contract MGDCompany is IMGDCompany {
         secondarySaleFeePercent = _secondarySaleFeePercent;
         collectorFee = _collectorFee;
         maxRoyalty = _maxRoyalty;
+        auctionDuration = 24 hours;
+        auctionFinalMinutes = 5 minutes;
     }
 
     /**
@@ -49,8 +53,8 @@ contract MGDCompany is IMGDCompany {
     }
 
     /**
-     * Update platform secondary fee percentage
-     * This fee is taken from each resale on the marketplace
+     * Update platform collector fee percentage
+     * This fee is taken from each first sale on the marketplace
      * @notice Only contract deployer can call this function
      * @param _percentage The percentage in wei format
      */
@@ -59,13 +63,42 @@ contract MGDCompany is IMGDCompany {
     }
 
     /**
-     * Update platform secondary fee percentage
-     * This fee is taken from each resale on the marketplace
+     * Update platform max royalty limit
+     * So the owner of the contract can't update the max royaltyFee
+     * for a number greater than this.
      * @notice Only contract deployer can call this function
      * @param _percentage The percentage in wei format
      */
     function updateMaxRoyalty(uint256 _percentage) public isowner {
         maxRoyalty = _percentage;
+    }
+
+    /**
+     * Update the auction duration attribute.
+     * This field is used to create the end time of an auction
+     * after the fist bid. So the end time would be the block.timestamp
+     * plus the auctionDuration.
+     * @notice Only contract deployer can call this function
+     * @param _auctionDuration the time in seconds
+     */
+    function updateAuctionTimeDuration(
+        uint256 _auctionDuration
+    ) public isowner {
+        auctionDuration = _auctionDuration;
+    }
+
+    /**
+     * Update the final minutes attribute.
+     * This field is responsible to add a verification for auction. IF
+     * a bid happens in the these last minutes, the end time of the auction
+     * increase more this quantity of minutes.
+     * @notice Only contract deployer can call this function
+     * @param _auctionFinalMinutes the time in seconds
+     */
+    function updateAuctionFinalMinutes(
+        uint256 _auctionFinalMinutes
+    ) public isowner {
+        auctionFinalMinutes = _auctionFinalMinutes;
     }
 
     /// @notice Whitelist/Blacklist validator

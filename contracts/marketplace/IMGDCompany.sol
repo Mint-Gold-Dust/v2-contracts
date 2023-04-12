@@ -6,7 +6,7 @@ pragma solidity 0.8.18;
 /// @custom:contact klvh@mintgolddust.io
 
 interface IMGDCompany {
-    event ArtistWhitelisted(address artistAddress, bool state);
+    event ArtistWhitelisted(address indexed artistAddress, bool state);
 
-    event ValidatorAdded(address validatorAddress, bool state);
+    event ValidatorAdded(address indexed validatorAddress, bool state);
 }

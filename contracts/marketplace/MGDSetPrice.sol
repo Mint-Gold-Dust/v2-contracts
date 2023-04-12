@@ -20,7 +20,7 @@ contract MGDSetPrice is MGDMarketplace {
         AuctionProps memory auctionProps = AuctionProps(
             0,
             payable(address(0)),
-            payable(address(0)),
+            0,
             false,
             false
         );
@@ -76,7 +76,6 @@ contract MGDSetPrice is MGDMarketplace {
      */
     function delistNft(uint256 _tokenId) public isSeller(_tokenId) {
         idMarketItem[_tokenId].sold = true;
-        incrementItemsSold();
         _mgdNft.transfer(address(this), msg.sender, _tokenId);
         emit NftRemovedFromMarketplace(_tokenId, msg.sender);
     }

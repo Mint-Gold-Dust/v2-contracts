@@ -5,10 +5,6 @@ pragma solidity 0.8.18;
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
 interface IMGDMarketplace {
-    event ArtistWhitelisted(address artistAddress, bool state);
-
-    event ValidatorAdded(address validatorAddress, bool state);
-
     event NftMinted(
         uint256 indexed tokenId,
         address owner,
@@ -17,10 +13,17 @@ interface IMGDMarketplace {
     );
 
     event NftListedToAuction(
-        uint256 tokenId,
+        uint256 indexed tokenId,
         address seller,
         uint256 price,
-        uint256 endTime
+        uint256 creationTime
+    );
+
+    event AuctionNewBid(
+        uint256 indexed tokenId,
+        address bidder,
+        uint256 bid,
+        uint256 bidTime
     );
 
     event NftListedToSetPrice(

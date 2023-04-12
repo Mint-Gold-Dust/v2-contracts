@@ -42,7 +42,7 @@ abstract contract MGDMarketplace is IMGDMarketplace {
     struct AuctionProps {
         uint256 endTime;
         address highestBidder;
-        address highestBid;
+        uint256 highestBid;
         bool cancelled;
         bool ended;
     }
@@ -139,17 +139,6 @@ abstract contract MGDMarketplace is IMGDMarketplace {
 
         secondarySale(msg.value, _tokenId);
     }
-
-    function incrementItemsSold() internal {
-        itemsSold.increment();
-    }
-
-    //   modifier isListed(uint256 _tokenId) {
-    //     if (idMarketItem[_tokenId].sold == true) {
-    //       revert MGDMarketplaceItemIsNotListed();
-    //     }
-    //     _;
-    //   }
 
     modifier isSeller(uint256 _tokenId) {
         if (

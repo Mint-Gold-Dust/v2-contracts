@@ -295,4 +295,34 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
       ).to.be.revertedWithCustomError(mgdNft, "MGDnftRoyaltyInvalidPercentage");
     });
   });
+
+  describe("Tests related with the update auction duration functionality:", function () {
+    const newTime = 5;
+
+    it("Should update the auction duration if is the owner.", async () => {
+      let gasPrice = await mgdCompany.signer.getGasPrice();
+      let gasLimit = await mgdCompany.estimateGas.updateAuctionTimeDuration(5);
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
+      expect(await mgdCompany.auctionDuration()).to.be.equal(86400);
+
+      // GD owner update the collector fee
+      await mgdCompany.connect(deployer).updateAuctionTimeDuration(newTime);
+
+      expect(await mgdCompany.auctionDuration()).to.be.equal(newTime);
+    });
+
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the collector fee.", async () => {
+      await expect(
+        mgdCompany.connect(addr1).updateAuctionTimeDuration(toWei(newTime))
+      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+    });
+  });
 });
