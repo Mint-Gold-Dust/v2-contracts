@@ -139,6 +139,10 @@ contract MGDAuction is MGDMarketplace {
         if (idMarketItem[_tokenId].auctionProps.cancelled) {
             revert AuctionCancelled();
         }
+
+        // purchaseNft{ value: idMarketItem[_tokenId].auctionProps.highestBid }(
+        //   _tokenId
+        // );
     }
 
     modifier isNotCreator(address _bidder, uint256 _tokenId) {
