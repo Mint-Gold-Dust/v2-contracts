@@ -9,6 +9,20 @@ contract MGDSetPrice is MGDMarketplace {
         address mgdNft
     ) MGDMarketplace(mgdCompany, mgdNft) {}
 
+    event NftListedToSetPrice(
+        uint256 indexed tokenId,
+        address seller,
+        uint256 price
+    );
+
+    event NftListedItemUpdated(
+        uint256 indexed tokenId,
+        address seller,
+        uint256 price
+    );
+
+    event NftRemovedFromMarketplace(uint256 indexed tokenId, address seller);
+
     function list(
         uint256 _tokenId,
         uint256 _price

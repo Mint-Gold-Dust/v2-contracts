@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 import "./MGDMarketplace.sol";
 
-error AuctionEnded();
+error AuctionEndedAlready();
 error AuctionCancelled();
 error BidTooLow();
 error AuctionCannotBeEndedYet();
@@ -17,10 +17,28 @@ contract MGDAuction is MGDMarketplace {
         address mgdNft
     ) MGDMarketplace(mgdCompany, mgdNft) {}
 
+    event NftListedToAuction(
+        uint256 indexed tokenId,
+        address seller,
+        uint256 price,
+        uint256 creationTime
+    );
+
+    event AuctionNewBid(
+        uint256 indexed tokenId,
+        address seller,
+        address previousBidder,
+        address currentBidder,
+        uint256 bid,
+        uint256 bidTime
+    );
+
+    event AuctionExtended(uint256 tokenId, uint256 newEndTime);
+
     function list(
         uint256 _tokenId,
         uint256 _price
-    ) public override isArtist(_tokenId) isNFTowner(_tokenId) {
+    ) public override isNFTowner(_tokenId) {
         AuctionProps memory auctionProps = AuctionProps(
             0,
             payable(address(0)),
@@ -35,7 +53,7 @@ contract MGDAuction is MGDMarketplace {
             _price,
             false,
             true,
-            true,
+            idMarketItem[_tokenId].isSecondarySale,
             auctionProps
         );
 
@@ -45,8 +63,6 @@ contract MGDAuction is MGDMarketplace {
 
         emit NftListedToAuction(_tokenId, payable(msg.sender), _price, 0);
     }
-
-    event AuctionExtended(uint256 tokenId, uint256 newEndTime);
 
     /**
      * @notice This function is responsible to allow a collector place a new
@@ -66,7 +82,7 @@ contract MGDAuction is MGDMarketplace {
             idMarketItem[_tokenId].auctionProps.endTime != 0 &&
             block.timestamp >= idMarketItem[_tokenId].auctionProps.endTime
         ) {
-            revert AuctionEnded();
+            revert AuctionEndedAlready();
         }
 
         if (idMarketItem[_tokenId].auctionProps.cancelled) {
@@ -118,13 +134,28 @@ contract MGDAuction is MGDMarketplace {
             idMarketItem[_tokenId].auctionProps.highestBid
         );
 
+        address previousBidder = idMarketItem[_tokenId]
+            .auctionProps
+            .highestBidder;
+        idMarketItem[_tokenId].price = msg.value;
         idMarketItem[_tokenId].auctionProps.highestBid = msg.value;
         idMarketItem[_tokenId].auctionProps.highestBidder = msg.sender;
 
-        emit AuctionNewBid(_tokenId, msg.sender, msg.value, block.timestamp);
+        emit AuctionNewBid(
+            _tokenId,
+            idMarketItem[_tokenId].seller,
+            previousBidder,
+            msg.sender,
+            msg.value,
+            block.timestamp
+        );
     }
 
-    function endAuction(uint256 _tokenId) public {
+    function endAuction(uint256 _tokenId) public isListed(_tokenId) {
+        if (idMarketItem[_tokenId].auctionProps.ended) {
+            revert AuctionEndedAlready();
+        }
+
         if (idMarketItem[_tokenId].auctionProps.endTime == 0) {
             revert AuctionTimeNotStartedYet();
         }
@@ -136,13 +167,7 @@ contract MGDAuction is MGDMarketplace {
             revert AuctionCannotBeEndedYet();
         }
 
-        if (idMarketItem[_tokenId].auctionProps.cancelled) {
-            revert AuctionCancelled();
-        }
-
-        // purchaseNft{ value: idMarketItem[_tokenId].auctionProps.highestBid }(
-        //   _tokenId
-        // );
+        purchaseNft(_tokenId, idMarketItem[_tokenId].auctionProps.highestBid);
     }
 
     modifier isNotCreator(address _bidder, uint256 _tokenId) {

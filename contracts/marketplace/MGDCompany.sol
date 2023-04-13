@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import "./IMGDCompany.sol";
-
 error MGDCompanyUnauthorized();
 
-contract MGDCompany is IMGDCompany {
+contract MGDCompany {
     uint256 public primarySaleFeePercent;
     uint256 public secondarySaleFeePercent;
     uint256 public collectorFee;
@@ -31,6 +29,10 @@ contract MGDCompany is IMGDCompany {
         auctionDuration = 24 hours;
         auctionFinalMinutes = 5 minutes;
     }
+
+    event ArtistWhitelisted(address indexed artistAddress, bool state);
+
+    event ValidatorAdded(address indexed validatorAddress, bool state);
 
     /**
      * Update platform primary fee percentage

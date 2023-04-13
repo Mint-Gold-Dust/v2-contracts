@@ -7,7 +7,7 @@ import { ethers, upgrades } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMGDSetPrice.sol Smart Contract \n___________________________\n \nThis smart contract is responsible by all functionalities related with the market like list and buy. \n", function () {
+describe("\nMGDSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n", function () {
   let MGDnft: ContractFactory;
   let mgdNft: Contract;
 
@@ -60,7 +60,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________\n \nThi
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
   });
 
-  describe("Listing a NFT", function () {
+  describe("\n--------------- Tests related witn the list NFT functionality ---------------\n", function () {
     let price = 1;
 
     beforeEach(async () => {
@@ -73,17 +73,6 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________\n \nThi
     });
 
     it("Should track newly listed item, transfer NFT from seller to MGD marketplace and emit the NftListed event.", async function () {
-      // let gasPrice = await mgdSetPrice.signer.getGasPrice();
-      // let gasLimit = await mgdSetPrice.estimateGas.list(1, toWei(price));
-
-      // console.log("\t GAS PRICE: ", gasPrice);
-      // console.log("\t GAS LIMIT: ", gasLimit);
-
-      // console.log(
-      //   "\t\t TOTAL GAS ESTIMATION (USD): ",
-      //   (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
-      //     2500
-      // );
       console.log(
         "\t ARTIST BALANCE BEFORE LIST: ",
         parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
@@ -130,7 +119,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________\n \nThi
     });
   });
 
-  describe("Update a listed NFT", function () {
+  describe("\n--------------- Tests related with the update a listed NFT functionality ---------------\n", function () {
     let primaryPrice = 1;
     let newPrice = 2;
 
@@ -200,17 +189,20 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________\n \nThi
       );
     });
 
-    // it("Should revert the transaction with an GDNFTMarketplace__NotAListedItem error if some user tries to update an item that is not on sale.", async function () {
-    //   await expect(
-    //     mgdSetPrice.connect(addr1).updateListedNft(2, toWei(newPrice))
-    //   ).to.be.revertedWithCustomError(
-    //     mgdSetPrice,
-    //     "MGDMarketplaceItemIsNotListed"
-    //   );
-    // });
+    it("Should revert the transaction with an MGDMarketplaceItemIsNotListed error if some user tries to update an item that is not on sale.", async function () {
+      await mgdSetPrice
+        .connect(addr2)
+        .purchaseNft(1, { value: toWei(primaryPrice) });
+      await expect(
+        mgdSetPrice.connect(addr2).updateListedNft(1, toWei(newPrice))
+      ).to.be.revertedWithCustomError(
+        mgdSetPrice,
+        "MGDMarketplaceItemIsNotListed"
+      );
+    });
   });
 
-  describe("Delist NFT", function () {
+  describe("\n--------------- Tests related with delist NFT functionality ---------------", function () {
     let primaryPrice = 1;
 
     beforeEach(async () => {
@@ -269,7 +261,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________\n \nThi
     });
   });
 
-  describe("Purchase NFT", function () {
+  describe("\n--------------- Purchase NFT on primary market ---------------\n", function () {
     let price = 20;
     // Calculate the fee and balance values based on the price
     let fee: number;
@@ -437,7 +429,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________\n \nThi
     });
   });
 
-  describe("Purchase NFT on secondary market", function () {
+  describe("\n--------------- Purchase NFT on secondary market ---------------\n", function () {
     let price = 20;
 
     let royaltyFee: number;

@@ -7,7 +7,7 @@ import { ethers, upgrades } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMGDnft.sol Smart Contract \n___________________________\n \nThis smart contract is responsible by mint new MGD Nfts. Actually this contract is an ERC721. \n", function () {
+describe("\nMGDnft.sol Smart Contract \n______________________________________________\n \nThis smart contract is responsible by mint new MGD Nfts. Actually this contract is an ERC721. \n", function () {
   let MGDnft: ContractFactory;
   let mgdNft: Contract;
 
@@ -47,7 +47,7 @@ describe("\nMGDnft.sol Smart Contract \n___________________________\n \nThis sma
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
   });
 
-  describe("Teste related with the mint NFT functionality:", function () {
+  describe("\n--------------- Test related with the mint NFT functionality ---------------\n", function () {
     it("Should track each minted NFT. This is verifying if: \n \t - The tokenURI was set correctly. \n \t - The tokenId was bound with the artist for future royalties payments. \n \t - The artist is the owner of the token. \n \t - The royalty percentage was set correctly. \n \t - The balanceOf the artists that mint an NFT was increased.", async function () {
       console.log(
         "\t ARTIST BALANCE BEFORE MINT: ",

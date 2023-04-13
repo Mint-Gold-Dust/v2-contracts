@@ -17,6 +17,9 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
   let MGDAuction: ContractFactory;
   let mgdAuction: Contract;
 
+  let MGDSetPrice: ContractFactory;
+  let mgdSetPrice: Contract;
+
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
@@ -43,6 +46,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
     MGDCompany = await ethers.getContractFactory("MGDCompany");
     MGDnft = await ethers.getContractFactory("MGDnft");
     MGDAuction = await ethers.getContractFactory("MGDAuction");
+    MGDSetPrice = await ethers.getContractFactory("MGDSetPrice");
 
     [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
 
@@ -57,11 +61,12 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
     mgdNft = await MGDnft.deploy(mgdCompany.address);
 
     mgdAuction = await MGDAuction.deploy(mgdCompany.address, mgdNft.address);
+    mgdSetPrice = await MGDSetPrice.deploy(mgdCompany.address, mgdNft.address);
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
   });
 
-  describe("Listing a NFT for Auction", function () {
+  describe("\n_________________________________ Tests related with listing a NFT for Auction _________________________________\n", function () {
     let price = 1;
 
     beforeEach(async () => {
@@ -166,7 +171,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       await mgdNft.connect(addr1).setApprovalForAll(mgdAuction.address, true);
     });
 
-    it("Should revert with an AuctionEnded() error when some user tries to bid in a timed auction that have ended already.", async function () {
+    it("Should revert with an AuctionEndedAlready() error when some user tries to bid in a timed auction that have ended already.", async function () {
       await mgdAuction.connect(addr1).list(1, toWei(price));
 
       // The first bid greater than zero, starts the time. In our test 3 seconds
@@ -178,7 +183,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       // addr3 tries to place a new bid after the time ends
       await expect(
         mgdAuction.connect(addr3).placeBid(1, { value: toWei(price + 1) })
-      ).to.be.revertedWithCustomError(MGDAuction, "AuctionEnded");
+      ).to.be.revertedWithCustomError(MGDAuction, "AuctionEndedAlready");
     });
 
     it("Should revert with an AuctionCreatorCannotBid() error if the auction creator (NFT Owner) tries to place a bid.", async function () {
@@ -238,7 +243,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
     });
   });
 
-  describe("\n \n _________________________________ PLACE A BID HAPPY PATHS _________________________________", function () {
+  describe("\n \n _________________________________ PLACE A BID HAPPY PATHS _________________________________\n", function () {
     let price = 4;
     const _duration = 10; // seconds
     const _finalTime = 8; // seconds
@@ -256,7 +261,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       await mgdNft.connect(addr1).setApprovalForAll(mgdAuction.address, true);
     });
 
-    describe("\n\t--------- AUCTION WITH A RESERVE PRICE ---------\n", () => {
+    describe("\n\t------------------ AUCTION WITH A RESERVE PRICE ------------------\n", () => {
       beforeEach(async () => {
         await mgdAuction.connect(addr1).list(1, toWei(price));
       });
@@ -373,7 +378,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       });
     });
 
-    describe("\n\t--------- AUCTION WITHOUT A RESERVE PRICE ---------\n", () => {
+    describe("\n\t------------------ AUCTION WITHOUT A RESERVE PRICE ------------------\n", () => {
       beforeEach(async () => {
         await mgdAuction.connect(addr1).list(1, toWei(0));
       });
@@ -490,7 +495,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       });
     });
 
-    describe("\n\t--------- SECOND BID BUT BEFORE THE LAST 5 MINUTES ---------\n", () => {
+    describe("\n\t------------------ SECOND BID BUT BEFORE THE LAST 5 MINUTES ------------------\n", () => {
       const secondBidValue = price + 2;
       beforeEach(async () => {
         await mgdAuction.connect(addr1).list(1, toWei(0));
@@ -703,7 +708,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       });
     });
 
-    describe("\n\t--------- SECOND BID NOW IN THE LAST 5 MINUTES ---------\n", () => {
+    describe("\n\t------------------ SECOND BID NOW IN THE LAST 5 MINUTES ------------------\n", () => {
       const secondBidValue = price + 2;
       beforeEach(async () => {
         await mgdAuction.connect(addr1).list(1, toWei(0));
@@ -773,6 +778,394 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
           ).auctionProps.endTime.toString()
         );
       });
+    });
+  });
+
+  describe("\n \n _________________________________ END AUCTION UNHAPPY PATHS _________________________________\n", function () {
+    let price = 4;
+    const _duration = 10; // seconds
+    const _finalTime = 8; // seconds
+    const _timeout = 3 * 1000; // seconds
+
+    beforeEach(async () => {
+      await mgdCompany.updateAuctionTimeDuration(_duration);
+      await mgdCompany.updateAuctionFinalMinutes(_finalTime);
+      // MGD owner whitelist the artist
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+      // addr1 mints a nft
+      await mgdNft.connect(addr1).mintNft(URI, toWei(5));
+      // Artist approve gdMarketPlace marketplace to exchange its NFT
+      await mgdNft.connect(addr1).setApprovalForAll(mgdAuction.address, true);
+    });
+
+    it("Should revert with MGDMarketplaceItemIsNotListed error if the end auction function is called and the tokenId was not listed on MGDAuction.", async () => {
+      // We list it to Set Price market place to confirm that it not cause problems here
+      await mgdSetPrice.connect(addr1).list(1, toWei(price));
+      await expect(mgdAuction.endAuction(1)).to.be.revertedWithCustomError(
+        mgdAuction,
+        "MGDMarketplaceItemIsNotListed"
+      );
+    });
+
+    it("Should revert with AuctionTimeNotStartedYet error if the end auction function is called and the auction have not received any bids yet.", async () => {
+      await mgdAuction.connect(addr1).list(1, toWei(price));
+      await expect(mgdAuction.endAuction(1)).to.be.revertedWithCustomError(
+        mgdAuction,
+        "AuctionTimeNotStartedYet"
+      );
+    });
+
+    it("Should revert with AuctionCannotBeEndedYet error if the end auction function is called before the time of duration of the auction be ended.", async () => {
+      await mgdAuction.connect(addr1).list(1, toWei(price));
+      await mgdAuction.connect(addr2).placeBid(1, { value: toWei(price) });
+      await expect(mgdAuction.endAuction(1)).to.be.revertedWithCustomError(
+        mgdAuction,
+        "AuctionCannotBeEndedYet"
+      );
+    });
+
+    it("Should revert with MGDMarketFunctionForSetPriceListedNFT error if the purchaseNFT function with one parameter is called to buy an item that is listed to Auction. For that the purchseNFT function with two params must be called and its function is internal and just can be called by the childrens smart contracts like the MGDAuction.", async () => {
+      await mgdAuction.connect(addr1).list(1, toWei(price));
+      await expect(
+        mgdAuction.connect(addr2).purchaseNft(1, { value: toWei(price) })
+      ).to.be.revertedWithCustomError(
+        mgdAuction,
+        "MGDMarketFunctionForSetPriceListedNFT"
+      );
+    });
+  });
+
+  describe("\n \n _________________________________ END AUCTION FOR PRIMARY SALE _________________________________\n", function () {
+    const _duration = 2; // seconds
+    const _finalTime = 1; // seconds
+    const _timeout = 3 * 1000; // seconds
+
+    let price = 20;
+    // Calculate the fee and balance values based on the price
+    let fee: number;
+    let balance: number;
+    let collFee: number;
+    let primarySaleFee: number;
+
+    beforeEach(async () => {
+      await mgdCompany.updateAuctionTimeDuration(_duration);
+      await mgdCompany.updateAuctionFinalMinutes(_finalTime);
+      // MGD owner whitelist the artist
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+      // addr1 mints a nft
+      await mgdNft.connect(addr1).mintNft(URI, toWei(5));
+      // Artist approve gdMarketPlace marketplace to exchange its NFT
+      await mgdNft.connect(addr1).setApprovalForAll(mgdAuction.address, true);
+
+      await mgdAuction.connect(addr1).list(1, toWei(price));
+
+      fee = (price * primary_sale_fee_percent) / 100;
+      collFee = (price * collector_fee) / 100;
+      primarySaleFee = fee + collFee;
+      balance = price - primarySaleFee;
+    });
+
+    it("Should:\n \t - Simulate a primary sale that transfer an NFT to the buyer;\n \t - Verify if the item changed status for sale;\n \t - Verify if the seller balance increases;\n \t - Verify if the marketplace's owner receives the fee;\n \t - Verify if the isSecondarySale attribute was set to true;\n \t - Verify if the buyer balance was deacresed exactly the gas fee + the token price;", async function () {
+      // get the balances for the seller and the owner of the marketplace.
+      const sellerInitalEthBal = await addr1.getBalance();
+      const feeAccountInitialEthBal = await deployer.getBalance();
+      const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
+        feeAccountInitialEthBal
+      ).add(toWei(primarySaleFee));
+
+      let addr2BalanceBefore = await addr2.getBalance();
+
+      await mgdAuction.connect(addr2).placeBid(1, { value: toWei(price) });
+
+      // verify if the flag for secondary is false
+      expect(
+        (await mgdAuction.connect(addr1).idMarketItem(1)).isSecondarySale
+      ).to.be.equal(false);
+
+      await new Promise((resolve) => setTimeout(resolve, _timeout));
+
+      let gasPrice = await mgdAuction.signer.getGasPrice();
+      let gasLimit = await mgdAuction.estimateGas.endAuction(1);
+
+      console.log("\t GAS PRICE END AUCTION: ", gasPrice);
+      console.log("\t GAS LIMIT END AUCTION: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION END AUCTION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
+
+      console.log("\n\t\t AUCTION HIGHEST BID: ", price);
+      console.log("\t\t Primary Market fee: ", fee);
+      console.log("\t\t Collector fee: ", collFee);
+      console.log("\t\t Marketplace owner fee: ", primarySaleFee);
+      console.log("\t\t Balance to seller: ", balance);
+
+      // execute the endAuction function
+      expect(await mgdAuction.endAuction(1))
+        .to.emit(mgdAuction, "NftPurchasedPrimaryMarket")
+        .withArgs(
+          1,
+          addr1.address,
+          addr2.address,
+          toWei(price),
+          toWei(fee),
+          toWei(collector_fee)
+        );
+
+      console.log(
+        "\n\t\t MARKETPLACE OWNER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(feeAccountInitialEthBal))
+      );
+
+      console.log(
+        "\t\t (OBS: IT'S A LITTLE BIT LESS THAN IT SHOULD BE BECAUSE THE EXECUTION OF ENDAUCTION FUNCTION + PURCHASENFT FUNCTION GAS) \n\t\t MARKETPLACE OWNER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await deployer.getBalance()))
+      );
+
+      console.log(
+        "\t\t MARKETPLACE OWNER BALANCE AFTER SALE SHOULD BE: ",
+        parseFloat(fromWei(feeAccountAfterEthBalShouldBe))
+      );
+
+      let addr2ShouldBeAfter = ethers.BigNumber.from(addr2BalanceBefore)
+        .sub(toWei(price))
+        .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
+
+      expect(
+        parseFloat(
+          (parseFloat(fromWei(await addr2.getBalance())) * 2500).toFixed(2)
+        )
+      ).to.be.closeTo(
+        parseFloat((parseFloat(fromWei(addr2ShouldBeAfter)) * 2500).toFixed(2)),
+        1
+      );
+
+      // verify if the owner of the NFT changed for the buyer
+      expect(await mgdNft.ownerOf(1)).to.equal(addr2.address);
+
+      // verify if the flag for secondary market changed for true
+      expect(
+        (await mgdAuction.connect(addr1).idMarketItem(1)).isSecondarySale
+      ).to.be.equal(true);
+
+      // verify if the marketplace owner's balance increased the fee
+      expect(
+        parseFloat(
+          (parseFloat(fromWei(await deployer.getBalance())) * 2500).toFixed(1)
+        )
+      ).to.be.closeTo(
+        parseFloat(
+          (parseFloat(fromWei(feeAccountAfterEthBalShouldBe)) * 2500).toFixed(1)
+        ),
+        1
+      );
+
+      // verify if the seller received the balance
+      expect(await addr1.getBalance()).to.be.equal(
+        ethers.BigNumber.from(sellerInitalEthBal).add(toWei(balance))
+      );
+
+      // expect item sold to be true
+      expect((await mgdAuction.idMarketItem(1)).sold).to.be.equal(true);
+
+      // expect item sold to be true
+      expect(await mgdAuction.itemsSold()).to.be.equal(1);
+
+      console.log(
+        "\t\t SELLER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(sellerInitalEthBal))
+      );
+
+      console.log(
+        "\t\t SELLER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await addr1.getBalance()))
+      );
+
+      console.log(
+        "\t\t AUCTION WINNER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(addr2BalanceBefore))
+      );
+
+      console.log(
+        "\t\t AUCTION WINNER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await addr2.getBalance()))
+      );
+    });
+  });
+
+  describe("------------------ END AUCTION NFT FOR SECONDARY MARKET ------------------", function () {
+    const _duration = 2; // seconds
+    const _finalTime = 1; // seconds
+    const _timeout = 3 * 1000; // seconds
+
+    let price = 20;
+    let royaltyFee: number;
+    let balance: number;
+    let secondarySaleFee: number;
+
+    beforeEach(async () => {
+      await mgdCompany.connect(deployer).updateAuctionTimeDuration(_duration);
+      await mgdCompany.connect(deployer).updateAuctionFinalMinutes(_finalTime);
+      // MGD owner whitelist the artist
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+      // addr1 mints a nft
+      await mgdNft.connect(addr1).mintNft(URI, toWei(5));
+      // Artist approve gdMarketPlace marketplace to exchange its NFT
+      await mgdNft.connect(addr1).setApprovalForAll(mgdAuction.address, true);
+
+      await mgdAuction.connect(addr1).list(1, toWei(0));
+
+      await mgdAuction.connect(addr2).placeBid(1, { value: toWei(price - 1) });
+
+      secondarySaleFee = (price * secondary_sale_fee_percent) / 100;
+      royaltyFee = (price * royalty) / 100;
+      balance = price - (secondarySaleFee + royaltyFee);
+    });
+
+    it("Should simulate a secondary sale that transfer an NFT to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the artist creator have received the royalty.", async function () {
+      await new Promise((resolve) => setTimeout(resolve, _timeout));
+
+      await mgdAuction.endAuction(1);
+
+      await mgdAuction.connect(addr2).list(1, toWei(price));
+      // verify if the isSecondarySale sale attribute is true
+      expect((await mgdAuction.idMarketItem(1)).isSecondarySale).to.equal(true);
+
+      // get the balances for the seller and the owner of the marketplace.
+      const feeAccountInitialEthBal = await deployer.getBalance();
+
+      let addr3BalanceBefore = await addr3.getBalance();
+
+      await mgdAuction.connect(addr3).placeBid(1, { value: toWei(price) });
+
+      // get the NFT's artist creator balance
+      const provider = ethers.provider;
+      const artistCreatorAddress = await mgdNft.tokenIdArtist(1);
+      const artistCreatorInitialBal = await provider.getBalance(
+        artistCreatorAddress
+      );
+
+      // get the addr2 buyer initial balance
+      const artistSellerInitialBal = await addr2.getBalance();
+
+      await new Promise((resolve) => setTimeout(resolve, _timeout));
+
+      let gasPrice = await mgdAuction.signer.getGasPrice();
+      let gasLimit = await mgdAuction.estimateGas.endAuction(1);
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
+
+      // execute the buyNft function
+      expect(await mgdAuction.endAuction(1))
+        .to.emit(mgdAuction, "NftPurchased")
+        .withArgs(
+          1,
+          addr2.address,
+          addr3.address,
+          toWei(price),
+          toWei(royalty),
+          toWei(royaltyFee),
+          artistCreatorAddress,
+          toWei(secondarySaleFee)
+        );
+
+      // prepare the future balance that the owner should have after the transaction
+      const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
+        feeAccountInitialEthBal
+      ).add(toWei(secondarySaleFee));
+
+      // verify if the owner of the NFT changed for the buyer
+      expect(await mgdNft.ownerOf(1)).to.equal(addr3.address);
+
+      console.log("\n\t\t ITEM PRICE: ", price);
+      console.log("\t\t Secondary Market fee: ", secondarySaleFee);
+      console.log("\t\t Royalty fee: ", royaltyFee);
+      console.log("\t\t Balance to seller: ", balance);
+      console.log(
+        "\n\t\t MARKETPLACE OWNER BALANCE BEFORE AUCTION: ",
+        parseFloat(fromWei(feeAccountInitialEthBal))
+      );
+
+      console.log(
+        "\t\t MARKETPLACE OWNER BALANCE AFTER AUCTION: ",
+        parseFloat(fromWei(await deployer.getBalance()))
+      );
+
+      // verify if the marketplace owner's balance increased the fee
+      expect(
+        parseFloat(
+          (parseFloat(fromWei(await deployer.getBalance())) * 2500).toFixed(1)
+        )
+      ).to.be.closeTo(
+        parseFloat(
+          (parseFloat(fromWei(feeAccountAfterEthBalShouldBe)) * 2500).toFixed(1)
+        ),
+        1
+      );
+
+      // verify if the seller received the balance
+      expect(await addr2.getBalance()).to.be.equal(
+        ethers.BigNumber.from(artistSellerInitialBal).add(toWei(balance))
+      );
+
+      console.log(
+        "\t\t SELLER BALANCE BEFORE AUCTION: ",
+        parseFloat(fromWei(artistSellerInitialBal))
+      );
+
+      console.log(
+        "\t\t SELLER BALANCE AFTER AUCTION: ",
+        parseFloat(fromWei(await addr2.getBalance()))
+      );
+
+      const artistCreatorAfterBal = await addr1.getBalance();
+
+      console.log(
+        "\t\t ARTIST BALANCE BEFORE AUCTION: ",
+        parseFloat(fromWei(artistCreatorInitialBal))
+      );
+
+      console.log(
+        "\t\t ARTIST BALANCE AFTER AUCTION WITH THE ROYALTY: ",
+        parseFloat(fromWei(artistCreatorAfterBal))
+      );
+
+      console.log(
+        "\t\t AUCTION WINNER BALANCE BEFORE AUCTION: ",
+        parseFloat(fromWei(addr3BalanceBefore))
+      );
+
+      console.log(
+        "\t\t AUCTION WINNER BALANCE AFTER AUCTION: ",
+        parseFloat(fromWei(await addr3.getBalance()))
+      );
+
+      // verify if the artist received the royalty
+      expect(await provider.getBalance(artistCreatorAddress)).to.be.equal(
+        ethers.BigNumber.from(artistCreatorInitialBal).add(toWei(royaltyFee))
+      );
+
+      let addr3ShouldBeAfter = ethers.BigNumber.from(addr3BalanceBefore)
+        .sub(toWei(price))
+        .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
+
+      expect(
+        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(3))
+      ).to.be.equal(
+        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(3))
+      );
+
+      // expect item sold to be true
+      expect((await mgdAuction.idMarketItem(1)).sold).to.be.equal(true);
     });
   });
 });

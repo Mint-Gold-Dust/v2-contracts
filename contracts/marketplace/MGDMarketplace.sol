@@ -4,18 +4,20 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./MGDCompany.sol";
-import "./IMGDMarketplace.sol";
 import "./MGDnft.sol";
 
 error MGDMarketplaceIncorrectAmountSent();
-error MGDMarketplaceSaleNotConcluded();
 error MGDMarketplaceItemIsNotListed();
+error MGDMarketplaceItemIsAlreadyListed();
 error MGDMarketplaceUnauthorized();
-error MGDMarketplaceInvalidInput();
 error MGDMarketplaceTokenForSecondSale();
+error MGDMarketplaceInvalidInput();
 error MGDMarketErrorToTransfer();
 
-abstract contract MGDMarketplace is IMGDMarketplace {
+error MGDMarketFunctionForSetPriceListedNFT();
+error MGDMarketFunctionForAuctionListedNFT();
+
+abstract contract MGDMarketplace {
     using Counters for Counters.Counter;
     Counters.Counter public itemsSold;
 
@@ -47,11 +49,35 @@ abstract contract MGDMarketplace is IMGDMarketplace {
         bool ended;
     }
 
+    event NftPurchasedPrimaryMarket(
+        uint256 indexed tokenId,
+        address seller,
+        address newOwner,
+        uint256 buyPrice,
+        uint256 feeAmount,
+        uint256 collectorFeeAmount
+    );
+
+    event NftPurchasedSecondaryMarket(
+        uint256 indexed tokenId,
+        address seller,
+        address newOwner,
+        uint256 buyPrice,
+        uint256 royaltyPercent,
+        uint256 royaltyAmount,
+        address royaltyRecipient,
+        uint256 feeAmount
+    );
+
     function list(uint256 _tokenId, uint256 _price) public virtual;
 
-    function primarySale(uint256 _value, uint256 _tokenId) private {
+    function primarySale(
+        uint256 _value,
+        address _sender,
+        uint256 _tokenId
+    ) private {
         uint256 price = idMarketItem[_tokenId].price;
-        if (msg.value != price) {
+        if (_value != price) {
             revert MGDMarketplaceIncorrectAmountSent();
         }
 
@@ -73,7 +99,7 @@ abstract contract MGDMarketplace is IMGDMarketplace {
         emit NftPurchasedPrimaryMarket(
             _tokenId,
             idMarketItem[_tokenId].seller,
-            msg.sender,
+            _sender,
             price,
             fee,
             collFee
@@ -82,12 +108,16 @@ abstract contract MGDMarketplace is IMGDMarketplace {
         payable(_mgdCompany.owner()).transfer(fee);
         payable(idMarketItem[_tokenId].seller).transfer(balance);
 
-        _mgdNft.transfer(address(this), msg.sender, _tokenId);
+        _mgdNft.transfer(address(this), _sender, _tokenId);
     }
 
-    function secondarySale(uint256 _value, uint256 _tokenId) private {
+    function secondarySale(
+        uint256 _value,
+        address _sender,
+        uint256 _tokenId
+    ) private {
         uint256 price = idMarketItem[_tokenId].price;
-        if (msg.value != price) {
+        if (_value != price) {
             revert MGDMarketplaceIncorrectAmountSent();
         }
         idMarketItem[_tokenId].sold = true;
@@ -111,7 +141,7 @@ abstract contract MGDMarketplace is IMGDMarketplace {
         emit NftPurchasedSecondaryMarket(
             _tokenId,
             idMarketItem[_tokenId].seller,
-            msg.sender,
+            _sender,
             price,
             _mgdNft.tokenIdRoyaltyPercent(_tokenId),
             royalty,
@@ -121,39 +151,57 @@ abstract contract MGDMarketplace is IMGDMarketplace {
 
         payable(_mgdCompany.owner()).transfer(fee);
         payable(idMarketItem[_tokenId].seller).transfer(balance);
-        _mgdNft.transfer(address(this), msg.sender, _tokenId);
+        _mgdNft.transfer(address(this), _sender, _tokenId);
     }
 
     /**
-     * Acquire a listed NFT
+     * Acquire a listed NFT to Set Price market
      * Primary fee percentage from primary sale is charged by the platform
      * Secondary fee percentage from secondary sale is charged by the platform while royalty is sent to artist
      * @notice Function will fail is artist has marked NFT as restricted
      * @param _tokenId The token ID of the the token to acquire
      */
-    function purchaseNft(uint256 _tokenId) public payable isListed(_tokenId) {
+    function purchaseNft(
+        uint256 _tokenId
+    ) public payable isListed(_tokenId) isSetPrice(_tokenId) {
         if (!idMarketItem[_tokenId].isSecondarySale) {
-            primarySale(msg.value, _tokenId);
+            primarySale(msg.value, msg.sender, _tokenId);
             return;
         }
 
-        secondarySale(msg.value, _tokenId);
+        secondarySale(msg.value, msg.sender, _tokenId);
+    }
+
+    /**
+     * Acquire a listed NFT to auction
+     * Primary fee percentage from primary sale is charged by the platform
+     * Secondary fee percentage from secondary sale is charged by the platform while royalty is sent to artist
+     * @notice Function will fail is artist has marked NFT as restricted
+     * @param _tokenId The token ID of the the token to acquire
+     */
+    function purchaseNft(
+        uint256 _tokenId,
+        uint256 _value
+    ) internal isListed(_tokenId) isAuction(_tokenId) {
+        if (!idMarketItem[_tokenId].isSecondarySale) {
+            primarySale(
+                _value,
+                idMarketItem[_tokenId].auctionProps.highestBidder,
+                _tokenId
+            );
+            return;
+        }
+
+        secondarySale(
+            _value,
+            idMarketItem[_tokenId].auctionProps.highestBidder,
+            _tokenId
+        );
     }
 
     modifier isSeller(uint256 _tokenId) {
         if (
             msg.sender == idMarketItem[_tokenId].seller ||
-            _mgdCompany.isAddressValidator(msg.sender) == true
-        ) {
-            _;
-        } else {
-            revert MGDMarketplaceUnauthorized();
-        }
-    }
-
-    modifier isArtist(uint256 _tokenId) {
-        if (
-            _mgdNft.tokenIdArtist(_tokenId) == msg.sender ||
             _mgdCompany.isAddressValidator(msg.sender) == true
         ) {
             _;
@@ -176,9 +224,30 @@ abstract contract MGDMarketplace is IMGDMarketplace {
         _;
     }
 
+    modifier isNotListed(uint256 _tokenId) {
+        if (!idMarketItem[_tokenId].sold) {
+            revert MGDMarketplaceItemIsAlreadyListed();
+        }
+        _;
+    }
+
     modifier isPrimarySale(uint256 _tokenId) {
         if (idMarketItem[_tokenId].isSecondarySale) {
             revert MGDMarketplaceTokenForSecondSale();
+        }
+        _;
+    }
+
+    modifier isSetPrice(uint256 _tokenId) {
+        if (idMarketItem[_tokenId].isAuction) {
+            revert MGDMarketFunctionForSetPriceListedNFT();
+        }
+        _;
+    }
+
+    modifier isAuction(uint256 _tokenId) {
+        if (!idMarketItem[_tokenId].isAuction) {
+            revert MGDMarketFunctionForAuctionListedNFT();
         }
         _;
     }

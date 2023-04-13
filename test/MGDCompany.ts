@@ -7,7 +7,7 @@ import { ethers, upgrades } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis smart contract is responsible by the functionalities related with MGD Management.\n", function () {
+describe("\nMGDCompany.sol Smart Contract \n_________________________________________\n \nThis smart contract is responsible by the functionalities related with MGD Management.\n", function () {
   let MGDCompany: ContractFactory;
   let mgdCompany: Contract;
 
@@ -51,7 +51,7 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
   });
 
-  describe("Tests related with the set validator functionality:", function () {
+  describe("\n--------------- Tests related with the set validator functionality ---------------\n", function () {
     const valueNewFee = 5;
 
     it("Should set a new validator if is the owner and this new validator should can whitelist or blacklist an artist.", async () => {
@@ -89,7 +89,7 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
     });
   });
 
-  describe("Tests related with whitelist/blacklist artist:", function () {
+  describe("\n--------------- Tests related with whitelist/blacklist artist ---------------\n", function () {
     it("Should whitelist an after blacklist artist.", async () => {
       let gasPrice = await mgdCompany.signer.getGasPrice();
       let gasLimit = await mgdCompany.estimateGas.whitelist(
@@ -130,7 +130,7 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
     });
   });
 
-  describe("Tests related with the update primary sale fee functionality:", function () {
+  describe("\n--------------- Tests related with the update primary sale fee functionality ---------------\n", function () {
     const valueNewFee = 30;
 
     it("Should update the fee if is the owner.", async () => {
@@ -171,7 +171,7 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
     });
   });
 
-  describe("Tests related with the update secondary sale fee functionality:", function () {
+  describe("\n--------------- Tests related with the update secondary sale fee functionality ---------------\n", function () {
     const valueNewFee = 10;
 
     it("Should update the secondary fee if is the owner.", async () => {
@@ -212,7 +212,7 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
     });
   });
 
-  describe("Tests related with the update collector fee functionality:", function () {
+  describe("\n--------------- Tests related with the update collector fee functionality ---------------\n", function () {
     const valueNewFee = 5;
 
     it("Should update the collector fee if is the owner.", async () => {
@@ -244,7 +244,7 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
     });
   });
 
-  describe("Tests related with the update max royalty fee functionality:", function () {
+  describe("\n--------------- Tests related with the update max royalty fee functionality ---------------\n", function () {
     const valueNewFee = 25;
 
     it("Should update the max_royalty_fee if is the owner.", async () => {
@@ -269,7 +269,7 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
       expect(await mgdCompany.maxRoyalty()).to.be.equal(toWei(valueNewFee));
     });
 
-    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the collector fee.", async () => {
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the max royalty fee.", async () => {
       await expect(
         mgdCompany.connect(addr1).updateMaxRoyalty(toWei(valueNewFee))
       ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
@@ -296,7 +296,7 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
     });
   });
 
-  describe("Tests related with the update auction duration functionality:", function () {
+  describe("\n--------------- Tests related with the update auction duration functionality ---------------\n", function () {
     const newTime = 5;
 
     it("Should update the auction duration if is the owner.", async () => {
@@ -311,7 +311,7 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
         (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
           2500
       );
-      expect(await mgdCompany.auctionDuration()).to.be.equal(86400);
+      expect(await mgdCompany.auctionDuration()).to.be.equal(24 * 60 * 60);
 
       // GD owner update the collector fee
       await mgdCompany.connect(deployer).updateAuctionTimeDuration(newTime);
@@ -319,9 +319,41 @@ describe("\nMGDCompany.sol Smart Contract \n___________________________\n \nThis
       expect(await mgdCompany.auctionDuration()).to.be.equal(newTime);
     });
 
-    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the collector fee.", async () => {
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the auction duration time.", async () => {
       await expect(
         mgdCompany.connect(addr1).updateAuctionTimeDuration(toWei(newTime))
+      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+    });
+  });
+
+  describe("\n--------------- Tests related with the update auction final time functionality ---------------\n", function () {
+    const newTime = 5;
+
+    it("Should update the auction final time duration if is the owner.", async () => {
+      let gasPrice = await mgdCompany.signer.getGasPrice();
+      let gasLimit = await mgdCompany.estimateGas.updateAuctionFinalMinutes(
+        newTime
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
+      expect(await mgdCompany.auctionFinalMinutes()).to.be.equal(5 * 60);
+
+      // GD owner update the collector fee
+      await mgdCompany.connect(deployer).updateAuctionFinalMinutes(newTime);
+
+      expect(await mgdCompany.auctionFinalMinutes()).to.be.equal(newTime);
+    });
+
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the auction final time. duration.", async () => {
+      await expect(
+        mgdCompany.connect(addr1).updateAuctionFinalMinutes(toWei(newTime))
       ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
     });
   });
