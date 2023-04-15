@@ -4,12 +4,11 @@ pragma solidity 0.8.18;
 import "./MGDMarketplace.sol";
 
 error AuctionEndedAlready();
-error AuctionCancelled();
 error BidTooLow();
 error AuctionCannotBeEndedYet();
 error AuctionTimeNotStartedYet();
 error AuctionCreatorCannotBid();
-error LastBidderCannotBidAgain();
+error LastBidderCannotPlaceNextBid();
 
 contract MGDAuction is MGDMarketplace {
     constructor(
@@ -83,10 +82,6 @@ contract MGDAuction is MGDMarketplace {
             block.timestamp >= idMarketItem[_tokenId].auctionProps.endTime
         ) {
             revert AuctionEndedAlready();
-        }
-
-        if (idMarketItem[_tokenId].auctionProps.cancelled) {
-            revert AuctionCancelled();
         }
 
         if (idMarketItem[_tokenId].price == 0 && msg.value <= 0) {
@@ -171,7 +166,7 @@ contract MGDAuction is MGDMarketplace {
     }
 
     modifier isNotCreator(address _bidder, uint256 _tokenId) {
-        if (_mgdNft.tokenIdArtist(_tokenId) == _bidder) {
+        if (idMarketItem[_tokenId].seller == _bidder) {
             revert AuctionCreatorCannotBid();
         }
         _;
@@ -179,7 +174,7 @@ contract MGDAuction is MGDMarketplace {
 
     modifier isNotLastBidder(address _bidder, uint256 _tokenId) {
         if (idMarketItem[_tokenId].auctionProps.highestBidder == _bidder) {
-            revert LastBidderCannotBidAgain();
+            revert LastBidderCannotPlaceNextBid();
         }
         _;
     }

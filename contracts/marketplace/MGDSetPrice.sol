@@ -41,7 +41,7 @@ contract MGDSetPrice is MGDMarketplace {
 
         idMarketItem[_tokenId] = MarketItem(
             _tokenId,
-            payable(msg.sender),
+            msg.sender,
             _price,
             false,
             false,
@@ -53,7 +53,7 @@ contract MGDSetPrice is MGDMarketplace {
             revert MGDMarketErrorToTransfer();
         }
 
-        emit NftListedToSetPrice(_tokenId, payable(msg.sender), _price);
+        emit NftListedToSetPrice(_tokenId, msg.sender, _price);
     }
 
     /**
@@ -71,12 +71,12 @@ contract MGDSetPrice is MGDMarketplace {
         }
 
         idMarketItem[_tokenId] = MarketItem(
-            _tokenId,
-            payable(msg.sender),
+            idMarketItem[_tokenId].tokenId,
+            idMarketItem[_tokenId].seller,
             _price,
-            false,
-            false,
-            true,
+            idMarketItem[_tokenId].sold,
+            idMarketItem[_tokenId].isAuction,
+            idMarketItem[_tokenId].isSecondarySale,
             idMarketItem[_tokenId].auctionProps
         );
 

@@ -55,7 +55,8 @@ abstract contract MGDMarketplace {
         address newOwner,
         uint256 buyPrice,
         uint256 feeAmount,
-        uint256 collectorFeeAmount
+        uint256 collectorFeeAmount,
+        bool auction
     );
 
     event NftPurchasedSecondaryMarket(
@@ -66,7 +67,8 @@ abstract contract MGDMarketplace {
         uint256 royaltyPercent,
         uint256 royaltyAmount,
         address royaltyRecipient,
-        uint256 feeAmount
+        uint256 feeAmount,
+        bool auction
     );
 
     function list(uint256 _tokenId, uint256 _price) public virtual;
@@ -82,6 +84,7 @@ abstract contract MGDMarketplace {
         }
 
         idMarketItem[_tokenId].sold = true;
+        idMarketItem[_tokenId].isSecondarySale = true;
         itemsSold.increment();
 
         uint256 fee;
@@ -92,9 +95,9 @@ abstract contract MGDMarketplace {
         collFee = (_value * _mgdCompany.collectorFee()) / (100 * 10 ** 18);
         balance = _value - (fee + collFee);
 
-        idMarketItem[_tokenId].isSecondarySale = true;
-
-        payable(_mgdCompany.owner()).transfer(collFee);
+        payable(_mgdCompany.owner()).transfer(collFee + fee);
+        payable(idMarketItem[_tokenId].seller).transfer(balance);
+        _mgdNft.transfer(address(this), _sender, _tokenId);
 
         emit NftPurchasedPrimaryMarket(
             _tokenId,
@@ -102,13 +105,9 @@ abstract contract MGDMarketplace {
             _sender,
             price,
             fee,
-            collFee
+            collFee,
+            idMarketItem[_tokenId].isAuction
         );
-
-        payable(_mgdCompany.owner()).transfer(fee);
-        payable(idMarketItem[_tokenId].seller).transfer(balance);
-
-        _mgdNft.transfer(address(this), _sender, _tokenId);
     }
 
     function secondarySale(
@@ -137,6 +136,9 @@ abstract contract MGDMarketplace {
         balance = _value - (fee + royalty);
 
         payable(_mgdNft.tokenIdArtist(_tokenId)).transfer(royalty);
+        payable(_mgdCompany.owner()).transfer(fee);
+        payable(idMarketItem[_tokenId].seller).transfer(balance);
+        _mgdNft.transfer(address(this), _sender, _tokenId);
 
         emit NftPurchasedSecondaryMarket(
             _tokenId,
@@ -146,12 +148,9 @@ abstract contract MGDMarketplace {
             _mgdNft.tokenIdRoyaltyPercent(_tokenId),
             royalty,
             _mgdNft.tokenIdArtist(_tokenId),
-            fee
+            fee,
+            idMarketItem[_tokenId].isAuction
         );
-
-        payable(_mgdCompany.owner()).transfer(fee);
-        payable(idMarketItem[_tokenId].seller).transfer(balance);
-        _mgdNft.transfer(address(this), _sender, _tokenId);
     }
 
     /**
@@ -200,14 +199,10 @@ abstract contract MGDMarketplace {
     }
 
     modifier isSeller(uint256 _tokenId) {
-        if (
-            msg.sender == idMarketItem[_tokenId].seller ||
-            _mgdCompany.isAddressValidator(msg.sender) == true
-        ) {
-            _;
-        } else {
+        if (msg.sender != idMarketItem[_tokenId].seller) {
             revert MGDMarketplaceUnauthorized();
         }
+        _;
     }
 
     modifier isNFTowner(uint256 _tokenId) {
@@ -227,13 +222,6 @@ abstract contract MGDMarketplace {
     modifier isNotListed(uint256 _tokenId) {
         if (!idMarketItem[_tokenId].sold) {
             revert MGDMarketplaceItemIsAlreadyListed();
-        }
-        _;
-    }
-
-    modifier isPrimarySale(uint256 _tokenId) {
-        if (idMarketItem[_tokenId].isSecondarySale) {
-            revert MGDMarketplaceTokenForSecondSale();
         }
         _;
     }

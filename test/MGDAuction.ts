@@ -194,7 +194,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       ).to.be.revertedWithCustomError(MGDAuction, "AuctionCreatorCannotBid");
     });
 
-    it("Should revert with an LastBidderCannotBidAgain() error if the last bidder tries to place a bid again.", async function () {
+    it("Should revert with an LastBidderCannotPlaceNextBid() error if the last bidder tries to place a bid again.", async function () {
       await mgdAuction.connect(addr1).list(1, toWei(price));
 
       await expect(
@@ -203,7 +203,10 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
 
       await expect(
         mgdAuction.connect(addr2).placeBid(1, { value: toWei(price + 1) })
-      ).to.be.revertedWithCustomError(MGDAuction, "LastBidderCannotBidAgain");
+      ).to.be.revertedWithCustomError(
+        MGDAuction,
+        "LastBidderCannotPlaceNextBid"
+      );
     });
 
     it("Should revert with an BidTooLow() error when some user tries to place bid with a value equal the highest bid.", async function () {
@@ -911,7 +914,8 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
           addr2.address,
           toWei(price),
           toWei(fee),
-          toWei(collector_fee)
+          toWei(collector_fee),
+          true
         );
 
       console.log(

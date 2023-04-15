@@ -103,6 +103,16 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       expect(await mgdNft.ownerOf(1)).to.equal(mgdSetPrice.address);
     });
 
+    it("Should secondary sale keep false if an artist list, delist and list again an item.", async function () {
+      await mgdSetPrice.connect(addr1).list(1, toWei(price));
+      await mgdSetPrice.connect(addr1).delistNft(1);
+      await mgdSetPrice.connect(addr1).list(1, toWei(price));
+
+      expect(
+        (await mgdSetPrice.connect(addr1).idMarketItem(1)).isSecondarySale
+      ).to.be.equal(false);
+    });
+
     it("Should revert the transaction if an artist tries to list its nft with price less than or equal zero.", async function () {
       await expect(
         mgdSetPrice.connect(addr1).list(1, 0)
@@ -135,20 +145,12 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     });
 
     it("Should track if a listed item was correctly updated and emit the NftListedItemUpdated event. We should remember that in this moment the owner of the NFT is the marketplace.", async function () {
-      let gasPrice = await mgdSetPrice.signer.getGasPrice();
-      let gasLimit = await mgdSetPrice.estimateGas.updateListedNft(
-        1,
-        toWei(newPrice)
-      );
-
-      console.log("\t GAS PRICE: ", gasPrice);
-      console.log("\t GAS LIMIT: ", gasLimit);
-
       console.log(
-        "\t\t TOTAL GAS ESTIMATION (USD): ",
-        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
-          2500
+        "\t ARTIST BALANCE BEFORE UPDATE A LISTED ITEM (ETH): ",
+        parseFloat(fromWei(await addr1.getBalance()))
       );
+      let artistBalanceBefore = await addr1.getBalance();
+
       // Get item from items mapping then check fields to ensure they are correct before update
       let marketItem = await mgdSetPrice.idMarketItem(1);
       expect(marketItem.price).to.equal(toWei(primaryPrice));
@@ -158,6 +160,22 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       )
         .to.emit(mgdSetPrice, "NftListedItemUpdated")
         .withArgs(1, addr1.address, toWei(newPrice));
+
+      console.log(
+        "\t ARTIST BALANCE AFTER UPDATE A LISTED ITEM (ETH): ",
+        parseFloat(fromWei(await addr1.getBalance()))
+      );
+
+      console.log(
+        "\t \tSo the gas estimation was more less (USD):",
+        parseFloat(
+          fromWei(
+            ethers.BigNumber.from(artistBalanceBefore).sub(
+              await addr1.getBalance()
+            )
+          )
+        ) * 2500
+      );
 
       // Get item from items mapping then check fields to ensure they are correct
       marketItem = await mgdSetPrice.idMarketItem(1);
@@ -217,18 +235,12 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     });
 
     it("Should delist a NFT from the marketplace and emit the NFTRemovedFromMarketplace event.", async function () {
-      let gasPrice = await mgdSetPrice.signer.getGasPrice();
-      let gasLimit = await mgdSetPrice.estimateGas.delistNft(1);
-
-      console.log("\t GAS PRICE: ", gasPrice);
-      console.log("\t GAS LIMIT: ", gasLimit);
-
       console.log(
-        "\t\t TOTAL GAS ESTIMATION (USD): ",
-        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
-          2500
+        "\t ARTIST BALANCE BEFORE DELIST (ETH): ",
+        parseFloat(fromWei(await addr1.getBalance()))
       );
-      // the market item should be not sold
+      let artistBalanceBefore = await addr1.getBalance();
+
       expect(
         (await mgdSetPrice.connect(addr1).idMarketItem(1)).sold
       ).to.be.equal(false);
@@ -240,9 +252,25 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       expect(
         (await mgdSetPrice.connect(addr1).idMarketItem(1)).sold
       ).to.be.equal(true);
+
+      console.log(
+        "\t ARTIST BALANCE AFTER DELIST (ETH): ",
+        parseFloat(fromWei(await addr1.getBalance()))
+      );
+
+      console.log(
+        "\t \tSo the gas estimation was more less (USD):",
+        parseFloat(
+          fromWei(
+            ethers.BigNumber.from(artistBalanceBefore).sub(
+              await addr1.getBalance()
+            )
+          )
+        ) * 2500
+      );
     });
 
-    it("Should revert with a GDNFTMarketplace__Unauthorized error if some address that is not the item seller try to delist its NFT from marketplace.", async function () {
+    it("Should revert with a MGDMarketplaceUnauthorized error if some address that is not the item seller try to delist its NFT from marketplace.", async function () {
       // the market item should be not sold
       expect(
         (await mgdSetPrice.connect(addr1).idMarketItem(1)).sold
@@ -330,7 +358,8 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           addr2.address,
           toWei(price),
           toWei(fee),
-          toWei(collector_fee)
+          toWei(collector_fee),
+          false
         );
 
       console.log(
