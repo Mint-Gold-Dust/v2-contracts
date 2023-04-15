@@ -13,10 +13,15 @@ error MGDMarketplaceUnauthorized();
 error MGDMarketplaceTokenForSecondSale();
 error MGDMarketplaceInvalidInput();
 error MGDMarketErrorToTransfer();
-
 error MGDMarketFunctionForSetPriceListedNFT();
 error MGDMarketFunctionForAuctionListedNFT();
 
+/// @title An abstract contract responsible to define some general responsibilites related with
+/// a marketplace for its childrens.
+/// @notice Contain a general function for purchases in primary and secondary sales
+/// and also a virtual function that each children should have a specif implementation.
+/// @author Mint Gold Dust LLC
+/// @custom:contact klvh@mintgolddust.io
 abstract contract MGDMarketplace {
     using Counters for Counters.Counter;
     Counters.Counter public itemsSold;
@@ -26,9 +31,15 @@ abstract contract MGDMarketplace {
 
     mapping(uint256 => MarketItem) public idMarketItem;
 
+    /**
+     *
+     * @notice MGDMarketplace is composed by other two contracts.
+     * @param mgdCompany The contract responsible to MGD management features.
+     * @param mgdNft The MGD ERC721.
+     */
     constructor(address mgdCompany, address mgdNft) {
-        _mgdCompany = MGDCompany(mgdCompany);
-        _mgdNft = MGDnft(mgdNft);
+        _mgdCompany = MGDCompany(payable(mgdCompany));
+        _mgdNft = MGDnft(payable(mgdNft));
     }
 
     struct MarketItem {
@@ -71,8 +82,26 @@ abstract contract MGDMarketplace {
         bool auction
     );
 
+    /**
+     *
+     * @notice that is a general function to be used by the more specif makets.
+     * @dev it is a internal function and should be implemented by the childrens
+     * if these are not abstract also.
+     * @param _tokenId the id of the NFT token to be listed.
+     * @param _price the respective price to list this item.
+     */
     function list(uint256 _tokenId, uint256 _price) public virtual;
 
+    /**
+     * Primary sale flow
+     * @notice that the function will fails if the amount sent is
+     * less than the item price.
+     * @dev here we apply the fees related with the primary market that are:
+     * the primarySaleFeePercent and the collectorFee.
+     * @param _value is the amount to be paid for the sale.
+     * @param _sender is the address of the buyer.
+     * @param _tokenId is the token id to be exchanged.
+     */
     function primarySale(
         uint256 _value,
         address _sender,
@@ -110,6 +139,16 @@ abstract contract MGDMarketplace {
         );
     }
 
+    /**
+     * Secondary sale flow
+     * @notice that the function will fails if the amount sent is
+     * less than the item price.
+     * @dev here we apply the fees related with the secondary market that are:
+     * the secondarySaleFeePercent and the tokenIdRoyaltyPercent.
+     * @param _value is the amount to be paid for the sale.
+     * @param _sender is the address of the buyer.
+     * @param _tokenId is the token id to be exchanged.
+     */
     function secondarySale(
         uint256 _value,
         address _sender,
@@ -155,9 +194,10 @@ abstract contract MGDMarketplace {
 
     /**
      * Acquire a listed NFT to Set Price market
-     * Primary fee percentage from primary sale is charged by the platform
-     * Secondary fee percentage from secondary sale is charged by the platform while royalty is sent to artist
-     * @notice Function will fail is artist has marked NFT as restricted
+     * @notice Function will fail if the token was not listed to a set price market.
+     * @dev This function is specific for the set price market. Because in this case
+     * the function will be called externally. So is possible to get the msg.value.
+     * For the auction market we have a second purchaseNft function. See below.
      * @param _tokenId The token ID of the the token to acquire
      */
     function purchaseNft(
@@ -172,11 +212,14 @@ abstract contract MGDMarketplace {
     }
 
     /**
-     * Acquire a listed NFT to auction
-     * Primary fee percentage from primary sale is charged by the platform
-     * Secondary fee percentage from secondary sale is charged by the platform while royalty is sent to artist
-     * @notice Function will fail is artist has marked NFT as restricted
-     * @param _tokenId The token ID of the the token to acquire
+     * Acquire a listed MGD Auction market.
+     * @notice Function will fail if the token was not listed to the auction market.
+     * @dev This function is specific for the auction market. Because in this case
+     * the function will be called internally from the MGDAuction contract. So is
+     * not possible to get the msg.value. Then we're receiving the value by param.
+     * For the auction market we have a second purchaseNft function. See below.
+     * @param _tokenId The token ID of the the token to acquire.
+     * @param _value The value to be paid for the purchase.
      */
     function purchaseNft(
         uint256 _tokenId,

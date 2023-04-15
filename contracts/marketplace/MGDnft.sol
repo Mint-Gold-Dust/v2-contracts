@@ -8,17 +8,26 @@ import "./MGDCompany.sol";
 error MGDnftRoyaltyInvalidPercentage();
 error MGDnftUnauthorized();
 
+/// @title A contract responsible by mint and transfer Mint Gold Dust ERC721 tokens.
+/// @notice Contains functions to mint and transfer MGD ERC721 tokens.
+/// @author Mint Gold Dust LLC
+/// @custom:contact klvh@mintgolddust.io
 contract MGDnft is ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
-    MGDCompany private mgdCompany;
+    MGDCompany private _mgdCompany;
 
     mapping(uint256 => address) public tokenIdArtist;
     mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
 
-    constructor(address _mgdCompany) ERC721("Mint Gold Dust NFT", "MGDNFT") {
-        mgdCompany = MGDCompany(_mgdCompany);
+    /**
+     *
+     * @notice that the MGDnft is composed by other contract.
+     * @param mgdCompany The contract responsible to MGD management features.
+     */
+    constructor(address mgdCompany) ERC721("Mint Gold Dust NFT", "MGDNFT") {
+        _mgdCompany = MGDCompany(payable(mgdCompany));
     }
 
     event NftMinted(
@@ -28,12 +37,20 @@ contract MGDnft is ERC721URIStorage {
         uint256 royalty
     );
 
+    /**
+     * @dev the _transfer function is an internal function of ERC721. And because of the
+     * necessity of call this function from other contract by composition we did need to
+     * create this public function.
+     * @param _from sender of the token.
+     * @param _to token destionation.
+     * @param _tokenId id of the token.
+     */
     function transfer(address _from, address _to, uint256 _tokenId) public {
         _transfer(_from, _to, _tokenId);
     }
 
     /**
-     * Mints a new Mint Gold Dust token and lists on the marketplace.
+     * Mints a new Mint Gold Dust token.
      * @notice Fails if artist is not whitelisted or if the royalty surpass the max royalty limit
      * setted on MGDCompany smart contract.
      * @dev tokenIdArtist keeps track of the work of each artist and tokenIdRoyaltyPercent the royalty
@@ -47,7 +64,7 @@ contract MGDnft is ERC721URIStorage {
     ) public validPercentage(_royaltyPercent) isApproved returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
-        _mint(msg.sender, newTokenId);
+        _safeMint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, _tokenURI);
         tokenIdArtist[newTokenId] = msg.sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
@@ -57,16 +74,26 @@ contract MGDnft is ERC721URIStorage {
     }
 
     modifier validPercentage(uint256 percentage) {
-        if (percentage > mgdCompany.maxRoyalty()) {
+        if (percentage > _mgdCompany.maxRoyalty()) {
             revert MGDnftRoyaltyInvalidPercentage();
         }
         _;
     }
 
     modifier isApproved() {
-        if (mgdCompany.isArtistApproved(msg.sender) == false) {
+        if (_mgdCompany.isArtistApproved(msg.sender) == false) {
             revert MGDnftUnauthorized();
         }
         _;
+    }
+
+    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
+    fallback() external payable {
+        payable(_mgdCompany.owner()).transfer(msg.value);
+    }
+
+    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
+    receive() external payable {
+        payable(_mgdCompany.owner()).transfer(msg.value);
     }
 }
