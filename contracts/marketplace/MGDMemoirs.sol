@@ -106,6 +106,14 @@ contract MGDMemoir {
         return size > 0;
     }
 
+    /**
+     * @notice that this modifier check if there is not yet a memoir for
+     * a given id token existing in a given NFT contract (ERC721 or ERC1155).
+     * If it already exists it reverts with a YouCannotUpdateThisMemoir error.
+     *
+     * @param _tokenId the token id for the NFT.
+     * @param _contract the contract address where this token id exists.
+     */
     modifier memoirNotExists(uint256 _tokenId, address _contract) {
         if (contractTokenIdMemoirs[_contract][_tokenId].length != 0) {
             revert YouCannotUpdateThisMemoir();
