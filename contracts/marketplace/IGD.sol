@@ -14,7 +14,8 @@ interface IGD {
         uint256 indexed tokenId,
         address owner,
         string tokenURI,
-        uint256 royalty
+        uint256 royalty,
+        string memoir
     );
 
     event NftListed(uint256 indexed tokenId, address seller, uint256 price);
@@ -48,4 +49,6 @@ interface IGD {
     event ArtistWhitelisted(address artistAddress, bool state);
 
     event ValidatorAdded(address validatorAddress, bool state);
+
+    event MemoirUpdated(uint256 indexed tokenId, string memoir);
 }
