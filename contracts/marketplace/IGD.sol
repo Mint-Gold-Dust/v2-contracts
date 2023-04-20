@@ -1,11 +1,15 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.17;
+pragma solidity 0.8.18;
 
 /// @title Gold Dust NFT
 /// @author Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
 
 interface IGD {
+    function isTokenSecondarySale(
+        uint256 _tokenId
+    ) external view returns (bool);
+
     event NftMinted(
         uint256 indexed tokenId,
         address owner,

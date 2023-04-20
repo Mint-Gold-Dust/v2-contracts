@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 /// @title Mint Gold Dust NFT
 /// @author Mint Gold Dust LLC
@@ -29,7 +29,7 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
     uint256 public secondary_sale_fee_percent;
     uint256 public collector_fee;
     uint256 public max_royalty;
-    address private OWNER;
+    address public OWNER;
     mapping(uint256 => MarketItem) public id_MarketItem;
     mapping(address => bool) public artist_IsApproved;
     mapping(address => bool) public address_isValidator;
@@ -43,6 +43,19 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
         address seller;
         uint256 price;
         bool sold;
+    }
+
+    function setItemSold(uint256 _itemId, bool _sold) public {
+        id_MarketItem[_itemId].sold = _sold;
+        _itemsSold.increment();
+    }
+
+    function isTokenSecondarySale(uint256 _tokenId) public view returns (bool) {
+        return tokenID_SecondarySale[_tokenId];
+    }
+
+    function setTokenAsSecondarySale(uint256 _tokenId) public {
+        tokenID_SecondarySale[_tokenId] = true;
     }
 
     function initialize(
@@ -232,8 +245,9 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
         uint256 _tokenId,
         address _auctionContract
     ) public isNFTowner(_tokenId) {
-        _transfer(address(this), _auctionContract, _tokenId);
-        emit NftSentToAuction(_tokenId, msg.sender, _auctionContract);
+        _transfer(msg.sender, address(this), _tokenId);
+        _approve(_auctionContract, _tokenId);
+        emit NftSentToAuction(_tokenId, msg.sender, address(this));
     }
 
     /**
@@ -287,6 +301,10 @@ contract GDNFTMarketplace is Initializable, ERC721URIStorageUpgradeable, IGD {
             fee,
             collFee
         );
+    }
+
+    function transfer(address from, address _to, uint256 _tokenId) public {
+        _transfer(address(this), _to, _tokenId);
     }
 
     /// @notice Whitelist/Blacklist validator
