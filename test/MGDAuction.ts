@@ -84,10 +84,24 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
         parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
       );
       let artistBalanceBefore = await addr1.getBalance();
-      // addr1 list the NFT with tokenID on gdMarketplace
-      await expect(mgdAuction.connect(addr1).list(1, toWei(price)))
-        .to.emit(mgdAuction, "NftListedToAuction")
-        .withArgs(1, addr1.address, toWei(price), 0);
+
+      const tx = await mgdAuction.connect(addr1).list(1, toWei(price));
+      const receipt = await tx.wait();
+
+      // Check that the transaction emitted an event
+      expect(receipt.events?.length).to.equal(2);
+
+      // Get the block timestamp
+      const block = await ethers.provider.getBlock(receipt.blockNumber);
+      const timestamp = block.timestamp;
+      expect(timestamp).to.be.above(0);
+
+      expect(receipt.events[1].event).to.equal("NftListedToAuction");
+      expect(receipt.events[1].args.length).to.equal(4);
+      expect(receipt.events[1].args[0]).to.be.equal(1);
+      expect(receipt.events[1].args[1]).to.be.equal(addr1.address);
+      expect(receipt.events[1].args[2]).to.be.equal(toWei(price));
+      expect(receipt.events[1].args[3]).to.be.equal(timestamp);
 
       console.log(
         "\t ARTIST BALANCE AFTER LIST: ",
@@ -116,9 +130,23 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
     });
 
     it("Should track a creation of an auction without a reserve price that expect the following conditions: \n \t - Expect emit the AuctionCreated event; \n \t - Expect auction structure attributes match with all passed to create auction function; \n \t - Auction end time should not be started yet to 24 hours and should be zero. \n \t - The auction price (initial price) should be zero. This way after any bid greater than zero the time of 24 hours should starts.", async () => {
-      await expect(mgdAuction.connect(addr1).list(1, toWei(0)))
-        .to.emit(mgdAuction, "NftListedToAuction")
-        .withArgs(1, addr1.address, toWei(0), 0);
+      const tx = await mgdAuction.connect(addr1).list(1, toWei(0));
+      const receipt = await tx.wait();
+
+      // Check that the transaction emitted an event
+      expect(receipt.events?.length).to.equal(2);
+
+      // Get the block timestamp
+      const block = await ethers.provider.getBlock(receipt.blockNumber);
+      const timestamp = block.timestamp;
+      expect(timestamp).to.be.above(0);
+
+      expect(receipt.events[1].event).to.equal("NftListedToAuction");
+      expect(receipt.events[1].args.length).to.equal(4);
+      expect(receipt.events[1].args[0]).to.be.equal(1);
+      expect(receipt.events[1].args[1]).to.be.equal(addr1.address);
+      expect(receipt.events[1].args[2]).to.be.equal(toWei(0));
+      expect(receipt.events[1].args[3]).to.be.equal(timestamp);
 
       let idMarketItem = await mgdAuction.connect(addr1).idMarketItem(1);
 
@@ -135,9 +163,23 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
     });
 
     it("Should track a creation of an auction with a reserve price that expect the following conditions: \n \t - Expect emit the AuctionCreated event; \n \t - Expect auction structure attributes match with all passed to create auction function; \n \t - Auction end time should not be started yet to 24 hours and should be zero. \n \t - The auction price (initial price) should be zero. This way after any bid greater than zero the time of 24 hours should starts.", async () => {
-      await expect(mgdAuction.connect(addr1).list(1, toWei(price)))
-        .to.emit(mgdAuction, "NftListedToAuction")
-        .withArgs(1, addr1.address, toWei(price), 0);
+      const tx = await mgdAuction.connect(addr1).list(1, toWei(price));
+      const receipt = await tx.wait();
+
+      // Check that the transaction emitted an event
+      expect(receipt.events?.length).to.equal(2);
+
+      // Get the block timestamp
+      const block = await ethers.provider.getBlock(receipt.blockNumber);
+      const timestamp = block.timestamp;
+      expect(timestamp).to.be.above(0);
+
+      expect(receipt.events[1].event).to.equal("NftListedToAuction");
+      expect(receipt.events[1].args.length).to.equal(4);
+      expect(receipt.events[1].args[0]).to.be.equal(1);
+      expect(receipt.events[1].args[1]).to.be.equal(addr1.address);
+      expect(receipt.events[1].args[2]).to.be.equal(toWei(price));
+      expect(receipt.events[1].args[3]).to.be.equal(timestamp);
 
       let idMarketItem = await mgdAuction.connect(addr1).idMarketItem(1);
 
@@ -171,7 +213,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       await mgdNft.connect(addr1).setApprovalForAll(mgdAuction.address, true);
     });
 
-    it("Should revert with an AuctionEndedAlready() error when some user tries to bid in a timed auction that have ended already.", async function () {
+    it("Should revert with an AuctionMustBeEnded() error when some user tries to bid in a timed auction that have ended already.", async function () {
       await mgdAuction.connect(addr1).list(1, toWei(price));
 
       // The first bid greater than zero, starts the time. In our test 3 seconds
@@ -183,7 +225,9 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       // addr3 tries to place a new bid after the time ends
       await expect(
         mgdAuction.connect(addr3).placeBid(1, { value: toWei(price + 1) })
-      ).to.be.revertedWithCustomError(MGDAuction, "AuctionEndedAlready");
+      )
+        .to.be.revertedWithCustomError(MGDAuction, "AuctionMustBeEnded")
+        .withArgs(1);
     });
 
     it("Should revert with an AuctionCreatorCannotBid() error if the auction creator (NFT Owner) tries to place a bid.", async function () {

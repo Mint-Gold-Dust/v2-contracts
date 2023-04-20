@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import "./MGDMarketplace.sol";
 
+error AuctionMustBeEnded(uint256 _tokenId);
 error AuctionEndedAlready();
 error BidTooLow();
 error AuctionCannotBeEndedYet();
@@ -32,7 +33,13 @@ contract MGDAuction is MGDMarketplace {
         uint256 indexed tokenId,
         address seller,
         uint256 price,
-        uint256 creationTime
+        uint256 timeOfCreation
+    );
+
+    event AuctionTimeStarted(
+        uint256 indexed tokenId,
+        uint256 startTime,
+        uint256 endTime
     );
 
     event AuctionNewBid(
@@ -85,7 +92,12 @@ contract MGDAuction is MGDMarketplace {
          * because of that we have the try catch.
          */
         try _mgdNft.transfer(msg.sender, address(this), _tokenId) {
-            emit NftListedToAuction(_tokenId, payable(msg.sender), _price, 0);
+            emit NftListedToAuction(
+                _tokenId,
+                payable(msg.sender),
+                _price,
+                block.timestamp
+            );
         } catch {
             revert MGDMarketErrorToTransfer();
         }
@@ -119,7 +131,7 @@ contract MGDAuction is MGDMarketplace {
             idMarketItem[_tokenId].auctionProps.endTime != 0 &&
             block.timestamp >= idMarketItem[_tokenId].auctionProps.endTime
         ) {
-            revert AuctionEndedAlready();
+            revert AuctionMustBeEnded(_tokenId);
         }
 
         if (idMarketItem[_tokenId].price == 0 && msg.value <= 0) {
@@ -142,9 +154,12 @@ contract MGDAuction is MGDMarketplace {
 
         /// @dev The time starts to count for the auction.
         if (idMarketItem[_tokenId].auctionProps.endTime == 0) {
-            idMarketItem[_tokenId].auctionProps.endTime =
-                block.timestamp +
-                _mgdCompany.auctionDuration();
+            uint256 _startTime = block.timestamp;
+            uint256 _endTime = _startTime + _mgdCompany.auctionDuration();
+
+            idMarketItem[_tokenId].auctionProps.endTime = _endTime;
+
+            emit AuctionTimeStarted(_tokenId, _startTime, _endTime);
         }
 
         /**
@@ -200,6 +215,10 @@ contract MGDAuction is MGDMarketplace {
      * @param _tokenId the id of the token that is listed to this auction.
      */
     function endAuction(uint256 _tokenId) public isListed(_tokenId) {
+        if (block.timestamp < idMarketItem[_tokenId].auctionProps.endTime) {
+            revert AuctionCannotBeEndedYet();
+        }
+
         if (idMarketItem[_tokenId].auctionProps.ended) {
             revert AuctionEndedAlready();
         }
@@ -208,13 +227,7 @@ contract MGDAuction is MGDMarketplace {
             revert AuctionTimeNotStartedYet();
         }
 
-        if (
-            idMarketItem[_tokenId].auctionProps.endTime != 0 &&
-            block.timestamp < idMarketItem[_tokenId].auctionProps.endTime
-        ) {
-            revert AuctionCannotBeEndedYet();
-        }
-
+        idMarketItem[_tokenId].auctionProps.ended = true;
         purchaseNft(_tokenId, idMarketItem[_tokenId].auctionProps.highestBid);
     }
 

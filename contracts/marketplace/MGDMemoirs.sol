@@ -17,6 +17,18 @@ contract MGDMemoir {
     mapping(address => mapping(uint256 => bytes)) public userCounterMemoirs;
     mapping(address => uint256) public userCounter;
 
+    event ArtworkMemoirCreated(
+        address smartContract,
+        uint256 indexed tokenId,
+        bytes memoir
+    );
+
+    event EOAMemoirCreated(
+        address indexed externallyOwnedAccount,
+        uint256 counter,
+        bytes memoir
+    );
+
     /**
      *
      * @notice that function creates a new memoir for some token id related with some contract address.
