@@ -20,6 +20,7 @@ contract MGDnft is ERC721URIStorage {
 
     mapping(uint256 => address) public tokenIdArtist;
     mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
+    mapping(uint256 => address[4]) public tokenCollaborators;
 
     /**
      *
@@ -37,6 +38,14 @@ contract MGDnft is ERC721URIStorage {
         uint256 royalty
     );
 
+    event NftMintedAndSplitted(
+        uint256 indexed tokenId,
+        address owner,
+        string tokenURI,
+        uint256 royalty,
+        address[] collaborators
+    );
+
     /**
      * @dev the _transfer function is an internal function of ERC721. And because of the
      * necessity of call this function from other contract by composition we did need to
@@ -47,6 +56,32 @@ contract MGDnft is ERC721URIStorage {
      */
     function transfer(address _from, address _to, uint256 _tokenId) public {
         _transfer(_from, _to, _tokenId);
+    }
+
+    function splitPayment(
+        string memory _tokenURI,
+        uint256 _royalty,
+        address[] calldata newOwners
+    ) external {
+        uint256 _tokenId = mintNft(_tokenURI, _royalty);
+        uint256 ownersCount = 0;
+
+        for (uint256 i = 0; i < newOwners.length; i++) {
+            if (newOwners[i] != address(0)) {
+                ownersCount++;
+            }
+        }
+
+        require(ownersCount > 1, "At least two different owners required");
+
+        require(ownersCount < 5, "Add maximum 4 collaborators for it");
+
+        // Assign new owners to the token
+        for (uint256 i = 0; i < newOwners.length; i++) {
+            if (newOwners[i] != address(0)) {
+                tokenCollaborators[_tokenId][i] = newOwners[i];
+            }
+        }
     }
 
     /**

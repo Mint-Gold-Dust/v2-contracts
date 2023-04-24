@@ -1,4 +1,72 @@
 const { ethers, upgrades } = require("hardhat");
+const fs = require("fs");
+
+async function main() {
+  const [deployer] = await ethers.getSigners();
+  const primary_sale_fee_percent_initial = 15000000000000000000n;
+  const secondary_sale_fee_percent_initial = 5000000000000000000n;
+  const collector_fee_initial = 3000000000000000000n;
+  const max_royalty_initial = 20000000000000000000n;
+
+  console.log("Deploying contracts with the account:", deployer.address);
+
+  // Deploy MGDCompany contract
+  const MGDCompanyFactory = await ethers.getContractFactory("MGDCompany");
+  const mgdCompany = await MGDCompanyFactory.deploy(
+    deployer.address,
+    primary_sale_fee_percent_initial,
+    secondary_sale_fee_percent_initial,
+    collector_fee_initial,
+    max_royalty_initial
+  );
+  await mgdCompany.deployed();
+  console.log("MGDCompany deployed to:", mgdCompany.address);
+
+  // Deploy MGDnft contract
+  const MGDnftFactory = await ethers.getContractFactory("MGDnft");
+  const mgdNft = await MGDnftFactory.deploy(mgdCompany.address);
+  await mgdNft.deployed();
+  console.log("MGDnft deployed to:", mgdNft.address);
+
+  // Deploy MGDSetPrice contract
+  const MGDSetPriceFactory = await ethers.getContractFactory("MGDSetPrice");
+  const mgdSetPrice = await MGDSetPriceFactory.deploy(
+    mgdCompany.address,
+    mgdNft.address
+  );
+  await mgdSetPrice.deployed();
+  console.log("MGDSetPrice deployed to:", mgdSetPrice.address);
+
+  // Deploy MGDAuction contract
+  const MGDAuctionFactory = await ethers.getContractFactory("MGDAuction");
+  const mgdAuction = await MGDAuctionFactory.deploy(
+    mgdCompany.address,
+    mgdNft.address
+  );
+  await mgdAuction.deployed();
+  console.log("MGDAuction deployed to:", mgdAuction.address);
+
+  // Deploy MGDMemoir contract
+  const MGDMemoirFactory = await ethers.getContractFactory("MGDMemoir");
+  const mgdMemoir = await MGDMemoirFactory.deploy();
+  await mgdMemoir.deployed();
+  console.log("MGDMemoir deployed to:", mgdMemoir.address);
+
+  // Save important addresses to a JSON file
+  const addresses = {
+    mgdCompany: mgdCompany.address,
+    mgdNft: mgdNft.address,
+    mgdSetPrice: mgdSetPrice.address,
+    mgdAuction: mgdAuction.address,
+    mgdMemoir: mgdMemoir.address, // Add this line
+  };
+
+  fs.writeFileSync(
+    "deployed_addresses.json",
+    JSON.stringify(addresses, null, 2)
+  );
+  console.log("Deployed contract addresses saved to deployed_addresses.json");
+}
 
 // function saveFrontendFiles(contract: any, name: string) {
 //   const fs = require("fs");
@@ -20,37 +88,6 @@ const { ethers, upgrades } = require("hardhat");
 //     JSON.stringify(contractArtifact, null, 2)
 //   );
 // }
-
-async function main() {
-  const [deployer] = await ethers.getSigners();
-  const primary_sale_fee_percent_initial = 15000000000000000000n;
-  const secondary_sale_fee_percent_initial = 5000000000000000000n;
-  const collector_fee_initial = 3000000000000000000n;
-  const max_royalty_initial = 20000000000000000000n;
-
-  console.log("Deploying contracts with the account:", deployer.address);
-  console.log("Account balance:", (await deployer.getBalance()).toString());
-
-  const GDNFTMarketplace = await ethers.getContractFactory("GDNFTMarketplace");
-
-  // Replace the arguments with the appropriate values for your contract's initializer
-  const gdNFTMarketplace = await upgrades.deployProxy(
-    GDNFTMarketplace,
-    [
-      deployer.address,
-      primary_sale_fee_percent_initial,
-      secondary_sale_fee_percent_initial,
-      collector_fee_initial,
-      max_royalty_initial,
-    ],
-    {
-      initializer: "initialize",
-    }
-  );
-  await gdNFTMarketplace.deployed();
-
-  console.log("GDNFTMarketplace deployed to:", gdNFTMarketplace.address);
-}
 
 main()
   .then(() => process.exit(0))

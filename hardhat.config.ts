@@ -13,6 +13,12 @@ const config: HardhatUserConfig = {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [`${process.env.PK}`],
     },
+    localhost: {
+      url: "http://127.0.0.1:8545",
+      accounts: [
+        "0xea6c44ac03bff858b476bba40716402b03e41b8e97e276d1baec7c37d42484a0", // Replace with the private key of the chosen pre-funded account
+      ],
+    },
   },
   solidity: {
     version: "0.8.18",
