@@ -17,6 +17,8 @@ contract MGDMemoir {
     mapping(address => mapping(uint256 => bytes)) public userCounterMemoirs;
     mapping(address => uint256) public userCounter;
 
+    constructor() {}
+
     event ArtworkMemoirCreated(
         address smartContract,
         uint256 indexed tokenId,
