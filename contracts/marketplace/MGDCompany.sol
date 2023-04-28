@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
+
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 error MGDCompanyUnauthorized();
 
@@ -7,7 +9,7 @@ error MGDCompanyUnauthorized();
 /// @notice Contains functions for update the MGD fees and some access levels.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-contract MGDCompany {
+contract MGDCompany is Initializable {
     /**
      * @dev all attributes are public to be accessible by the other contracts
      * that are composed by this one
@@ -30,13 +32,13 @@ contract MGDCompany {
      * @param _collectorFee is the fee paid by collectors setted for primary sales (3% initially)
      * @param _maxRoyalty is the maximum percetange that an artist can set to its artwork (20% initially)
      */
-    constructor(
+    function initialize(
         address _owner,
         uint256 _primarySaleFeePercent,
         uint256 _secondarySaleFeePercent,
         uint256 _collectorFee,
         uint256 _maxRoyalty
-    ) {
+    ) public initializer {
         owner = _owner;
         primarySaleFeePercent = _primarySaleFeePercent;
         secondarySaleFeePercent = _secondarySaleFeePercent;

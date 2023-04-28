@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "./MGDCompany.sol";
 
 error MGDnftRoyaltyInvalidPercentage();
@@ -12,7 +15,12 @@ error MGDnftUnauthorized();
 /// @notice Contains functions to mint and transfer MGD ERC721 tokens.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-contract MGDnft is ERC721URIStorage {
+
+contract MGDnft is
+    Initializable,
+    ERC721Upgradeable,
+    ERC721URIStorageUpgradeable
+{
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
@@ -27,7 +35,8 @@ contract MGDnft is ERC721URIStorage {
      * @notice that the MGDnft is composed by other contract.
      * @param mgdCompany The contract responsible to MGD management features.
      */
-    constructor(address mgdCompany) ERC721("Mint Gold Dust NFT", "MGDNFT") {
+    function initialize(address mgdCompany) public initializer {
+        __ERC721_init("Mint Gold Dust NFT", "MGDNFT");
         _mgdCompany = MGDCompany(payable(mgdCompany));
     }
 
@@ -106,6 +115,23 @@ contract MGDnft is ERC721URIStorage {
 
         emit NftMinted(newTokenId, msg.sender, _tokenURI, _royaltyPercent);
         return newTokenId;
+    }
+
+    function _burn(
+        uint256 tokenId
+    ) internal override(ERC721Upgradeable, ERC721URIStorageUpgradeable) {
+        super._burn(tokenId);
+    }
+
+    function tokenURI(
+        uint256 tokenId
+    )
+        public
+        view
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
     }
 
     modifier validPercentage(uint256 percentage) {

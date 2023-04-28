@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./MGDMarketplace.sol";
 
 /// @title A contract responsible by the Set Price Market functionalities
 /// @notice Contains functions for list, update a listed item and delist an item.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-contract MGDSetPrice is MGDMarketplace {
+contract MGDSetPrice is MGDMarketplace, ReentrancyGuardUpgradeable {
     /**
      *
      * @notice MGDSetPrice is a children of MGDMarketplace and this one is
@@ -15,10 +16,13 @@ contract MGDSetPrice is MGDMarketplace {
      * @param mgdCompany The contract responsible to MGD management features.
      * @param mgdNft The MGD ERC721.
      */
-    constructor(
+    function initialize(
         address mgdCompany,
         address mgdNft
-    ) MGDMarketplace(mgdCompany, mgdNft) {}
+    ) public override initializer {
+        MGDMarketplace.initialize(mgdCompany, mgdNft);
+        __ReentrancyGuard_init();
+    }
 
     event NftListedToSetPrice(
         uint256 indexed tokenId,
@@ -120,15 +124,22 @@ contract MGDSetPrice is MGDMarketplace {
      * owner of the item, means that the item is not listed.
      * @param _tokenId The token ID of the the token to delist
      */
-    function delistNft(uint256 _tokenId) public isSeller(_tokenId) {
+    function delistNft(
+        uint256 _tokenId
+    ) public nonReentrant isSeller(_tokenId) {
+        if (idMarketItem[_tokenId].sold) {
+            revert MGDMarketplaceItemIsNotListed();
+        }
+
+        idMarketItem[_tokenId].sold = true;
         /**
          * @dev Here we have an external call to the MGD ERC721 contract
          * because of that we have the try catch.
          */
         try _mgdNft.transfer(address(this), msg.sender, _tokenId) {
-            idMarketItem[_tokenId].sold = true;
             emit NftRemovedFromMarketplace(_tokenId, msg.sender);
         } catch {
+            idMarketItem[_tokenId].sold = false;
             revert MGDMarketErrorToTransfer();
         }
     }

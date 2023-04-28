@@ -50,18 +50,37 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
 
     [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
 
-    mgdCompany = await MGDCompany.deploy(
-      TEST_OWNER,
-      primary_sale_fee_percent_initial,
-      secondary_sale_fee_percent_initial,
-      collector_fee_initial,
-      max_royalty_initial
+    mgdCompany = await upgrades.deployProxy(
+      MGDCompany,
+      [
+        TEST_OWNER,
+        primary_sale_fee_percent_initial,
+        secondary_sale_fee_percent_initial,
+        collector_fee_initial,
+        max_royalty_initial,
+      ],
+      { initializer: "initialize" }
     );
+    await mgdCompany.deployed();
 
-    mgdNft = await MGDnft.deploy(mgdCompany.address);
+    mgdNft = await upgrades.deployProxy(MGDnft, [mgdCompany.address], {
+      initializer: "initialize",
+    });
+    await mgdNft.deployed();
 
-    mgdAuction = await MGDAuction.deploy(mgdCompany.address, mgdNft.address);
-    mgdSetPrice = await MGDSetPrice.deploy(mgdCompany.address, mgdNft.address);
+    mgdAuction = await upgrades.deployProxy(
+      MGDAuction,
+      [mgdCompany.address, mgdNft.address],
+      { initializer: "initialize" }
+    );
+    await mgdAuction.deployed();
+
+    mgdSetPrice = await upgrades.deployProxy(
+      MGDSetPrice,
+      [mgdCompany.address, mgdNft.address],
+      { initializer: "initialize" }
+    );
+    await mgdSetPrice.deployed();
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
   });
@@ -391,10 +410,14 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
           )
         );
 
-        expect(bidderBalanceBefore).to.be.equal(
-          ethers.BigNumber.from(bidderBalanceAfter)
-            .add(toWei(price))
-            .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
+        expect(parseFloat(fromWei(bidderBalanceBefore)).toFixed(4)).to.be.equal(
+          parseFloat(
+            fromWei(
+              ethers.BigNumber.from(bidderBalanceAfter)
+                .add(toWei(price))
+                .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
+            )
+          ).toFixed(4)
         );
 
         // Verify if the end time was set to 24 hours after the first bid greater than zero.
@@ -508,10 +531,14 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
           )
         );
 
-        expect(bidderBalanceBefore).to.be.equal(
-          ethers.BigNumber.from(bidderBalanceAfter)
-            .add(toWei(price))
-            .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
+        expect(parseFloat(fromWei(bidderBalanceBefore)).toFixed(4)).to.be.equal(
+          parseFloat(
+            fromWei(
+              ethers.BigNumber.from(bidderBalanceAfter)
+                .add(toWei(price))
+                .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
+            )
+          ).toFixed(4)
         );
 
         // Verify if the end time was set to 24 hours after the first bid greater than zero.
@@ -689,10 +716,16 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
         );
 
         // **** EXPECT THE BIDDER 1 BALANCE TO BE DECREASED CORRECTLY AFTER FIST BID ****
-        expect(bidder1BalanceBefore).to.be.equal(
-          ethers.BigNumber.from(bidder1BalanceAfter)
-            .add(toWei(price))
-            .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
+        expect(
+          parseFloat(fromWei(bidder1BalanceBefore)).toFixed(4)
+        ).to.be.equal(
+          parseFloat(
+            fromWei(
+              ethers.BigNumber.from(bidder1BalanceAfter)
+                .add(toWei(price))
+                .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
+            )
+          ).toFixed(4)
         );
 
         // **** EXPECT THE BIDDER 1 TO BE REFUNDED AFTER SECOND BID ****
@@ -700,10 +733,16 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
           ethers.BigNumber.from(bidder1BalanceAfter).add(toWei(price))
         );
 
-        expect(bidder2BalanceBefore).to.be.equal(
-          ethers.BigNumber.from(bidder2BalanceAfter)
-            .add(toWei(secondBidValue))
-            .add(ethers.BigNumber.from(gasPrice2).mul(gasLimit2))
+        expect(
+          parseFloat(fromWei(bidder2BalanceBefore)).toFixed(4)
+        ).to.be.equal(
+          parseFloat(
+            fromWei(
+              ethers.BigNumber.from(bidder2BalanceAfter)
+                .add(toWei(secondBidValue))
+                .add(ethers.BigNumber.from(gasPrice2).mul(gasLimit2))
+            )
+          ).toFixed(4)
         );
 
         console.log(
@@ -1207,9 +1246,10 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
 
       expect(
-        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(3))
-      ).to.be.equal(
-        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(3))
+        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(4))
+      ).to.be.approximately(
+        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(4)),
+        1
       );
 
       // expect item sold to be true

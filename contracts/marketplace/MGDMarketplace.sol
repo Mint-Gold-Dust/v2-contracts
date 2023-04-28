@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./MGDCompany.sol";
 import "./MGDnft.sol";
 
@@ -22,7 +23,7 @@ error MGDMarketFunctionForAuctionListedNFT();
 /// and also a virtual function that each children should have a specif implementation.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-abstract contract MGDMarketplace {
+abstract contract MGDMarketplace is Initializable {
     using Counters for Counters.Counter;
     Counters.Counter public itemsSold;
 
@@ -37,7 +38,10 @@ abstract contract MGDMarketplace {
      * @param mgdCompany The contract responsible to MGD management features.
      * @param mgdNft The MGD ERC721.
      */
-    constructor(address mgdCompany, address mgdNft) {
+    function initialize(
+        address mgdCompany,
+        address mgdNft
+    ) public virtual initializer {
         _mgdCompany = MGDCompany(payable(mgdCompany));
         _mgdNft = MGDnft(payable(mgdNft));
     }

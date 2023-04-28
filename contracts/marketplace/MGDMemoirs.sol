@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 error UseThisFunctionForEOA();
 error UseThisFunctionForContract();
@@ -12,12 +13,14 @@ error YouCannotUpdateThisMemoir();
 /// to show your feelings related to art or the current moment.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-contract MGDMemoir {
+contract MGDMemoir is Initializable {
     mapping(address => mapping(uint256 => bytes)) public contractTokenIdMemoirs;
     mapping(address => mapping(uint256 => bytes)) public userCounterMemoirs;
     mapping(address => uint256) public userCounter;
 
-    constructor() {}
+    function initialize() public initializer {
+        // Empty initializer function for the upgrade proxy pattern
+    }
 
     event ArtworkMemoirCreated(
         address smartContract,

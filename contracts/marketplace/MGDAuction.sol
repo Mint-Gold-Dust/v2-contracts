@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 import "./MGDMarketplace.sol";
 
@@ -24,10 +24,12 @@ contract MGDAuction is MGDMarketplace {
      * @param mgdCompany The contract responsible to MGD management features.
      * @param mgdNft The MGD ERC721.
      */
-    constructor(
+    function initialize(
         address mgdCompany,
         address mgdNft
-    ) MGDMarketplace(mgdCompany, mgdNft) {}
+    ) public override initializer {
+        MGDMarketplace.initialize(mgdCompany, mgdNft);
+    }
 
     event NftListedToAuction(
         uint256 indexed tokenId,

@@ -32,17 +32,26 @@ describe("\nMGDnft.sol Smart Contract \n________________________________________
   beforeEach(async function () {
     MGDCompany = await ethers.getContractFactory("MGDCompany");
     MGDnft = await ethers.getContractFactory("MGDnft");
+
     [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
 
-    mgdCompany = await MGDCompany.deploy(
-      TEST_OWNER,
-      primary_sale_fee_percent_initial,
-      secondary_sale_fee_percent_initial,
-      collector_fee_initial,
-      max_royalty_initial
+    mgdCompany = await upgrades.deployProxy(
+      MGDCompany,
+      [
+        TEST_OWNER,
+        primary_sale_fee_percent_initial,
+        secondary_sale_fee_percent_initial,
+        collector_fee_initial,
+        max_royalty_initial,
+      ],
+      { initializer: "initialize" }
     );
+    await mgdCompany.deployed();
 
-    mgdNft = await MGDnft.deploy(mgdCompany.address);
+    mgdNft = await upgrades.deployProxy(MGDnft, [mgdCompany.address], {
+      initializer: "initialize",
+    });
+    await mgdNft.deployed();
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
   });
