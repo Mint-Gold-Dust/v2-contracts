@@ -10,6 +10,8 @@ import "./MGDCompany.sol";
 
 error MGDnftRoyaltyInvalidPercentage();
 error MGDnftUnauthorized();
+error NumberOfCollaboratorsAndPercentagesNotMatch();
+error TheTotalPercentageCantBeGreaterThan100();
 
 /// @title A contract responsible by mint and transfer Mint Gold Dust ERC721 tokens.
 /// @notice Contains functions to mint and transfer MGD ERC721 tokens.
@@ -29,6 +31,8 @@ contract MGDnft is
     mapping(uint256 => address) public tokenIdArtist;
     mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
     mapping(uint256 => address[4]) public tokenCollaborators;
+    mapping(uint256 => uint256[5]) public tokenIdCollaboratorsPercentage;
+    mapping(uint256 => bool) public hasTokenCollaborators;
 
     /**
      *
@@ -47,11 +51,9 @@ contract MGDnft is
         uint256 royalty
     );
 
-    event NftMintedAndSplitted(
+    event NftSplitted(
         uint256 indexed tokenId,
         address owner,
-        string tokenURI,
-        uint256 royalty,
         address[] collaborators
     );
 
@@ -68,29 +70,58 @@ contract MGDnft is
     }
 
     function splitPayment(
-        string memory _tokenURI,
+        string calldata _tokenURI,
         uint256 _royalty,
-        address[] calldata newOwners
-    ) external {
+        address[] calldata newOwners,
+        uint256[] calldata ownersPercentage
+    ) public returns (uint256) {
+        if (ownersPercentage.length != newOwners.length + 1) {
+            revert NumberOfCollaboratorsAndPercentagesNotMatch();
+        }
         uint256 _tokenId = mintNft(_tokenURI, _royalty);
         uint256 ownersCount = 0;
+        uint256 totalPercentage = 0; // New variable to keep track of the total percentage assigned to collaborators
 
         for (uint256 i = 0; i < newOwners.length; i++) {
             if (newOwners[i] != address(0)) {
                 ownersCount++;
+                totalPercentage += ownersPercentage[i]; // Accumulate the percentage for each valid collaborator
             }
+        }
+
+        // The array of percentages is always one number greater than the collaborators length
+        // So is necessary do one more addition here
+        totalPercentage += ownersPercentage[newOwners.length];
+
+        if (totalPercentage != 100000000000000000000) {
+            revert TheTotalPercentageCantBeGreaterThan100();
         }
 
         require(ownersCount > 1, "At least two different owners required");
 
-        require(ownersCount < 5, "Add maximum 4 collaborators for it");
+        require(
+            ownersCount < 5,
+            "Add maximum one owner and 4 collaborators for it"
+        );
 
         // Assign new owners to the token
         for (uint256 i = 0; i < newOwners.length; i++) {
             if (newOwners[i] != address(0)) {
                 tokenCollaborators[_tokenId][i] = newOwners[i];
+                tokenIdCollaboratorsPercentage[_tokenId][i] = ownersPercentage[
+                    i
+                ];
             }
         }
+
+        tokenIdCollaboratorsPercentage[_tokenId][
+            ownersCount
+        ] = ownersPercentage[ownersCount];
+
+        hasTokenCollaborators[_tokenId] = true;
+        emit NftSplitted(_tokenId, msg.sender, newOwners);
+
+        return _tokenId;
     }
 
     /**

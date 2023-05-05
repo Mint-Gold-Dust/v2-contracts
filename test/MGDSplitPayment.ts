@@ -14,6 +14,9 @@ describe("\nMGDnft.sol Smart Contract \n________________________________________
   let MGDCompany: ContractFactory;
   let mgdCompany: Contract;
 
+  let MGDSplitPayment: ContractFactory;
+  let mgdSplitPayment: Contract;
+
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
@@ -61,94 +64,149 @@ describe("\nMGDnft.sol Smart Contract \n________________________________________
   });
 
   describe("\n--------------- Test related with the mint a splitted NFT functionality ---------------\n", function () {
-    it("Should track each minted NFT. This is verifying if: \n \t - The tokenURI was set correctly. \n \t - The tokenId was bound with the artist for future royalties payments. \n \t - The artist is the owner of the token. \n \t - The royalty percentage was set correctly. \n \t - The balanceOf the artists that mint an NFT was increased.", async function () {
-      // console.log(
-      //   "\t ARTIST BALANCE BEFORE MINT: ",
-      //   parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
-      // );
-      // let artistBalanceBefore = await addr1.getBalance();
-
-      // addr1 mints a nft
+    it("Should revert with a NumberOfCollaboratorsAndPercentagesNotMatch if the number of collaborators plus one is different of the number of percentages.", async function () {
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-      // await expect(
-      //   mgdNft
-      //     .connect(addr1)
-      //     .splitPayment(URI, toWei(5), [addr2.address, addr3.address])
-      // )
-      //   .to.emit(mgdNft, "NftMinted")
-      //   .withArgs(1, addr1.address, URI, toWei(5));
-      // expect(await mgdNft.tokenURI(1)).to.equal(URI);
-      // expect(await mgdNft.tokenIdArtist(1)).to.equal(addr1.address);
-      // expect(await mgdNft.ownerOf(1)).to.equal(addr1.address);
-      // expect(await mgdNft.ownerOf(1)).to.equal(addr1.address);
-
-      const tx = await mgdNft
-        .connect(addr1)
-        .splitPayment(URI, toWei(5), [addr2.address, addr3.address]);
-
-      const result = await tx.wait();
-      const tokenId = result.events[0].args[2];
-      console.log("NEW TOKEN ID: ", tokenId);
-
-      // console.log(
-      //   "\t ARTIST BALANCE AFTER MINT: ",
-      //   parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
-      // );
-
-      // console.log(
-      //   "\t \tSo the gas estimation was more less:",
-      //   parseFloat(
-      //     fromWei(
-      //       ethers.BigNumber.from(artistBalanceBefore).sub(
-      //         await addr1.getBalance()
-      //       )
-      //     )
-      //   ) * 2500
-      // );
-
-      // addr2 mints a nft
-      // await mgdCompany.connect(deployer).whitelist(addr2.address, true);
-      // await expect(mgdNft.connect(addr2).mintNft(URI, toWei(5)))
-      //   .to.emit(mgdNft, "NftMinted")
-      //   .withArgs(2, addr2.address, URI, toWei(5));
-      // expect(await mgdNft.tokenURI(2)).to.equal(URI);
-      // expect(await mgdNft.tokenIdArtist(2)).to.equal(addr2.address);
-      // expect(await mgdNft.ownerOf(2)).to.equal(addr2.address);
-
-      // addr1 mints another nft
-      // await expect(mgdNft.connect(addr1).mintNft(URI, toWei(5)))
-      //   .to.emit(mgdNft, "NftMinted")
-      //   .withArgs(3, addr1.address, URI, toWei(5));
-      // expect(await mgdNft.tokenURI(3)).to.equal(URI);
-      // expect(await mgdNft.tokenIdArtist(3)).to.equal(addr1.address);
-      // expect(await mgdNft.ownerOf(3)).to.equal(addr1.address);
-
-      // expect(await mgdNft.balanceOf(addr1.address)).to.be.equal(2);
-      // expect(await mgdNft.balanceOf(addr2.address)).to.be.equal(1);
-
-      // expect(await mgdNft.connect(addr1).tokenIdRoyaltyPercent(1)).to.be.equal(
-      //   toWei(5)
-      // );
-      // expect(await mgdNft.connect(addr1).tokenIdRoyaltyPercent(2)).to.be.equal(
-      //   toWei(5)
-      // );
-      // expect(await mgdNft.connect(addr1).tokenIdRoyaltyPercent(3)).to.be.equal(
-      //   toWei(5)
-      // );
+      await expect(
+        mgdNft
+          .connect(addr1)
+          .splitPayment(
+            URI,
+            toWei(5),
+            [addr2.address, addr3.address],
+            [toWei(20), toWei(20)]
+          )
+      ).to.be.revertedWithCustomError(
+        mgdNft,
+        "NumberOfCollaboratorsAndPercentagesNotMatch"
+      );
     });
 
-    // it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than ${max_royalty}.`, async function () {
-    //   await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-    //   await expect(
-    //     mgdNft.connect(addr1).mintNft(URI, toWei(max_royalty + 1))
-    //   ).to.be.revertedWithCustomError(mgdNft, "MGDnftRoyaltyInvalidPercentage");
-    // });
+    it("Should revert with a TheTotalPercentageCantBeGreaterThan100 if total percentage passed to the spliPayment function surpass 100.", async function () {
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+      await expect(
+        mgdNft
+          .connect(addr1)
+          .splitPayment(
+            URI,
+            toWei(5),
+            [addr2.address, addr3.address, addr4.address, addr5.address],
+            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(21)]
+          )
+      ).to.be.revertedWithCustomError(
+        mgdNft,
+        "TheTotalPercentageCantBeGreaterThan100"
+      );
+    });
 
-    // it("Should revert with a MGDnftUnauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
-    //   // addr1 try to mint a NFT without be whitelisted
-    //   await expect(
-    //     mgdNft.connect(addr1).mintNft(URI, toWei(5))
-    //   ).to.be.revertedWithCustomError(mgdNft, "MGDnftUnauthorized");
-    // });
+    it("Should revert with a TheTotalPercentageCantBeGreaterThan100 if total percentage passed to the spliPayment function is less than 100.", async function () {
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+      await expect(
+        mgdNft
+          .connect(addr1)
+          .splitPayment(
+            URI,
+            toWei(5),
+            [addr2.address, addr3.address, addr4.address, addr5.address],
+            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(19)]
+          )
+      ).to.be.revertedWithCustomError(
+        mgdNft,
+        "TheTotalPercentageCantBeGreaterThan100"
+      );
+    });
+
+    it(`Should call the split payments function correctly.`, async function () {
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+
+      let transaction = await mgdNft
+        .connect(addr1)
+        .splitPayment(
+          URI,
+          toWei(5),
+          [addr2.address, addr3.address, addr4.address, addr5.address],
+          [toWei(15), toWei(25), toWei(25), toWei(20), toWei(15)]
+        );
+
+      // Wait for the transaction to be finalized
+      const receipt = await transaction.wait();
+      const tokenId = receipt.events[0].args[2];
+
+      expect(receipt.events[0].event).to.be.equal("Transfer");
+      expect(receipt.events[0].args[0]).to.be.equal(
+        "0x0000000000000000000000000000000000000000"
+      );
+      expect(receipt.events[0].args[1]).to.be.equal(addr1.address);
+      expect(receipt.events[0].args[2]).to.be.equal(tokenId);
+
+      expect(receipt.events[1].event).to.be.equal("NftMinted");
+      expect(receipt.events[1].args[0]).to.be.equal(tokenId);
+      expect(receipt.events[1].args[1]).to.be.equal(addr1.address);
+      expect(receipt.events[1].args[2]).to.be.equal(URI);
+      expect(receipt.events[1].args[3]).to.be.equal(toWei(5));
+
+      expect(receipt.events[2].event).to.be.equal("NftSplitted");
+      expect(receipt.events[2].args[0]).to.be.equal(tokenId);
+      expect(receipt.events[2].args[1]).to.be.equal(addr1.address);
+      expect(JSON.stringify(receipt.events[2].args[2])).to.be.equal(
+        JSON.stringify([
+          addr2.address,
+          addr3.address,
+          addr4.address,
+          addr5.address,
+        ])
+      );
+
+      expect(+tokenId).to.be.equal(1);
+      expect(await mgdNft.tokenURI(+tokenId)).to.equal(URI);
+      expect(await mgdNft.tokenIdArtist(+tokenId)).to.equal(addr1.address);
+      expect(await mgdNft.hasTokenCollaborators(+tokenId)).to.equal(true);
+
+      // OWNER
+      expect(await mgdNft.ownerOf(+tokenId)).to.equal(addr1.address);
+
+      // COLLABORATORS
+      expect(await mgdNft.tokenCollaborators(+tokenId, 0)).to.equal(
+        addr2.address
+      );
+      expect(await mgdNft.tokenCollaborators(+tokenId, 1)).to.equal(
+        addr3.address
+      );
+      expect(await mgdNft.tokenCollaborators(+tokenId, 2)).to.equal(
+        addr4.address
+      );
+      expect(await mgdNft.tokenCollaborators(+tokenId, 3)).to.equal(
+        addr5.address
+      );
+
+      expect(await mgdNft.tokenIdCollaboratorsPercentage(+tokenId, 0)).to.equal(
+        toWei(15)
+      );
+      expect(await mgdNft.tokenIdCollaboratorsPercentage(+tokenId, 1)).to.equal(
+        toWei(25)
+      );
+      expect(await mgdNft.tokenIdCollaboratorsPercentage(+tokenId, 2)).to.equal(
+        toWei(25)
+      );
+      expect(await mgdNft.tokenIdCollaboratorsPercentage(+tokenId, 3)).to.equal(
+        toWei(20)
+      );
+      expect(await mgdNft.tokenIdCollaboratorsPercentage(+tokenId, 4)).to.equal(
+        toWei(15)
+      );
+    });
+
+    it("Should revert with a MGDnftUnauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
+      // addr1 try to mint a NFT without be whitelisted
+      await expect(
+        mgdNft
+          .connect(addr1)
+          .splitPayment(
+            URI,
+            toWei(5),
+            [addr2.address, addr3.address, addr4.address, addr5.address],
+            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(19)]
+          )
+      ).to.be.revertedWithCustomError(mgdNft, "MGDnftUnauthorized");
+    });
   });
 });
