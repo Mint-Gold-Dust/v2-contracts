@@ -22,17 +22,17 @@
 //   await mgdCompany.deployed();
 //   console.log("MGDCompany deployed to:", mgdCompany.address);
 
-//   // Deploy MGDnft contract
-//   const MGDnftFactory = await ethers.getContractFactory("MGDnft");
-//   const mgdNft = await MGDnftFactory.deploy(mgdCompany.address);
-//   await mgdNft.deployed();
-//   console.log("MGDnft deployed to:", mgdNft.address);
+//   // Deploy MintGoldDustERC721 contract
+//   const MGDnftFactory = await ethers.getContractFactory("MintGoldDustERC721");
+//   const mintGoldDustERC721 = await MGDnftFactory.deploy(mgdCompany.address);
+//   await mintGoldDustERC721.deployed();
+//   console.log("MintGoldDustERC721 deployed to:", mintGoldDustERC721.address);
 
 //   // Deploy MGDSetPrice contract
 //   const MGDSetPriceFactory = await ethers.getContractFactory("MGDSetPrice");
 //   const mgdSetPrice = await MGDSetPriceFactory.deploy(
 //     mgdCompany.address,
-//     mgdNft.address
+//     mintGoldDustERC721.address
 //   );
 //   await mgdSetPrice.deployed();
 //   console.log("MGDSetPrice deployed to:", mgdSetPrice.address);
@@ -41,7 +41,7 @@
 //   const MGDAuctionFactory = await ethers.getContractFactory("MGDAuction");
 //   const mgdAuction = await MGDAuctionFactory.deploy(
 //     mgdCompany.address,
-//     mgdNft.address
+//     mintGoldDustERC721.address
 //   );
 //   await mgdAuction.deployed();
 //   console.log("MGDAuction deployed to:", mgdAuction.address);
@@ -55,7 +55,7 @@
 //   // Save important addresses to a JSON file
 //   const addresses = {
 //     mgdCompany: mgdCompany.address,
-//     mgdNft: mgdNft.address,
+//     mintGoldDustERC721: mintGoldDustERC721.address,
 //     mgdSetPrice: mgdSetPrice.address,
 //     mgdAuction: mgdAuction.address,
 //     mgdMemoir: mgdMemoir.address, // Add this line

@@ -8,8 +8,8 @@ const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
 describe("\nMGDSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n", function () {
-  let MGDnft: ContractFactory;
-  let mgdNft: Contract;
+  let MintGoldDustERC721: ContractFactory;
+  let mintGoldDustERC721: Contract;
 
   let MGDCompany: ContractFactory;
   let mgdCompany: Contract;
@@ -40,7 +40,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
 
   beforeEach(async function () {
     MGDCompany = await ethers.getContractFactory("MGDCompany");
-    MGDnft = await ethers.getContractFactory("MGDnft");
+    MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
     MGDSetPrice = await ethers.getContractFactory("MGDSetPrice");
 
     [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
@@ -58,14 +58,18 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     );
     await mgdCompany.deployed();
 
-    mgdNft = await upgrades.deployProxy(MGDnft, [mgdCompany.address], {
-      initializer: "initialize",
-    });
-    await mgdNft.deployed();
+    mintGoldDustERC721 = await upgrades.deployProxy(
+      MintGoldDustERC721,
+      [mgdCompany.address],
+      {
+        initializer: "initialize",
+      }
+    );
+    await mintGoldDustERC721.deployed();
 
     mgdSetPrice = await upgrades.deployProxy(
       MGDSetPrice,
-      [mgdCompany.address, mgdNft.address],
+      [mgdCompany.address, mintGoldDustERC721.address],
       { initializer: "initialize" }
     );
     await mgdSetPrice.deployed();
@@ -80,9 +84,11 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
       // addr1 mints a nft
-      await mgdNft.connect(addr1).mintNft(URI, toWei(5));
+      await mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5));
       // Artist approve gdMarketPlace marketplace to exchange its NFT
-      await mgdNft.connect(addr1).setApprovalForAll(mgdSetPrice.address, true);
+      await mintGoldDustERC721
+        .connect(addr1)
+        .setApprovalForAll(mgdSetPrice.address, true);
     });
 
     it("Should track newly listed item, transfer NFT from seller to MGD marketplace and emit the NftListed event.", async function () {
@@ -113,7 +119,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       );
 
       // owner should be the marketplace
-      expect(await mgdNft.ownerOf(1)).to.equal(mgdSetPrice.address);
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(mgdSetPrice.address);
     });
 
     it("Should secondary sale keep false if an artist list, delist and list again an item.", async function () {
@@ -150,9 +156,11 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
       // addr1 mints a nft
-      await mgdNft.connect(addr1).mintNft(URI, toWei(5));
+      await mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5));
       // Artist approve gdMarketPlace marketplace to exchange its NFT
-      await mgdNft.connect(addr1).setApprovalForAll(mgdSetPrice.address, true);
+      await mintGoldDustERC721
+        .connect(addr1)
+        .setApprovalForAll(mgdSetPrice.address, true);
       // Artist list its NFT on MGD marketplace
       await mgdSetPrice.connect(addr1).list(1, toWei(primaryPrice));
     });
@@ -197,7 +205,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       expect(marketItem.price).to.equal(toWei(newPrice));
 
       // Just confirm that the owner is the marketplace
-      expect(await mgdNft.ownerOf(1)).to.equal(mgdSetPrice.address);
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(mgdSetPrice.address);
     });
 
     it("Should revert the transaction with InvalidInput error if the marketplace owner tries to update some listed nft with price less than or equal zero.", async function () {
@@ -240,9 +248,11 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
       // addr1 mints a nft
-      await mgdNft.connect(addr1).mintNft(URI, toWei(5));
+      await mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5));
       // Artist approve gdMarketPlace marketplace to exchange its NFT
-      await mgdNft.connect(addr1).setApprovalForAll(mgdSetPrice.address, true);
+      await mintGoldDustERC721
+        .connect(addr1)
+        .setApprovalForAll(mgdSetPrice.address, true);
       // Artist list its NFT on MGD marketplace
       await mgdSetPrice.connect(addr1).list(1, toWei(primaryPrice));
     });
@@ -314,9 +324,11 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
       // addr1 mints a NFT
-      await mgdNft.connect(addr1).mintNft(URI, toWei(royalty));
+      await mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(royalty));
       // Artist approve MGD marketplace to exchange its NFT
-      await mgdNft.connect(addr1).setApprovalForAll(mgdSetPrice.address, true);
+      await mintGoldDustERC721
+        .connect(addr1)
+        .setApprovalForAll(mgdSetPrice.address, true);
       // Artist list its NFT on MGD marketplace
       await mgdSetPrice.connect(addr1).list(1, toWei(price));
 
@@ -399,7 +411,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       );
 
       // verify if the owner of the NFT changed for the buyer
-      expect(await mgdNft.ownerOf(1)).to.equal(addr2.address);
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr2.address);
 
       // verify if the flag for secondary market changed for true
       expect(
@@ -482,9 +494,11 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
       // addr1 mints a NFT
-      await mgdNft.connect(addr1).mintNft(URI, toWei(royalty));
+      await mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(royalty));
       // Artist approve MGD marketplace to exchange its NFT
-      await mgdNft.connect(addr1).setApprovalForAll(mgdSetPrice.address, true);
+      await mintGoldDustERC721
+        .connect(addr1)
+        .setApprovalForAll(mgdSetPrice.address, true);
       // Artist list its NFT on MGD marketplace
       await mgdSetPrice.connect(addr1).list(1, toWei(price));
 
@@ -510,7 +524,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
 
       // get the NFT's artist creator balance
       const provider = ethers.provider;
-      const artistCreatorAddress = await mgdNft.tokenIdArtist(1);
+      const artistCreatorAddress = await mintGoldDustERC721.tokenIdArtist(1);
       const artistCreatorInitialBal = await provider.getBalance(
         artistCreatorAddress
       );
@@ -554,7 +568,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       ).add(toWei(secondarySaleFee));
 
       // verify if the owner of the NFT changed for the buyer
-      expect(await mgdNft.ownerOf(1)).to.equal(addr3.address);
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr3.address);
 
       console.log("\n\t\t ITEM PRICE: ", price);
       console.log("\t\t Secondary Market fee: ", secondarySaleFee);

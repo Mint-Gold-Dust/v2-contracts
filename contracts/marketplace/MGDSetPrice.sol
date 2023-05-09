@@ -14,13 +14,13 @@ contract MGDSetPrice is MGDMarketplace, ReentrancyGuardUpgradeable {
      * @notice MGDSetPrice is a children of MGDMarketplace and this one is
      * composed by other two contracts.
      * @param mgdCompany The contract responsible to MGD management features.
-     * @param mgdNft The MGD ERC721.
+     * @param mintGoldDustERC721 The MGD ERC721.
      */
     function initialize(
         address mgdCompany,
-        address mgdNft
+        address mintGoldDustERC721
     ) public override initializer {
-        MGDMarketplace.initialize(mgdCompany, mgdNft);
+        MGDMarketplace.initialize(mgdCompany, mintGoldDustERC721);
         __ReentrancyGuard_init();
     }
 
@@ -50,7 +50,9 @@ contract MGDSetPrice is MGDMarketplace, ReentrancyGuardUpgradeable {
      */
     function list(
         uint256 _tokenId,
-        uint256 _price
+        uint256 _price,
+        bool _isERC721,
+        uint256 _amount
     ) public override isNFTowner(_tokenId) {
         if (_price <= 0) {
             revert MGDMarketplaceInvalidInput();
@@ -71,7 +73,9 @@ contract MGDSetPrice is MGDMarketplace, ReentrancyGuardUpgradeable {
             false,
             false,
             idMarketItem[_tokenId].isSecondarySale,
-            auctionProps
+            auctionProps,
+            _isERC721,
+            _amount
         );
 
         /**

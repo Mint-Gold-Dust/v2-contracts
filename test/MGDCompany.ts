@@ -11,8 +11,8 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
   let MGDCompany: ContractFactory;
   let mgdCompany: Contract;
 
-  let MGDnft: ContractFactory;
-  let mgdNft: Contract;
+  let MintGoldDustERC721: ContractFactory;
+  let mintGoldDustERC721: Contract;
 
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
@@ -34,7 +34,7 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
   beforeEach(async function () {
     MGDCompany = await ethers.getContractFactory("MGDCompany");
-    MGDnft = await ethers.getContractFactory("MGDnft");
+    MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
 
     [deployer, addr1, ...addrs] = await ethers.getSigners();
 
@@ -51,10 +51,14 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
     );
     await mgdCompany.deployed();
 
-    mgdNft = await upgrades.deployProxy(MGDnft, [mgdCompany.address], {
-      initializer: "initialize",
-    });
-    await mgdNft.deployed();
+    mintGoldDustERC721 = await upgrades.deployProxy(
+      MintGoldDustERC721,
+      [mgdCompany.address],
+      {
+        initializer: "initialize",
+      }
+    );
+    await mintGoldDustERC721.deployed();
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
   });
@@ -289,7 +293,7 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
-      await mgdNft.connect(addr1).mintNft(URI, toWei(valueNewFee));
+      await mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(valueNewFee));
     });
 
     it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than new max royalty that is ${valueNewFee}.`, async function () {
@@ -299,8 +303,11 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
       await expect(
-        mgdNft.connect(addr1).mintNft(URI, toWei(valueNewFee + 1))
-      ).to.be.revertedWithCustomError(mgdNft, "MGDnftRoyaltyInvalidPercentage");
+        mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(valueNewFee + 1))
+      ).to.be.revertedWithCustomError(
+        mintGoldDustERC721,
+        "MGDnftRoyaltyInvalidPercentage"
+      );
     });
   });
 

@@ -22,13 +22,13 @@ contract MGDAuction is MGDMarketplace {
      * @notice MGDAuction is a children of MGDMarketplace and this one is
      * composed by other two contracts.
      * @param mgdCompany The contract responsible to MGD management features.
-     * @param mgdNft The MGD ERC721.
+     * @param mintGoldDustERC721 The MGD ERC721.
      */
     function initialize(
         address mgdCompany,
-        address mgdNft
+        address mintGoldDustERC721
     ) public override initializer {
-        MGDMarketplace.initialize(mgdCompany, mgdNft);
+        MGDMarketplace.initialize(mgdCompany, mintGoldDustERC721);
     }
 
     event NftListedToAuction(

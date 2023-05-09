@@ -8,8 +8,8 @@ const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
 describe("******************************************** MGDMemoirs.sol Smart Contract ************************************************\n\n\tThis smart contract is responsible vinculate memoirs with some address, be it an EOA or a contract address. \n\n", function () {
-  let MGDnft: ContractFactory;
-  let mgdNft: Contract;
+  let MintGoldDustERC721: ContractFactory;
+  let mintGoldDustERC721: Contract;
 
   let MGDCompany: ContractFactory;
   let mgdCompany: Contract;
@@ -34,7 +34,7 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
 
   beforeEach(async function () {
     MGDCompany = await ethers.getContractFactory("MGDCompany");
-    MGDnft = await ethers.getContractFactory("MGDnft");
+    MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
     MGDMemoir = await ethers.getContractFactory("MGDMemoir");
 
     [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
@@ -52,10 +52,14 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
     );
     await mgdCompany.deployed();
 
-    mgdNft = await upgrades.deployProxy(MGDnft, [mgdCompany.address], {
-      initializer: "initialize",
-    });
-    await mgdNft.deployed();
+    mintGoldDustERC721 = await upgrades.deployProxy(
+      MintGoldDustERC721,
+      [mgdCompany.address],
+      {
+        initializer: "initialize",
+      }
+    );
+    await mintGoldDustERC721.deployed();
 
     mgdMemoir = await MGDMemoir.deploy();
     await mgdMemoir.deployed();
@@ -64,7 +68,7 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
   });
 
   describe("* TESTS RELATED WITH TOKENS MEMOIRS\n", () => {
-    it("Should add a new memoir for a new MGD ERC721 minted by the MGDnft contract.", async () => {
+    it("Should add a new memoir for a new MGD ERC721 minted by the MintGoldDustERC721 contract.", async () => {
       console.log(
         "--------------------------------------------------------------------------------------------"
       );
@@ -78,18 +82,27 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
       // Mint a new MGD ERC721
-      const transaction = await mgdNft.connect(addr1).mintNft(URI, toWei(5));
+      const transaction = await mintGoldDustERC721
+        .connect(addr1)
+        .mintNft(URI, toWei(5));
       // Wait for the transaction to be finalized
       const receipt = await transaction.wait();
       const tokenId = receipt.events[0].args[2];
 
       const MEMOIR =
         "This is my first memoir in my art history! I was very thoughtful and very creative at this moment!";
-      await mgdMemoir.addMemoirForContract(mgdNft.address, tokenId, MEMOIR);
+      await mgdMemoir.addMemoirForContract(
+        mintGoldDustERC721.address,
+        tokenId,
+        MEMOIR
+      );
 
       const decoder = new TextDecoder();
       const byteArray = ethers.utils.arrayify(
-        await mgdMemoir.contractTokenIdMemoirs(mgdNft.address, tokenId)
+        await mgdMemoir.contractTokenIdMemoirs(
+          mintGoldDustERC721.address,
+          tokenId
+        )
       );
       const memoirStringReturned = decoder.decode(byteArray);
 
@@ -110,7 +123,7 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       );
 
       console.log(
-        `\n\t\tTOKEN ID MEMOIR FOR THE CONTRACT MGDNFT (${mgdNft.address}):\n\t\t `,
+        `\n\t\tTOKEN ID MEMOIR FOR THE CONTRACT MGDNFT (${mintGoldDustERC721.address}):\n\t\t `,
         memoirStringReturned
       );
       expect(memoirStringReturned).to.be.equal(MEMOIR);
@@ -131,7 +144,9 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
       // Mint a new MGD ERC721
-      const transaction = await mgdNft.connect(addr1).mintNft(URI, toWei(5));
+      const transaction = await mintGoldDustERC721
+        .connect(addr1)
+        .mintNft(URI, toWei(5));
 
       // Wait for the transaction to be finalized
       const receipt = await transaction.wait();
@@ -167,7 +182,9 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
       // Mint a new MGD ERC721
-      const transaction = await mgdNft.connect(addr1).mintNft(URI, toWei(5));
+      const transaction = await mintGoldDustERC721
+        .connect(addr1)
+        .mintNft(URI, toWei(5));
 
       // Wait for the transaction to be finalized
       const receipt = await transaction.wait();
@@ -175,12 +192,20 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
 
       // Artist add a memoir
       let MEMOIR = "Some string";
-      await mgdMemoir.addMemoirForContract(mgdNft.address, tokenId, MEMOIR);
+      await mgdMemoir.addMemoirForContract(
+        mintGoldDustERC721.address,
+        tokenId,
+        MEMOIR
+      );
 
       // Artist try to update this memoir
       let MEMOIR2 = "NEW Some string";
       await expect(
-        mgdMemoir.addMemoirForContract(mgdNft.address, tokenId, MEMOIR2)
+        mgdMemoir.addMemoirForContract(
+          mintGoldDustERC721.address,
+          tokenId,
+          MEMOIR2
+        )
       ).to.be.revertedWithCustomError(mgdMemoir, "YouCannotUpdateThisMemoir");
     });
   });
@@ -244,13 +269,13 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
       // Mint a new MGD ERC721
-      await expect(mgdNft.connect(addr1).mintNft(URI, toWei(5)))
-        .to.emit(mgdNft, "NftMinted")
+      await expect(mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5)))
+        .to.emit(mintGoldDustERC721, "NftMinted")
         .withArgs(1, addr1.address, URI, toWei(5));
 
       const MEMOIR = "Some string";
       await expect(
-        mgdMemoir.addMemoirForEOA(mgdNft.address, MEMOIR)
+        mgdMemoir.addMemoirForEOA(mintGoldDustERC721.address, MEMOIR)
       ).to.be.revertedWithCustomError(mgdMemoir, "UseThisFunctionForEOA");
 
       console.log(
