@@ -21,7 +21,7 @@
       "address": "0xF82e4671436707cD2b609a640c6Fc96DA8F5b27b",
       "txHash": "0xf7e3ea719a20ae209b447b1b08df0c9f4bc1a95c0ee660fda46aaaf4a7efb5b7",
       "layout": {
-        "solcVersion": "0.8.17",
+        "solcVersion": "0.8.18",
         "storage": [
           {
             "label": "_initialized",
@@ -347,7 +347,7 @@
       "address": "0xd50645A7EC17Dc560794EaAF328b9CDDCf8d66d1",
       "txHash": "0x0101629c125cfaee6ca6dca1172ab155ed314d18ebb75f1f9d9cb79ce8920f15",
       "layout": {
-        "solcVersion": "0.8.17",
+        "solcVersion": "0.8.18",
         "storage": [
           {
             "label": "_initialized",

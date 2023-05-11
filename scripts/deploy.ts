@@ -28,14 +28,14 @@
 //   await mintGoldDustERC721.deployed();
 //   console.log("MintGoldDustERC721 deployed to:", mintGoldDustERC721.address);
 
-//   // Deploy MGDSetPrice contract
-//   const MGDSetPriceFactory = await ethers.getContractFactory("MGDSetPrice");
+//   // Deploy MintGoldDustSetPrice contract
+//   const MGDSetPriceFactory = await ethers.getContractFactory("MintGoldDustSetPrice");
 //   const mgdSetPrice = await MGDSetPriceFactory.deploy(
 //     mgdCompany.address,
 //     mintGoldDustERC721.address
 //   );
 //   await mgdSetPrice.deployed();
-//   console.log("MGDSetPrice deployed to:", mgdSetPrice.address);
+//   console.log("MintGoldDustSetPrice deployed to:", mgdSetPrice.address);
 
 //   // Deploy MGDAuction contract
 //   const MGDAuctionFactory = await ethers.getContractFactory("MGDAuction");

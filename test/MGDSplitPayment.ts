@@ -14,7 +14,7 @@ describe("SplitPayments are related with the MintGoldDustERC721.sol and MintGold
   let MGDCompany: ContractFactory;
   let mgdCompany: Contract;
 
-  let MGDSetPrice: ContractFactory;
+  let MintGoldDustSetPrice: ContractFactory;
   let mgdSetPrice: Contract;
 
   let deployer: SignerWithAddress;
@@ -45,7 +45,9 @@ describe("SplitPayments are related with the MintGoldDustERC721.sol and MintGold
   beforeEach(async function () {
     MGDCompany = await ethers.getContractFactory("MGDCompany");
     MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
-    MGDSetPrice = await ethers.getContractFactory("MGDSetPrice");
+    MintGoldDustSetPrice = await ethers.getContractFactory(
+      "MintGoldDustSetPrice"
+    );
 
     [deployer, addr1, addr2, addr3, addr4, addr5, addr6, addr7, ...addrs] =
       await ethers.getSigners();
@@ -73,7 +75,7 @@ describe("SplitPayments are related with the MintGoldDustERC721.sol and MintGold
     await mintGoldDustERC721.deployed();
 
     mgdSetPrice = await upgrades.deployProxy(
-      MGDSetPrice,
+      MintGoldDustSetPrice,
       [mgdCompany.address, mintGoldDustERC721.address],
       { initializer: "initialize" }
     );

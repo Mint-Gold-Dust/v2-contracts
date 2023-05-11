@@ -74,21 +74,23 @@ async function main() {
   );
   /**************************************** MGD721 FINAL ***************************************/
 
-  /************************************* MGDSetPrice INIT **************************************/
-  // Deploy MGDSetPrice contract
-  const MGDSetPriceFactory = await ethers.getContractFactory("MGDSetPrice");
+  /************************************* MintGoldDustSetPrice INIT **************************************/
+  // Deploy MintGoldDustSetPrice contract
+  const MGDSetPriceFactory = await ethers.getContractFactory(
+    "MintGoldDustSetPrice"
+  );
   const mgdSetPrice = await upgrades.deployProxy(
     MGDSetPriceFactory,
     [mgdCompany.address, mintGoldDustERC721.address],
     { initializer: "initialize" }
   );
   await mgdSetPrice.deployed();
-  console.log("MGDSetPrice Proxy deployed to:", mgdSetPrice.address);
+  console.log("MintGoldDustSetPrice Proxy deployed to:", mgdSetPrice.address);
 
   const setPriceImplementationAddress =
     await upgrades.erc1967.getImplementationAddress(mgdSetPrice.address);
   console.log(
-    "MGDSetPrice Implementation deployed to:",
+    "MintGoldDustSetPrice Implementation deployed to:",
     setPriceImplementationAddress
   );
 
@@ -96,10 +98,10 @@ async function main() {
     mgdSetPrice.address
   );
   console.log(
-    "MGDSetPrice Proxy Admin deployed to:",
+    "MintGoldDustSetPrice Proxy Admin deployed to:",
     setPriceProxyAdminAddress
   );
-  /************************************* MGDSetPrice FINAL *************************************/
+  /************************************* MintGoldDustSetPrice FINAL *************************************/
 
   /************************************** MGDAuction INIT **************************************/
   // Deploy MGDAuction contract
@@ -158,7 +160,7 @@ async function main() {
       implementation: nftImplementationAddress,
       proxyAdmin: nftProxyAdminAddress,
     },
-    MGDSetPrice: {
+    MintGoldDustSetPrice: {
       proxy: mgdSetPrice.address,
       implementation: setPriceImplementationAddress,
       proxyAdmin: setPriceProxyAdminAddress,

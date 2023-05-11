@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
-import "./MGDMarketplace.sol";
+import "./MintGoldDustMarketplace.sol";
 
 error AuctionMustBeEnded(uint256 _tokenId);
 error AuctionEndedAlready();
@@ -16,19 +16,25 @@ error LastBidderCannotPlaceNextBid();
 /// check if an auction time is ended and end an auction.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-contract MGDAuction is MGDMarketplace {
+contract MGDAuction is MintGoldDustMarketplace {
     /**
      *
-     * @notice MGDAuction is a children of MGDMarketplace and this one is
+     * @notice MGDAuction is a children of MintGoldDustMarketplace and this one is
      * composed by other two contracts.
-     * @param mgdCompany The contract responsible to MGD management features.
-     * @param mintGoldDustERC721 The MGD ERC721.
+     * @param _mgdCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustERC721Address The MGD ERC721.
+     * @param _mintGoldDustERC1155Address The MGD ERC721.
      */
-    function initialize(
-        address mgdCompany,
-        address mintGoldDustERC721
-    ) public override initializer {
-        MGDMarketplace.initialize(mgdCompany, mintGoldDustERC721);
+    function initializeChild(
+        address _mgdCompany,
+        address payable _mintGoldDustERC721Address,
+        address payable _mintGoldDustERC1155Address
+    ) public initializer {
+        super.initialize(
+            _mgdCompany,
+            _mintGoldDustERC721Address,
+            _mintGoldDustERC1155Address
+        );
     }
 
     event NftListedToAuction(
@@ -69,8 +75,18 @@ contract MGDAuction is MGDMarketplace {
      */
     function list(
         uint256 _tokenId,
-        uint256 _price
+        uint256 _price,
+        bool _isERC721,
+        uint256 _tokenAmount
     ) public override isNFTowner(_tokenId) {
+        MintGoldDustNFT _mintGoldDustNFT;
+
+        if (_isERC721) {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
+        } else {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
+        }
+
         AuctionProps memory auctionProps = AuctionProps(
             0,
             payable(address(0)),
@@ -86,6 +102,8 @@ contract MGDAuction is MGDMarketplace {
             false,
             true,
             idMarketItem[_tokenId].isSecondarySale,
+            _isERC721,
+            _tokenAmount,
             auctionProps
         );
 
@@ -93,7 +111,14 @@ contract MGDAuction is MGDMarketplace {
          * @dev Here we have an external call to the MGD ERC721 contract
          * because of that we have the try catch.
          */
-        try _mgdNft.transfer(msg.sender, address(this), _tokenId) {
+        try
+            _mintGoldDustNFT.transfer(
+                msg.sender,
+                address(this),
+                _tokenId,
+                _tokenAmount
+            )
+        {
             emit NftListedToAuction(
                 _tokenId,
                 payable(msg.sender),
@@ -157,7 +182,7 @@ contract MGDAuction is MGDMarketplace {
         /// @dev The time starts to count for the auction.
         if (idMarketItem[_tokenId].auctionProps.endTime == 0) {
             uint256 _startTime = block.timestamp;
-            uint256 _endTime = _startTime + _mgdCompany.auctionDuration();
+            uint256 _endTime = _startTime + mgdCompany.auctionDuration();
 
             idMarketItem[_tokenId].auctionProps.endTime = _endTime;
 
@@ -170,11 +195,11 @@ contract MGDAuction is MGDMarketplace {
          */
         if (
             idMarketItem[_tokenId].auctionProps.endTime - block.timestamp <
-            _mgdCompany.auctionFinalMinutes()
+            mgdCompany.auctionFinalMinutes()
         ) {
             idMarketItem[_tokenId].auctionProps.endTime =
                 idMarketItem[_tokenId].auctionProps.endTime +
-                _mgdCompany.auctionFinalMinutes();
+                mgdCompany.auctionFinalMinutes();
 
             emit AuctionExtended(
                 _tokenId,
@@ -230,7 +255,11 @@ contract MGDAuction is MGDMarketplace {
         }
 
         idMarketItem[_tokenId].auctionProps.ended = true;
-        purchaseNft(_tokenId, idMarketItem[_tokenId].auctionProps.highestBid);
+        purchaseAuctionNft(
+            _tokenId,
+            idMarketItem[_tokenId].auctionProps.highestBid,
+            idMarketItem[_tokenId].tokenAmount
+        );
     }
 
     modifier isNotCreator(address _bidder, uint256 _tokenId) {

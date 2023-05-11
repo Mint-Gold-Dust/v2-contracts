@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeabl
 import "./MGDCompany.sol";
 import "./MintGoldDustERC721.sol";
 import "./MintGoldDustNFT.sol";
+import "./MintGoldDustERC1155.sol";
 
 error MGDMarketplaceIncorrectAmountSent();
 error MGDMarketplaceItemIsNotListed();
@@ -19,42 +20,40 @@ error MGDMarketErrorToTransfer();
 error MGDMarketFunctionForSetPriceListedNFT();
 error MGDMarketFunctionForAuctionListedNFT();
 
+error UserDoesNotHasEnoughAmountOfToken();
+
 /// @title An abstract contract responsible to define some general responsibilites related with
 /// a marketplace for its childrens.
 /// @notice Contain a general function for purchases in primary and secondary sales
 /// and also a virtual function that each children should have a specif implementation.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
+abstract contract MintGoldDustMarketplace is Initializable {
+    /**
+     *
+     * @notice MintGoldDustMarketplace is composed by other two contracts.
+     * @param _mgdCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustERC721Address The MGD ERC721 address.
+     * @param _mintGoldDustERC1155Address The MGD ERC1155 address.
+     */
+    function initialize(
+        address _mgdCompany,
+        address payable _mintGoldDustERC721Address,
+        address payable _mintGoldDustERC1155Address
+    ) public initializer {
+        mgdCompany = MGDCompany(payable(_mgdCompany));
+        mintGoldDustERC721Address = _mintGoldDustERC721Address;
+        mintGoldDustERC1155Address = _mintGoldDustERC1155Address;
+    }
+
     using Counters for Counters.Counter;
     Counters.Counter public itemsSold;
 
-    MGDCompany internal _mgdCompany;
-    MintGoldDustERC721 internal _mgdNft;
+    MGDCompany internal mgdCompany;
+    address payable internal mintGoldDustERC721Address;
+    address payable internal mintGoldDustERC1155Address;
 
     mapping(uint256 => MarketItem) public idMarketItem;
-
-    /**
-     *
-     * @notice MGDMarketplace is composed by other two contracts.
-     * @param mgdCompany The contract responsible to MGD management features.
-     * @param mintGoldDustERC721 The MGD ERC721.
-     */
-    function initialize(
-        address mgdCompany,
-        address mintGoldDustERC721
-    ) public virtual initializer {
-        _mgdCompany = MGDCompany(payable(mgdCompany));
-        _mgdNft = MintGoldDustERC721(payable(mintGoldDustERC721));
-
-        // Calculate the interface IDs for ERC721 and ERC1155
-        bytes4 erc721InterfaceId = 0x80ac58cd; // ERC721 interface ID
-        bytes4 erc1155InterfaceId = 0xd9b67a26; // ERC1155 interface ID
-
-        // Register the supported interfaces
-        _registerInterface(erc721InterfaceId);
-        _registerInterface(erc1155InterfaceId);
-    }
 
     struct MarketItem {
         uint256 tokenId;
@@ -113,6 +112,7 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
     function list(
         uint256 _tokenId,
         uint256 _price,
+        bool _isERC721,
         uint256 _amount
     ) public virtual;
 
@@ -130,11 +130,18 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
         uint256 _value,
         address _sender,
         uint256 _tokenId,
-        uint256 _amount,
-        address _contract
+        uint256 _amount
     ) private {
-        uint256 price = idMarketItem[_tokenId].price;
-        if (_value != price) {
+        MintGoldDustNFT _mintGoldDustNFT;
+        MarketItem memory marketItem = idMarketItem[_tokenId];
+
+        if (marketItem.isERC721) {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
+        } else {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
+        }
+
+        if (_value != marketItem.price) {
             revert MGDMarketplaceIncorrectAmountSent();
         }
 
@@ -146,12 +153,19 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
         uint256 collFee;
         uint256 balance;
 
-        fee = (_value * _mgdCompany.primarySaleFeePercent()) / (100 * 10 ** 18);
-        collFee = (_value * _mgdCompany.collectorFee()) / (100 * 10 ** 18);
+        fee = (_value * mgdCompany.primarySaleFeePercent()) / (100 * 10 ** 18);
+        collFee = (_value * mgdCompany.collectorFee()) / (100 * 10 ** 18);
         balance = _value - (fee + collFee);
 
-        if (_mgdNft.hasTokenCollaborators(_tokenId)) {
-            try _mgdNft.transfer(address(this), _sender, _tokenId) {
+        if (_mintGoldDustNFT.hasTokenCollaborators(_tokenId)) {
+            try
+                _mintGoldDustNFT.transfer(
+                    address(this),
+                    _sender,
+                    _tokenId,
+                    _amount
+                )
+            {
                 splittedSale(balance, _tokenId, idMarketItem[_tokenId].seller);
             } catch {
                 idMarketItem[_tokenId].sold = false;
@@ -160,16 +174,25 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
                 revert MGDMarketErrorToTransfer();
             }
         } else {
-            try _mgdNft.transfer(address(this), _sender, _tokenId) {
-                payable(idMarketItem[_tokenId].seller).transfer(balance);
+            try
+                _mintGoldDustNFT.transfer(
+                    address(this),
+                    _sender,
+                    _tokenId,
+                    _amount
+                )
+            {
+                payable(marketItem.seller).transfer(balance);
                 emit NftPurchasedPrimaryMarket(
                     _tokenId,
-                    idMarketItem[_tokenId].seller,
+                    marketItem.seller,
                     _sender,
-                    price,
+                    marketItem.price,
                     fee,
                     collFee,
-                    idMarketItem[_tokenId].isAuction
+                    marketItem.isAuction,
+                    marketItem.isERC721,
+                    marketItem.tokenAmount
                 );
             } catch {
                 idMarketItem[_tokenId].sold = false;
@@ -179,7 +202,7 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
             }
         }
 
-        payable(_mgdCompany.owner()).transfer(collFee + fee);
+        payable(mgdCompany.owner()).transfer(collFee + fee);
     }
 
     function splittedSale(
@@ -187,21 +210,31 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
         uint256 _tokenId,
         address _artist
     ) private {
-        uint256 _tokenIdCollaboratorsQuantity = _mgdNft
+        MintGoldDustNFT _mintGoldDustNFT;
+
+        if (idMarketItem[_tokenId].isERC721) {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
+        } else {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
+        }
+
+        uint256 _tokenIdCollaboratorsQuantity = _mintGoldDustNFT
             .tokenIdCollaboratorsQuantity(_tokenId);
 
         uint256 balanceSplitPart = (_balance *
-            _mgdNft.tokenIdCollaboratorsPercentage(_tokenId, 0)) /
+            _mintGoldDustNFT.tokenIdCollaboratorsPercentage(_tokenId, 0)) /
             (100 * 10 ** 18);
         payable(_artist).transfer(balanceSplitPart);
         for (uint256 i = 1; i < _tokenIdCollaboratorsQuantity; i++) {
             balanceSplitPart =
                 (_balance *
-                    _mgdNft.tokenIdCollaboratorsPercentage(_tokenId, i)) /
+                    _mintGoldDustNFT.tokenIdCollaboratorsPercentage(
+                        _tokenId,
+                        i
+                    )) /
                 (100 * 10 ** 18);
-            payable(_mgdNft.tokenCollaborators(_tokenId, i - 1)).transfer(
-                balanceSplitPart
-            );
+            payable(_mintGoldDustNFT.tokenCollaborators(_tokenId, i - 1))
+                .transfer(balanceSplitPart);
         }
     }
 
@@ -219,12 +252,18 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
         uint256 _value,
         address _sender,
         uint256 _tokenId,
-        uint256 _amount,
-        address _contract
+        uint256 _amount
     ) private {
-        MintGoldDustNFT mintGoldDustNFT = MintGoldDustNFT(_contract);
-        uint256 price = idMarketItem[_tokenId].price;
-        if (_value != price) {
+        MintGoldDustNFT _mintGoldDustNFT;
+        MarketItem memory marketItem = idMarketItem[_tokenId];
+
+        if (marketItem.isERC721) {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
+        } else {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
+        }
+
+        if (_value != marketItem.price) {
             revert MGDMarketplaceIncorrectAmountSent();
         }
         idMarketItem[_tokenId].sold = true;
@@ -235,20 +274,27 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
         uint256 balance;
 
         fee =
-            (_value * _mgdCompany.secondarySaleFeePercent()) /
+            (_value * mgdCompany.secondarySaleFeePercent()) /
             (100 * 10 ** 18);
         royalty =
-            (_value * _mgdNft.tokenIdRoyaltyPercent(_tokenId)) /
+            (_value * _mintGoldDustNFT.tokenIdRoyaltyPercent(_tokenId)) /
             (100 * 10 ** 18);
 
         balance = _value - (fee + royalty);
 
-        if (_mgdNft.hasTokenCollaborators(_tokenId)) {
-            try mintGoldDustNFT.transfer(address(this), _sender, _tokenId) {
+        if (_mintGoldDustNFT.hasTokenCollaborators(_tokenId)) {
+            try
+                _mintGoldDustNFT.transfer(
+                    address(this),
+                    _sender,
+                    _tokenId,
+                    _amount
+                )
+            {
                 splittedSale(
                     royalty,
                     _tokenId,
-                    _mgdNft.tokenIdArtist(_tokenId)
+                    _mintGoldDustNFT.tokenIdArtist(_tokenId)
                 );
             } catch {
                 idMarketItem[_tokenId].sold = false;
@@ -256,18 +302,29 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
                 revert MGDMarketErrorToTransfer();
             }
         } else {
-            try mintGoldDustNFT.transfer(address(this), _sender, _tokenId) {
-                payable(_mgdNft.tokenIdArtist(_tokenId)).transfer(royalty);
+            try
+                _mintGoldDustNFT.transfer(
+                    address(this),
+                    _sender,
+                    _tokenId,
+                    _amount
+                )
+            {
+                payable(_mintGoldDustNFT.tokenIdArtist(_tokenId)).transfer(
+                    royalty
+                );
                 emit NftPurchasedSecondaryMarket(
                     _tokenId,
-                    idMarketItem[_tokenId].seller,
+                    marketItem.seller,
                     _sender,
-                    price,
-                    _mgdNft.tokenIdRoyaltyPercent(_tokenId),
+                    marketItem.price,
+                    _mintGoldDustNFT.tokenIdRoyaltyPercent(_tokenId),
                     royalty,
-                    _mgdNft.tokenIdArtist(_tokenId),
+                    _mintGoldDustNFT.tokenIdArtist(_tokenId),
                     fee,
-                    idMarketItem[_tokenId].isAuction
+                    marketItem.isAuction,
+                    marketItem.isERC721,
+                    marketItem.tokenAmount
                 );
             } catch {
                 idMarketItem[_tokenId].sold = false;
@@ -275,8 +332,8 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
                 revert MGDMarketErrorToTransfer();
             }
         }
-        payable(_mgdCompany.owner()).transfer(fee);
-        payable(idMarketItem[_tokenId].seller).transfer(balance);
+        payable(mgdCompany.owner()).transfer(fee);
+        payable(marketItem.seller).transfer(balance);
     }
 
     /**
@@ -289,15 +346,14 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
      */
     function purchaseNft(
         uint256 _tokenId,
-        address _contract,
         uint256 _amount
     ) external payable isListed(_tokenId) isSetPrice(_tokenId) {
         if (!idMarketItem[_tokenId].isSecondarySale) {
-            primarySale(msg.value, msg.sender, _tokenId, _amount, _contract);
+            primarySale(msg.value, msg.sender, _tokenId, _amount);
             return;
         }
 
-        secondarySale(msg.value, msg.sender, _tokenId, _amount, _contract);
+        secondarySale(msg.value, msg.sender, _tokenId, _amount);
     }
 
     /**
@@ -310,15 +366,17 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
      * @param _tokenId The token ID of the the token to acquire.
      * @param _value The value to be paid for the purchase.
      */
-    function purchaseNft(
+    function purchaseAuctionNft(
         uint256 _tokenId,
-        uint256 _value
+        uint256 _value,
+        uint256 _amount
     ) internal isListed(_tokenId) isAuction(_tokenId) {
         if (!idMarketItem[_tokenId].isSecondarySale) {
             primarySale(
                 _value,
                 idMarketItem[_tokenId].auctionProps.highestBidder,
-                _tokenId
+                _tokenId,
+                _amount
             );
             return;
         }
@@ -326,7 +384,8 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
         secondarySale(
             _value,
             idMarketItem[_tokenId].auctionProps.highestBidder,
-            _tokenId
+            _tokenId,
+            _amount
         );
     }
 
@@ -337,15 +396,11 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
         _;
     }
 
-    modifier isNFTowner(uint256 _tokenId) {
-        if (_mgdNft.ownerOf(_tokenId) != msg.sender) {
-            revert MGDMarketplaceUnauthorized();
-        }
-        _;
-    }
-
     modifier isListed(uint256 _tokenId) {
-        if (_mgdNft.ownerOf(_tokenId) != address(this)) {
+        if (
+            (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(_tokenId) !=
+            address(this)
+        ) {
             revert MGDMarketplaceItemIsNotListed();
         }
         _;
@@ -372,13 +427,41 @@ abstract contract MGDMarketplace is Initializable, ERC165Upgradeable {
         _;
     }
 
+    modifier isNFTowner(uint256 _tokenId) {
+        if (
+            (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(_tokenId) !=
+            msg.sender
+        ) {
+            revert MGDMarketplaceUnauthorized();
+        }
+        _;
+    }
+
+    modifier checkBalanceForERC1155(
+        bool _isERC721,
+        uint256 _tokenId,
+        uint256 _tokenAmount
+    ) {
+        if (
+            !_isERC721 &&
+            (MintGoldDustERC1155(mintGoldDustERC1155Address)).balanceOf(
+                msg.sender,
+                _tokenId
+            ) <
+            _tokenAmount
+        ) {
+            revert UserDoesNotHasEnoughAmountOfToken();
+        }
+        _;
+    }
+
     /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
     fallback() external payable {
-        payable(_mgdCompany.owner()).transfer(msg.value);
+        payable(mgdCompany.owner()).transfer(msg.value);
     }
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
     receive() external payable {
-        payable(_mgdCompany.owner()).transfer(msg.value);
+        payable(mgdCompany.owner()).transfer(msg.value);
     }
 }

@@ -9,7 +9,7 @@
     "implementation": "0xfBECbd548B8BdA886BA45cA496C89C9227a51d4F",
     "proxyAdmin": "0xa27bC320252d51EEAA24BCCF6cc003979E485860"
   },
-  "MGDSetPrice": {
+  "MintGoldDustSetPrice": {
     "proxy": "0x24981ffED771cEf58f334B881A398C547efb7dB9",
     "implementation": "0xacC09486C9e34aa1Dff13b2E64d5482A3648D018",
     "proxyAdmin": "0xa27bC320252d51EEAA24BCCF6cc003979E485860"

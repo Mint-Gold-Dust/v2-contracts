@@ -1361,7 +1361,7 @@
       "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
       "txHash": "0x11c1c42ed555f3189443cc2ba35bb158dc6de45b9d3e670520f7f80b7e1f07d5",
       "layout": {
-        "solcVersion": "0.8.17",
+        "solcVersion": "0.8.18",
         "storage": [
           {
             "label": "_initialized",
@@ -1481,7 +1481,7 @@
       "address": "0x5Cdf04F281C8E9c6E13d742c2293e5527e64F03D",
       "txHash": "0xb38a24084fa97a3bf46c4c26573bc7bf7eeb44dbf7e68ab2901656f94273d9e8",
       "layout": {
-        "solcVersion": "0.8.17",
+        "solcVersion": "0.8.18",
         "storage": [
           {
             "label": "_initialized",
@@ -1565,7 +1565,7 @@
       "address": "0x6D765AE425aDcdb00c9feD174683340248C96a34",
       "txHash": "0xd89328b93cc94989a856824d5d6e727806f2f890aacdde4a66566336d2d77a99",
       "layout": {
-        "solcVersion": "0.8.17",
+        "solcVersion": "0.8.18",
         "storage": [
           {
             "label": "_initialized",
@@ -1649,7 +1649,7 @@
       "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
       "txHash": "0x76b7b092e5029f44d465d034780eedb9df7cf4efc53e63f2367e419bb8dce44f",
       "layout": {
-        "solcVersion": "0.8.17",
+        "solcVersion": "0.8.18",
         "storage": [
           {
             "label": "_initialized",
@@ -1673,32 +1673,32 @@
             "offset": 0,
             "slot": "1",
             "type": "t_struct(Counter)4492_storage",
-            "contract": "MGDMarketplace",
-            "src": "contracts/marketplace/MGDMarketplace.sol:28"
+            "contract": "MintGoldDustMarketplace",
+            "src": "contracts/marketplace/MintGoldDustMarketplace.sol:28"
           },
           {
             "label": "_mgdCompany",
             "offset": 0,
             "slot": "2",
             "type": "t_contract(MGDCompany)6406",
-            "contract": "MGDMarketplace",
-            "src": "contracts/marketplace/MGDMarketplace.sol:30"
+            "contract": "MintGoldDustMarketplace",
+            "src": "contracts/marketplace/MintGoldDustMarketplace.sol:30"
           },
           {
             "label": "_mgdNft",
             "offset": 0,
             "slot": "3",
             "type": "t_contract(MintGoldDustERC721)8010",
-            "contract": "MGDMarketplace",
-            "src": "contracts/marketplace/MGDMarketplace.sol:31"
+            "contract": "MintGoldDustMarketplace",
+            "src": "contracts/marketplace/MintGoldDustMarketplace.sol:31"
           },
           {
             "label": "idMarketItem",
             "offset": 0,
             "slot": "4",
             "type": "t_mapping(t_uint256,t_struct(MarketItem)6497_storage)",
-            "contract": "MGDMarketplace",
-            "src": "contracts/marketplace/MGDMarketplace.sol:33"
+            "contract": "MintGoldDustMarketplace",
+            "src": "contracts/marketplace/MintGoldDustMarketplace.sol:33"
           },
           {
             "label": "_status",
@@ -1739,11 +1739,11 @@
             "numberOfBytes": "20"
           },
           "t_mapping(t_uint256,t_struct(MarketItem)6497_storage)": {
-            "label": "mapping(uint256 => struct MGDMarketplace.MarketItem)",
+            "label": "mapping(uint256 => struct MintGoldDustMarketplace.MarketItem)",
             "numberOfBytes": "32"
           },
           "t_struct(AuctionProps)6508_storage": {
-            "label": "struct MGDMarketplace.AuctionProps",
+            "label": "struct MintGoldDustMarketplace.AuctionProps",
             "members": [
               {
                 "label": "endTime",
@@ -1791,7 +1791,7 @@
             "numberOfBytes": "32"
           },
           "t_struct(MarketItem)6497_storage": {
-            "label": "struct MGDMarketplace.MarketItem",
+            "label": "struct MintGoldDustMarketplace.MarketItem",
             "members": [
               {
                 "label": "tokenId",
@@ -1853,7 +1853,7 @@
       "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
       "txHash": "0xe81a5659c98f5909c9f8f30e6421b35aa25f9c03e4691cf7713f434e643706af",
       "layout": {
-        "solcVersion": "0.8.17",
+        "solcVersion": "0.8.18",
         "storage": [
           {
             "label": "_initialized",

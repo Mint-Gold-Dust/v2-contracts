@@ -1,27 +1,31 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
+import "./MintGoldDustMarketplace.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "./MGDMarketplace.sol";
 
-/// @title A contract responsible by the Set Price Market functionalities
-/// @notice Contains functions for list, update a listed item and delist an item.
-/// @author Mint Gold Dust LLC
-/// @custom:contact klvh@mintgolddust.io
-contract MGDSetPrice is MGDMarketplace, ReentrancyGuardUpgradeable {
+contract MintGoldDustSetPrice is
+    MintGoldDustMarketplace,
+    ReentrancyGuardUpgradeable
+{
     /**
      *
-     * @notice MGDSetPrice is a children of MGDMarketplace and this one is
+     * @notice MGDAuction is a children of MintGoldDustMarketplace and this one is
      * composed by other two contracts.
-     * @param mgdCompany The contract responsible to MGD management features.
-     * @param mintGoldDustERC721 The MGD ERC721.
+     * @param _mgdCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustERC721Address The MGD ERC721.
+     * @param _mintGoldDustERC1155Address The MGD ERC721.
      */
-    function initialize(
-        address mgdCompany,
-        address mintGoldDustERC721
-    ) public override initializer {
-        MGDMarketplace.initialize(mgdCompany, mintGoldDustERC721);
-        __ReentrancyGuard_init();
+    function initializeChild(
+        address _mgdCompany,
+        address payable _mintGoldDustERC721Address,
+        address payable _mintGoldDustERC1155Address
+    ) public initializer {
+        MintGoldDustMarketplace.initialize(
+            _mgdCompany,
+            _mintGoldDustERC721Address,
+            _mintGoldDustERC1155Address
+        );
     }
 
     event NftListedToSetPrice(
@@ -52,10 +56,23 @@ contract MGDSetPrice is MGDMarketplace, ReentrancyGuardUpgradeable {
         uint256 _tokenId,
         uint256 _price,
         bool _isERC721,
-        uint256 _amount
-    ) public override isNFTowner(_tokenId) {
+        uint256 _tokenAmount
+    )
+        public
+        override
+        isNFTowner(_tokenId)
+        checkBalanceForERC1155(_isERC721, _tokenId, _tokenAmount)
+    {
         if (_price <= 0) {
             revert MGDMarketplaceInvalidInput();
+        }
+
+        MintGoldDustNFT _mintGoldDustNFT;
+
+        if (_isERC721) {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
+        } else {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
         }
 
         AuctionProps memory auctionProps = AuctionProps(
@@ -73,16 +90,23 @@ contract MGDSetPrice is MGDMarketplace, ReentrancyGuardUpgradeable {
             false,
             false,
             idMarketItem[_tokenId].isSecondarySale,
-            auctionProps,
             _isERC721,
-            _amount
+            _tokenAmount,
+            auctionProps
         );
 
         /**
-         * @dev Here we have an external call to the MGD ERC721 contract
-         * because of that we have the try catch.
+         * @dev Here we have an external call to the MGD ERC721 or to the
+         * ERC1155 contract because of that we have the try catch.
          */
-        try _mgdNft.transfer(msg.sender, address(this), _tokenId) {
+        try
+            _mintGoldDustNFT.transfer(
+                msg.sender,
+                address(this),
+                _tokenId,
+                _tokenAmount
+            )
+        {
             emit NftListedToSetPrice(_tokenId, msg.sender, _price);
         } catch {
             revert MGDMarketErrorToTransfer();
@@ -113,6 +137,8 @@ contract MGDSetPrice is MGDMarketplace, ReentrancyGuardUpgradeable {
             idMarketItem[_tokenId].sold,
             idMarketItem[_tokenId].isAuction,
             idMarketItem[_tokenId].isSecondarySale,
+            idMarketItem[_tokenId].isERC721,
+            idMarketItem[_tokenId].tokenAmount,
             idMarketItem[_tokenId].auctionProps
         );
 
@@ -129,18 +155,42 @@ contract MGDSetPrice is MGDMarketplace, ReentrancyGuardUpgradeable {
      * @param _tokenId The token ID of the the token to delist
      */
     function delistNft(
-        uint256 _tokenId
+        uint256 _tokenId,
+        uint256 _tokenAmount
     ) public nonReentrant isSeller(_tokenId) {
         if (idMarketItem[_tokenId].sold) {
             revert MGDMarketplaceItemIsNotListed();
         }
 
+        if (
+            !idMarketItem[_tokenId].isERC721 &&
+            _tokenAmount > idMarketItem[_tokenId].tokenAmount
+        ) {
+            revert MGDMarketplaceItemIsNotListed();
+        }
+
+        MintGoldDustNFT _mintGoldDustNFT;
+
+        if (idMarketItem[_tokenId].isERC721) {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
+        } else {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
+        }
+
         idMarketItem[_tokenId].sold = true;
+
         /**
          * @dev Here we have an external call to the MGD ERC721 contract
          * because of that we have the try catch.
          */
-        try _mgdNft.transfer(address(this), msg.sender, _tokenId) {
+        try
+            _mintGoldDustNFT.transfer(
+                address(this),
+                msg.sender,
+                _tokenId,
+                _tokenAmount
+            )
+        {
             emit NftRemovedFromMarketplace(_tokenId, msg.sender);
         } catch {
             idMarketItem[_tokenId].sold = false;

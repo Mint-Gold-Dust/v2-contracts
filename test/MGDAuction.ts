@@ -17,7 +17,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
   let MGDAuction: ContractFactory;
   let mgdAuction: Contract;
 
-  let MGDSetPrice: ContractFactory;
+  let MintGoldDustSetPrice: ContractFactory;
   let mgdSetPrice: Contract;
 
   let deployer: SignerWithAddress;
@@ -46,7 +46,9 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
     MGDCompany = await ethers.getContractFactory("MGDCompany");
     MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
     MGDAuction = await ethers.getContractFactory("MGDAuction");
-    MGDSetPrice = await ethers.getContractFactory("MGDSetPrice");
+    MintGoldDustSetPrice = await ethers.getContractFactory(
+      "MintGoldDustSetPrice"
+    );
 
     [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
 
@@ -80,7 +82,7 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
     await mgdAuction.deployed();
 
     mgdSetPrice = await upgrades.deployProxy(
-      MGDSetPrice,
+      MintGoldDustSetPrice,
       [mgdCompany.address, mintGoldDustERC721.address],
       { initializer: "initialize" }
     );
