@@ -3,6 +3,8 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
+
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "./MGDCompany.sol";
@@ -24,7 +26,7 @@ contract MintGoldDustERC1155 is
      * @notice that the MintGoldDustERC721 is composed by other contract.
      * @param _mgdCompany The contract responsible to MGD management features.
      */
-    function initialize(
+    function initializeChild(
         address _mgdCompany,
         string calldata baseURI
     ) public initializer {
@@ -34,20 +36,6 @@ contract MintGoldDustERC1155 is
 
     using Counters for Counters.Counter;
     Counters.Counter public _tokenIds;
-
-    event NftMinted(
-        uint256 indexed tokenId,
-        address owner,
-        string tokenURI,
-        uint256 royalty
-    );
-
-    event NftSplitted(
-        uint256 indexed tokenId,
-        address owner,
-        address[] collaborators,
-        uint256[] ownersPercentage
-    );
 
     function uri(
         uint256 tokenId
@@ -116,12 +104,12 @@ contract MintGoldDustERC1155 is
      * percent for each art work.
      * @param _tokenURI The uri of the token metadata.
      * @param _royaltyPercent The royalty percentage for this art work.
-     * @param amount The amount of tokens to be minted.
+     * @param _amount The amount of tokens to be minted.
      */
     function mintNft(
         string calldata _tokenURI,
         uint256 _royaltyPercent,
-        uint256 amount
+        uint256 _amount
     )
         public
         payable
@@ -132,12 +120,11 @@ contract MintGoldDustERC1155 is
     {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
-        _mint(msg.sender, newTokenId, amount, "");
-        _setURI(newTokenId, _tokenURI);
+        _mint(msg.sender, newTokenId, _amount, "");
         tokenIdArtist[newTokenId] = msg.sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
 
-        emit NftMinted(newTokenId, msg.sender, _tokenURI, _royaltyPercent);
+        emit NftMinted(newTokenId, msg.sender, _royaltyPercent, _amount);
         return newTokenId;
     }
 }

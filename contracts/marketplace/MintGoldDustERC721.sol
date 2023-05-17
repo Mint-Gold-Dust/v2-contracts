@@ -32,13 +32,6 @@ contract MintGoldDustERC721 is
     using Counters for Counters.Counter;
     Counters.Counter public _tokenIds;
 
-    event NftMinted(
-        uint256 indexed tokenId,
-        address owner,
-        string tokenURI,
-        uint256 royalty
-    );
-
     /**
      * @dev the _transfer function is an internal function of ERC721. And because of the
      * necessity of call this function from other contract by composition we did need to
@@ -84,7 +77,7 @@ contract MintGoldDustERC721 is
         tokenIdArtist[newTokenId] = msg.sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
 
-        emit NftMinted(newTokenId, msg.sender, _tokenURI, _royaltyPercent);
+        emit NftMinted(newTokenId, msg.sender, _royaltyPercent, 1);
         return newTokenId;
     }
 

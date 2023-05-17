@@ -31,6 +31,13 @@ abstract contract MintGoldDustNFT is Initializable {
     mapping(uint256 => bool) public hasTokenCollaborators;
     mapping(uint256 => uint256) public tokenIdCollaboratorsQuantity;
 
+    event NftMinted(
+        uint256 indexed tokenId,
+        address owner,
+        uint256 royalty,
+        uint256 amount
+    );
+
     event NftSplitted(
         uint256 indexed tokenId,
         address owner,
