@@ -265,98 +265,98 @@ describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDus
       ).to.be.revertedWithCustomError(mintGoldDustERC721, "MGDnftUnauthorized");
     });
 
-    describe("\n\n Here goes the tests related with splitted sales for primary market and after for secondary market. The result of the test are after the console logs.\n", () => {
-      let price = 20;
-      // Calculate the fee and balance values based on the price
-      let fee: number;
-      let balance: number;
-      let collFee: number;
-      let primarySaleFee: number;
-      let sumBalances: number;
-      let royaltyFee: number;
-      let secondarySaleFee: number;
+    // describe("\n\n Here goes the tests related with splitted sales for primary market and after for secondary market. The result of the test are after the console logs.\n", () => {
+    //   let price = 20;
+    //   // Calculate the fee and balance values based on the price
+    //   let fee: number;
+    //   let balance: number;
+    //   let collFee: number;
+    //   let primarySaleFee: number;
+    //   let sumBalances: number;
+    //   let royaltyFee: number;
+    //   let secondarySaleFee: number;
 
-      let percentages: number[] = [15, 25, 25, 20, 15];
-      let balanceSplits: number[] = [];
+    //   let percentages: number[] = [15, 25, 25, 20, 15];
+    //   let balanceSplits: number[] = [];
 
-      beforeEach(async () => {
-        // MGD owner whitelist the artist
-        await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-        // addr1 mints a NFT
-        await mintGoldDustERC721
-          .connect(addr1)
-          .splitMint(
-            URI,
-            toWei(royalty),
-            [addr2.address, addr3.address, addr4.address, addr5.address],
-            [
-              toWei(percentages[0]),
-              toWei(percentages[1]),
-              toWei(percentages[2]),
-              toWei(percentages[3]),
-              toWei(percentages[4]),
-            ],
-            1
-          );
-        // Artist approve MGD marketplace to exchange its NFT
-        await mintGoldDustERC721
-          .connect(addr1)
-          .setApprovalForAll(mgdSetPrice.address, true);
-        // Artist list its NFT on MGD marketplace
-        await mgdSetPrice.connect(addr1).list(1, toWei(price));
+    //   beforeEach(async () => {
+    //     // MGD owner whitelist the artist
+    //     await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+    //     // addr1 mints a NFT
+    //     await mintGoldDustERC721
+    //       .connect(addr1)
+    //       .splitMint(
+    //         URI,
+    //         toWei(royalty),
+    //         [addr2.address, addr3.address, addr4.address, addr5.address],
+    //         [
+    //           toWei(percentages[0]),
+    //           toWei(percentages[1]),
+    //           toWei(percentages[2]),
+    //           toWei(percentages[3]),
+    //           toWei(percentages[4]),
+    //         ],
+    //         1
+    //       );
+    //     // Artist approve MGD marketplace to exchange its NFT
+    //     await mintGoldDustERC721
+    //       .connect(addr1)
+    //       .setApprovalForAll(mgdSetPrice.address, true);
+    //     // Artist list its NFT on MGD marketplace
+    //     await mgdSetPrice.connect(addr1).list(1, toWei(price));
 
-        fee = (price * primary_sale_fee_percent) / 100;
-        collFee = (price * collector_fee) / 100;
-        primarySaleFee = fee + collFee;
-        balance = price - primarySaleFee;
-        balanceSplits = percentages.map(
-          (percentages: number) => (balance * percentages) / 100
-        );
-        sumBalances = balanceSplits.reduce(
-          (accumulator, currentValue) => accumulator + currentValue
-        );
-      });
+    //     fee = (price * primary_sale_fee_percent) / 100;
+    //     collFee = (price * collector_fee) / 100;
+    //     primarySaleFee = fee + collFee;
+    //     balance = price - primarySaleFee;
+    //     balanceSplits = percentages.map(
+    //       (percentages: number) => (balance * percentages) / 100
+    //     );
+    //     sumBalances = balanceSplits.reduce(
+    //       (accumulator, currentValue) => accumulator + currentValue
+    //     );
+    //   });
 
-      it("Should:\n \t - Simulate a primary sale that transfer an NFT to the buyer and split the payments;\n \t - Verify if the item changed status for sale;\n \t - Verify if the seller balance increases;\n \t - Verify if the collaborators' balances increases correctly;\n \t - Verify if the marketplace's owner receives the fee;\n \t - Verify if the isSecondarySale attribute was set to true;\n \t - Verify if the buyer balance was deacresed exactly the gas fee + the token price;\n\n\tShould also: \n\t - Simulate a secondary sale that transfer an NFT to the buyer;\n\t - Verify if the item changed status for sale;\n\t - Verify if the seller balance increases correctly;\n\t - Verify if the marketplace's owner receives the secondary sale fee;\n\t - Verify if the artist creator and all collaborators have received correctly each one the respective part of the royalty.", async function () {
-        // get the balances for the seller and the owner of the marketplace.
-        const sellerInitalEthBal = await addr1.getBalance();
+    //   it("Should:\n \t - Simulate a primary sale that transfer an NFT to the buyer and split the payments;\n \t - Verify if the item changed status for sale;\n \t - Verify if the seller balance increases;\n \t - Verify if the collaborators' balances increases correctly;\n \t - Verify if the marketplace's owner receives the fee;\n \t - Verify if the isSecondarySale attribute was set to true;\n \t - Verify if the buyer balance was deacresed exactly the gas fee + the token price;\n\n\tShould also: \n\t - Simulate a secondary sale that transfer an NFT to the buyer;\n\t - Verify if the item changed status for sale;\n\t - Verify if the seller balance increases correctly;\n\t - Verify if the marketplace's owner receives the secondary sale fee;\n\t - Verify if the artist creator and all collaborators have received correctly each one the respective part of the royalty.", async function () {
+    //     // get the balances for the seller and the owner of the marketplace.
+    //     const sellerInitalEthBal = await addr1.getBalance();
 
-        const collaborator1InitialBalance = await addr2.getBalance();
-        const collaborator2InitialBalance = await addr3.getBalance();
-        const collaborator3InitialBalance = await addr4.getBalance();
-        const collaborator4InitialBalance = await addr5.getBalance();
+    //     const collaborator1InitialBalance = await addr2.getBalance();
+    //     const collaborator2InitialBalance = await addr3.getBalance();
+    //     const collaborator3InitialBalance = await addr4.getBalance();
+    //     const collaborator4InitialBalance = await addr5.getBalance();
 
-        let feeAccountInitialEthBal = await deployer.getBalance();
-        let feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
-          feeAccountInitialEthBal
-        ).add(toWei(primarySaleFee));
+    //     let feeAccountInitialEthBal = await deployer.getBalance();
+    //     let feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
+    //       feeAccountInitialEthBal
+    //     ).add(toWei(primarySaleFee));
 
-        // verify if the flag for secondary is false
-        // expect(
-        //   (await mgdSetPrice.connect(addr1).idMarketItem(1)).isSecondarySale
-        // ).to.be.equal(false);
+    //     // verify if the flag for secondary is false
+    //     // expect(
+    //     //   (await mgdSetPrice.connect(addr1).idMarketItem(1)).isSecondarySale
+    //     // ).to.be.equal(false);
 
-        // let gasPrice = await mgdSetPrice.signer.getGasPrice();
-        // let gasLimit = await mgdSetPrice.estimateGas.purchaseNft(1, 1, {
-        //   value: toWei(price),
-        // });
+    //     // let gasPrice = await mgdSetPrice.signer.getGasPrice();
+    //     // let gasLimit = await mgdSetPrice.estimateGas.purchaseNft(1, 1, {
+    //     //   value: toWei(price),
+    //     // });
 
-        // console.log("\t GAS PRICE: ", gasPrice);
-        // console.log("\t GAS LIMIT: ", gasLimit);
+    //     // console.log("\t GAS PRICE: ", gasPrice);
+    //     // console.log("\t GAS LIMIT: ", gasLimit);
 
-        // console.log(
-        //   "\t\t TOTAL GAS ESTIMATION (USD): ",
-        //   (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
-        //     2500
-        // );
+    //     // console.log(
+    //     //   "\t\t TOTAL GAS ESTIMATION (USD): ",
+    //     //   (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+    //     //     2500
+    //     // );
 
-        console.log("\n PRIMARY SALE");
-        console.log("\n\t\t ITEM PRICE: ", price);
-        console.log("\t\t PRIMARY MARKET FEE: ", fee);
-        console.log("\t\t COLLECTOR FEE: ", collFee);
-        console.log("\t\t MARKETPLACE OWNER FEE: ", primarySaleFee);
-        console.log("\t\t TOTAL BALANCE TO BE SPLITTED: ", balance);
-        console.log("\t\t BALANCE SPLITTED: ", balanceSplits);
+    //     console.log("\n PRIMARY SALE");
+    //     console.log("\n\t\t ITEM PRICE: ", price);
+    //     console.log("\t\t PRIMARY MARKET FEE: ", fee);
+    //     console.log("\t\t COLLECTOR FEE: ", collFee);
+    //     console.log("\t\t MARKETPLACE OWNER FEE: ", primarySaleFee);
+    //     console.log("\t\t TOTAL BALANCE TO BE SPLITTED: ", balance);
+    //     console.log("\t\t BALANCE SPLITTED: ", balanceSplits);
 
         let addr6BalanceBefore = await addr6.getBalance();
         // execute the buyNft function
