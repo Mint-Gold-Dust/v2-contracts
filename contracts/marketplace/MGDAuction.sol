@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import "./MGDMarketplace.sol";
+import "./MintGoldDustMarketplace.sol";
 
 error AuctionMustBeEnded(uint256 _tokenId);
 error AuctionEndedAlready();
@@ -16,18 +16,26 @@ error LastBidderCannotPlaceNextBid();
 /// check if an auction time is ended and end an auction.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-contract MGDAuction is MGDMarketplace {
+contract MGDAuction is MintGoldDustMarketplace {
     /**
      *
-     * @notice MGDAuction is a children of MGDMarketplace and this one is
+     * @notice MGDAuction is a children of MintGoldDustMarketplace and this one is
      * composed by other two contracts.
-     * @param mgdCompany The contract responsible to MGD management features.
-     * @param mgdNft The MGD ERC721.
+     * @param _mgdCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustERC721Address The MGD ERC721.
+     * @param _mintGoldDustERC1155Address The MGD ERC721.
      */
-    constructor(
-        address mgdCompany,
-        address mgdNft
-    ) MGDMarketplace(mgdCompany, mgdNft) {}
+    function initializeChild(
+        address _mgdCompany,
+        address payable _mintGoldDustERC721Address,
+        address payable _mintGoldDustERC1155Address
+    ) public initializer {
+        super.initialize(
+            _mgdCompany,
+            _mintGoldDustERC721Address,
+            _mintGoldDustERC1155Address
+        );
+    }
 
     event NftListedToAuction(
         uint256 indexed tokenId,
@@ -67,8 +75,27 @@ contract MGDAuction is MGDMarketplace {
      */
     function list(
         uint256 _tokenId,
-        uint256 _price
-    ) public override isNFTowner(_tokenId) {
+        uint256 _price,
+        uint256 _tokenAmount,
+        address _contractAddress
+    ) public override isERC721(_contractAddress) {
+        if (_price <= 0) {
+            revert MGDMarketplaceInvalidInput();
+        }
+
+        bool _isERC721 = false;
+
+        MintGoldDustNFT _mintGoldDustNFT;
+
+        if (_contractAddress == mintGoldDustERC721Address) {
+            isNFTowner(_tokenId);
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
+            _isERC721 = true;
+        } else {
+            checkBalanceForERC1155(_tokenId, _tokenAmount);
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
+        }
+
         AuctionProps memory auctionProps = AuctionProps(
             0,
             payable(address(0)),
@@ -77,13 +104,15 @@ contract MGDAuction is MGDMarketplace {
             false
         );
 
-        idMarketItem[_tokenId] = MarketItem(
+        idMarketItemsByContract[_contractAddress][_tokenId] = MarketItem(
             _tokenId,
             payable(msg.sender),
             _price,
             false,
             true,
-            idMarketItem[_tokenId].isSecondarySale,
+            idMarketItemsByContract[_contractAddress][_tokenId].isSecondarySale,
+            _isERC721,
+            _tokenAmount,
             auctionProps
         );
 
@@ -91,7 +120,14 @@ contract MGDAuction is MGDMarketplace {
          * @dev Here we have an external call to the MGD ERC721 contract
          * because of that we have the try catch.
          */
-        try _mgdNft.transfer(msg.sender, address(this), _tokenId) {
+        try
+            _mintGoldDustNFT.transfer(
+                msg.sender,
+                address(this),
+                _tokenId,
+                _tokenAmount
+            )
+        {
             emit NftListedToAuction(
                 _tokenId,
                 payable(msg.sender),
@@ -119,45 +155,71 @@ contract MGDAuction is MGDMarketplace {
      * @param _tokenId is the id of the NFT listed to this auction.
      */
     function placeBid(
-        uint256 _tokenId
+        uint256 _tokenId,
+        address _contractAddress
     )
         public
         payable
-        isListed(_tokenId)
-        isNotCreator(msg.sender, _tokenId)
-        isNotLastBidder(msg.sender, _tokenId)
+        isListed(_tokenId, _contractAddress)
+        isNotCreator(msg.sender, _tokenId, _contractAddress)
+        isNotLastBidder(msg.sender, _tokenId, _contractAddress)
     {
         if (
-            idMarketItem[_tokenId].auctionProps.endTime != 0 &&
-            block.timestamp >= idMarketItem[_tokenId].auctionProps.endTime
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .endTime !=
+            0 &&
+            block.timestamp >=
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .endTime
         ) {
             revert AuctionMustBeEnded(_tokenId);
         }
 
-        if (idMarketItem[_tokenId].price == 0 && msg.value <= 0) {
-            revert BidTooLow();
-        }
-
         if (
-            idMarketItem[_tokenId].auctionProps.highestBid == 0 &&
-            msg.value < idMarketItem[_tokenId].price
+            idMarketItemsByContract[_contractAddress][_tokenId].price == 0 &&
+            msg.value <= 0
         ) {
             revert BidTooLow();
         }
 
         if (
-            idMarketItem[_tokenId].auctionProps.highestBid != 0 &&
-            msg.value <= idMarketItem[_tokenId].auctionProps.highestBid
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .highestBid ==
+            0 &&
+            msg.value <
+            idMarketItemsByContract[_contractAddress][_tokenId].price
+        ) {
+            revert BidTooLow();
+        }
+
+        if (
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .highestBid !=
+            0 &&
+            msg.value <=
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .highestBid
         ) {
             revert BidTooLow();
         }
 
         /// @dev The time starts to count for the auction.
-        if (idMarketItem[_tokenId].auctionProps.endTime == 0) {
+        if (
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .endTime == 0
+        ) {
             uint256 _startTime = block.timestamp;
-            uint256 _endTime = _startTime + _mgdCompany.auctionDuration();
+            uint256 _endTime = _startTime + mgdCompany.auctionDuration();
 
-            idMarketItem[_tokenId].auctionProps.endTime = _endTime;
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .endTime = _endTime;
 
             emit AuctionTimeStarted(_tokenId, _startTime, _endTime);
         }
@@ -167,38 +229,57 @@ contract MGDAuction is MGDMarketplace {
          * to the end time auction.
          */
         if (
-            idMarketItem[_tokenId].auctionProps.endTime - block.timestamp <
-            _mgdCompany.auctionFinalMinutes()
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .endTime -
+                block.timestamp <
+            mgdCompany.auctionFinalMinutes()
         ) {
-            idMarketItem[_tokenId].auctionProps.endTime =
-                idMarketItem[_tokenId].auctionProps.endTime +
-                _mgdCompany.auctionFinalMinutes();
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .endTime =
+                idMarketItemsByContract[_contractAddress][_tokenId]
+                    .auctionProps
+                    .endTime +
+                mgdCompany.auctionFinalMinutes();
 
             emit AuctionExtended(
                 _tokenId,
-                idMarketItem[_tokenId].auctionProps.endTime
+                idMarketItemsByContract[_contractAddress][_tokenId]
+                    .auctionProps
+                    .endTime
             );
         }
 
         /**
          * @dev Here we refund the last bidder.
          */
-        payable(idMarketItem[_tokenId].auctionProps.highestBidder).transfer(
-            idMarketItem[_tokenId].auctionProps.highestBid
-        );
+        payable(
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .highestBidder
+        ).transfer(
+                idMarketItemsByContract[_contractAddress][_tokenId]
+                    .auctionProps
+                    .highestBid
+            );
 
         /// @dev save the previous bidder to show in the event.
-        address previousBidder = idMarketItem[_tokenId]
-            .auctionProps
-            .highestBidder;
+        address previousBidder = idMarketItemsByContract[_contractAddress][
+            _tokenId
+        ].auctionProps.highestBidder;
         /// @dev here we change the states.
-        idMarketItem[_tokenId].price = msg.value;
-        idMarketItem[_tokenId].auctionProps.highestBid = msg.value;
-        idMarketItem[_tokenId].auctionProps.highestBidder = msg.sender;
+        idMarketItemsByContract[_contractAddress][_tokenId].price = msg.value;
+        idMarketItemsByContract[_contractAddress][_tokenId]
+            .auctionProps
+            .highestBid = msg.value;
+        idMarketItemsByContract[_contractAddress][_tokenId]
+            .auctionProps
+            .highestBidder = msg.sender;
 
         emit AuctionNewBid(
             _tokenId,
-            idMarketItem[_tokenId].seller,
+            idMarketItemsByContract[_contractAddress][_tokenId].seller,
             previousBidder,
             msg.sender,
             msg.value,
@@ -214,32 +295,72 @@ contract MGDAuction is MGDMarketplace {
      * auction must already be reached out the final.
      * @param _tokenId the id of the token that is listed to this auction.
      */
-    function endAuction(uint256 _tokenId) public isListed(_tokenId) {
-        if (block.timestamp < idMarketItem[_tokenId].auctionProps.endTime) {
+    function endAuction(
+        uint256 _tokenId,
+        address _contractAddress
+    ) public isListed(_tokenId, _contractAddress) {
+        if (
+            block.timestamp <
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .endTime
+        ) {
             revert AuctionCannotBeEndedYet();
         }
 
-        if (idMarketItem[_tokenId].auctionProps.ended) {
+        if (
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .ended
+        ) {
             revert AuctionEndedAlready();
         }
 
-        if (idMarketItem[_tokenId].auctionProps.endTime == 0) {
+        if (
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .endTime == 0
+        ) {
             revert AuctionTimeNotStartedYet();
         }
 
-        idMarketItem[_tokenId].auctionProps.ended = true;
-        purchaseNft(_tokenId, idMarketItem[_tokenId].auctionProps.highestBid);
+        idMarketItemsByContract[_contractAddress][_tokenId]
+            .auctionProps
+            .ended = true;
+        purchaseAuctionNft(
+            _tokenId,
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .highestBid,
+            idMarketItemsByContract[_contractAddress][_tokenId].tokenAmount,
+            _contractAddress
+        );
     }
 
-    modifier isNotCreator(address _bidder, uint256 _tokenId) {
-        if (idMarketItem[_tokenId].seller == _bidder) {
+    modifier isNotCreator(
+        address _bidder,
+        uint256 _tokenId,
+        address _contractAddress
+    ) {
+        if (
+            idMarketItemsByContract[_contractAddress][_tokenId].seller ==
+            _bidder
+        ) {
             revert AuctionCreatorCannotBid();
         }
         _;
     }
 
-    modifier isNotLastBidder(address _bidder, uint256 _tokenId) {
-        if (idMarketItem[_tokenId].auctionProps.highestBidder == _bidder) {
+    modifier isNotLastBidder(
+        address _bidder,
+        uint256 _tokenId,
+        address _contractAddress
+    ) {
+        if (
+            idMarketItemsByContract[_contractAddress][_tokenId]
+                .auctionProps
+                .highestBidder == _bidder
+        ) {
             revert LastBidderCannotPlaceNextBid();
         }
         _;
