@@ -10,9 +10,11 @@ async function main() {
 
   console.log("Deploying contracts with the account:", deployer.address);
 
-  /************************************** MGDCompany INIT *************************************/
+  /************************************** MintGoldDustCompany INIT *************************************/
 
-  const MGDCompanyFactory = await ethers.getContractFactory("MGDCompany");
+  const MGDCompanyFactory = await ethers.getContractFactory(
+    "MintGoldDustCompany"
+  );
   const mgdCompany = await upgrades.deployProxy(
     MGDCompanyFactory,
     [
@@ -25,58 +27,72 @@ async function main() {
     { initializer: "initialize" }
   );
   await mgdCompany.deployed();
-  console.log("MGDCompany deployed to:", mgdCompany.address);
+  console.log("MintGoldDustCompany deployed to:", mgdCompany.address);
 
   const mgdCompanyImplementationAddress =
     await upgrades.erc1967.getImplementationAddress(mgdCompany.address);
   console.log(
-    "MGDnft Implementation deployed to:",
+    "MintGoldDustERC721 Implementation deployed to:",
     mgdCompanyImplementationAddress
   );
 
   const mgdCompanyProxyAdminAddress = await upgrades.erc1967.getAdminAddress(
     mgdCompany.address
   );
-  console.log("MGDnft Proxy Admin deployed to:", mgdCompanyProxyAdminAddress);
-  /************************************** MGDCompany FINAL ************************************/
+  console.log(
+    "MintGoldDustERC721 Proxy Admin deployed to:",
+    mgdCompanyProxyAdminAddress
+  );
+  /************************************** MintGoldDustCompany FINAL ************************************/
 
   /**************************************** MGD721 INIT ***************************************/
 
-  // Deploy MGDnft contract
-  const MGDnftFactory = await ethers.getContractFactory("MGDnft");
-  const mgdNft = await upgrades.deployProxy(
+  // Deploy MintGoldDustERC721 contract
+  const MGDnftFactory = await ethers.getContractFactory("MintGoldDustERC721");
+  const mintGoldDustERC721 = await upgrades.deployProxy(
     MGDnftFactory,
     [mgdCompany.address],
     { initializer: "initialize" }
   );
-  await mgdNft.deployed();
-  console.log("MGDnft Proxy deployed to:", mgdNft.address);
+  await mintGoldDustERC721.deployed();
+  console.log(
+    "MintGoldDustERC721 Proxy deployed to:",
+    mintGoldDustERC721.address
+  );
 
   const nftImplementationAddress =
-    await upgrades.erc1967.getImplementationAddress(mgdNft.address);
-  console.log("MGDnft Implementation deployed to:", nftImplementationAddress);
+    await upgrades.erc1967.getImplementationAddress(mintGoldDustERC721.address);
+  console.log(
+    "MintGoldDustERC721 Implementation deployed to:",
+    nftImplementationAddress
+  );
 
   const nftProxyAdminAddress = await upgrades.erc1967.getAdminAddress(
-    mgdNft.address
+    mintGoldDustERC721.address
   );
-  console.log("MGDnft Proxy Admin deployed to:", nftProxyAdminAddress);
+  console.log(
+    "MintGoldDustERC721 Proxy Admin deployed to:",
+    nftProxyAdminAddress
+  );
   /**************************************** MGD721 FINAL ***************************************/
 
-  /************************************* MGDSetPrice INIT **************************************/
-  // Deploy MGDSetPrice contract
-  const MGDSetPriceFactory = await ethers.getContractFactory("MGDSetPrice");
+  /************************************* MintGoldDustSetPrice INIT **************************************/
+  // Deploy MintGoldDustSetPrice contract
+  const MGDSetPriceFactory = await ethers.getContractFactory(
+    "MintGoldDustSetPrice"
+  );
   const mgdSetPrice = await upgrades.deployProxy(
     MGDSetPriceFactory,
-    [mgdCompany.address, mgdNft.address],
+    [mgdCompany.address, mintGoldDustERC721.address],
     { initializer: "initialize" }
   );
   await mgdSetPrice.deployed();
-  console.log("MGDSetPrice Proxy deployed to:", mgdSetPrice.address);
+  console.log("MintGoldDustSetPrice Proxy deployed to:", mgdSetPrice.address);
 
   const setPriceImplementationAddress =
     await upgrades.erc1967.getImplementationAddress(mgdSetPrice.address);
   console.log(
-    "MGDSetPrice Implementation deployed to:",
+    "MintGoldDustSetPrice Implementation deployed to:",
     setPriceImplementationAddress
   );
 
@@ -84,17 +100,17 @@ async function main() {
     mgdSetPrice.address
   );
   console.log(
-    "MGDSetPrice Proxy Admin deployed to:",
+    "MintGoldDustSetPrice Proxy Admin deployed to:",
     setPriceProxyAdminAddress
   );
-  /************************************* MGDSetPrice FINAL *************************************/
+  /************************************* MintGoldDustSetPrice FINAL *************************************/
 
   /************************************** MGDAuction INIT **************************************/
   // Deploy MGDAuction contract
   const MGDAuctionFactory = await ethers.getContractFactory("MGDAuction");
   const mgdAuction = await upgrades.deployProxy(
     MGDAuctionFactory,
-    [mgdCompany.address, mgdNft.address],
+    [mgdCompany.address, mintGoldDustERC721.address],
     { initializer: "initialize" }
   );
   await mgdAuction.deployed();
@@ -113,40 +129,45 @@ async function main() {
   console.log("MGDAuction Proxy Admin deployed to:", auctionProxyAdminAddress);
   /************************************** MGDAuction FINAL *************************************/
 
-  /**************************************** MGDMemoir INIT ***************************************/
-  // Deploy MGDMemoir contract
-  const MGDMemoirFactory = await ethers.getContractFactory("MGDMemoir");
+  /**************************************** MintGoldDustMemoir INIT ***************************************/
+  // Deploy MintGoldDustMemoir contract
+  const MGDMemoirFactory = await ethers.getContractFactory(
+    "MintGoldDustMemoir"
+  );
   const mgdMemoir = await upgrades.deployProxy(MGDMemoirFactory, [], {
     initializer: "initialize",
   });
   await mgdMemoir.deployed();
-  console.log("MGDMemoir Proxy deployed to:", mgdMemoir.address);
+  console.log("MintGoldDustMemoir Proxy deployed to:", mgdMemoir.address);
 
   const memoirImplementationAddress =
     await upgrades.erc1967.getImplementationAddress(mgdMemoir.address);
   console.log(
-    "MGDMemoir Implementation deployed to:",
+    "MintGoldDustMemoir Implementation deployed to:",
     memoirImplementationAddress
   );
 
   const memoirProxyAdminAddress = await upgrades.erc1967.getAdminAddress(
     mgdMemoir.address
   );
-  console.log("MGDMemoir Proxy Admin deployed to:", memoirProxyAdminAddress);
-  /**************************************** MGDMemoir FINAL **************************************/
+  console.log(
+    "MintGoldDustMemoir Proxy Admin deployed to:",
+    memoirProxyAdminAddress
+  );
+  /**************************************** MintGoldDustMemoir FINAL **************************************/
 
   const contractAddresses = {
-    MGDCompany: {
+    MintGoldDustCompany: {
       proxy: mgdCompany.address,
       implementation: mgdCompanyImplementationAddress,
       proxyAdmin: mgdCompanyProxyAdminAddress,
     },
-    MGDnft: {
-      proxy: mgdNft.address,
+    MintGoldDustERC721: {
+      proxy: mintGoldDustERC721.address,
       implementation: nftImplementationAddress,
       proxyAdmin: nftProxyAdminAddress,
     },
-    MGDSetPrice: {
+    MintGoldDustSetPrice: {
       proxy: mgdSetPrice.address,
       implementation: setPriceImplementationAddress,
       proxyAdmin: setPriceProxyAdminAddress,
@@ -156,7 +177,7 @@ async function main() {
       implementation: auctionImplementationAddress,
       proxyAdmin: auctionProxyAdminAddress,
     },
-    MGDMemoir: {
+    MintGoldDustMemoir: {
       proxy: mgdMemoir.address,
       implementation: memoirImplementationAddress,
       proxyAdmin: memoirProxyAdminAddress,

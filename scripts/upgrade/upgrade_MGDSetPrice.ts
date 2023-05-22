@@ -3,24 +3,29 @@ import fs from "fs";
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  console.log("Upgrading MGDSetPrice with the account:", deployer.address);
+  console.log(
+    "Upgrading MintGoldDustSetPrice with the account:",
+    deployer.address
+  );
 
   // Read the contract addresses from the JSON file
   const contractAddresses = JSON.parse(
     fs.readFileSync("addresses.json", { encoding: "utf-8" })
   );
 
-  const proxyAddress = contractAddresses.MGDSetPrice.proxy;
-  const proxyAdminAddress = contractAddresses.MGDSetPrice.proxyAdmin;
+  const proxyAddress = contractAddresses.MintGoldDustSetPrice.proxy;
+  const proxyAdminAddress = contractAddresses.MintGoldDustSetPrice.proxyAdmin;
 
-  // Deploy the new implementation of MGDSetPrice
-  const MGDSetPriceFactory = await ethers.getContractFactory("MGDSetPrice");
+  // Deploy the new implementation of MintGoldDustSetPrice
+  const MGDSetPriceFactory = await ethers.getContractFactory(
+    "MintGoldDustSetPrice"
+  );
   const newMGDSetPriceImplementation = await upgrades.prepareUpgrade(
     proxyAddress,
     MGDSetPriceFactory
   );
   console.log(
-    "New MGDSetPrice implementation deployed at:",
+    "New MintGoldDustSetPrice implementation deployed at:",
     newMGDSetPriceImplementation
   );
 
@@ -32,16 +37,17 @@ async function main() {
   await proxyAdmin
     .connect(deployer)
     .upgrade(proxyAddress, newMGDSetPriceImplementation);
-  console.log("MGDSetPrice proxy upgraded to the new implementation");
+  console.log("MintGoldDustSetPrice proxy upgraded to the new implementation");
 
   // Update the JSON file with the new implementation address
-  contractAddresses.MGDSetPrice.implementation = newMGDSetPriceImplementation;
+  contractAddresses.MintGoldDustSetPrice.implementation =
+    newMGDSetPriceImplementation;
   fs.writeFileSync(
     "addresses.json",
     JSON.stringify(contractAddresses, null, 2)
   );
   console.log(
-    "Updated addresses.json with the new MGDSetPrice implementation address"
+    "Updated addresses.json with the new MintGoldDustSetPrice implementation address"
   );
 }
 

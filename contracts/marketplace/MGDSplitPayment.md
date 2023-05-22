@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17;
+pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
-import "./MGDnft.sol";
-import "./MGDCompany.sol";
+import "./MintGoldDustERC721.sol";
+import "./MintGoldDustCompany.sol";
 
 error NumberOfCollaboratorsDoesNotMatchWithPercentage();
 
@@ -19,15 +19,15 @@ contract MGDSplitPayment is Initializable {
 using Counters for Counters.Counter;
 Counters.Counter private \_tokenIds;
 
-MGDnft private \_mgdNft;
-MGDCompany private \_mgdCompany;
+MintGoldDustERC721 private \_mgdNft;
+MintGoldDustCompany private \_mgdCompany;
 
 mapping(uint256 => uint256[5]) public tokenIdCollaboratorsPercentage;
 mapping(uint256 => address[4]) public tokenCollaborators;
 
-function initialize(address mgdNft, address mgdCompany) public initializer {
-\_mgdNft = MGDnft(payable(mgdNft));
-\_mgdCompany = MGDCompany(payable(mgdCompany));
+function initialize(address mintGoldDustERC721, address mgdCompany) public initializer {
+\_mgdNft = MintGoldDustERC721(payable(mintGoldDustERC721));
+\_mgdCompany = MintGoldDustCompany(payable(mgdCompany));
 }
 
 event NftMintedAndSplitted(
