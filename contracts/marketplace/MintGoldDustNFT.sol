@@ -3,7 +3,7 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./MGDCompany.sol";
+import "./MintGoldDustCompany.sol";
 
 error MGDnftRoyaltyInvalidPercentage();
 error MGDnftUnauthorized();
@@ -18,10 +18,10 @@ abstract contract MintGoldDustNFT is Initializable {
      * @param _mgdCompany The contract responsible to MGD management features.
      */
     function initialize(address _mgdCompany) public initializer {
-        mgdCompany = MGDCompany(payable(_mgdCompany));
+        mgdCompany = MintGoldDustCompany(payable(_mgdCompany));
     }
 
-    MGDCompany internal mgdCompany;
+    MintGoldDustCompany internal mgdCompany;
 
     mapping(uint256 => address) public tokenIdArtist;
     mapping(uint256 => uint256) public tokenIdRoyaltyPercent;

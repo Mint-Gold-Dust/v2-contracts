@@ -7,53 +7,53 @@ import { ethers } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis smart contract is responsible by all functionalities related with the marketplace auction. \n", function () {
-  let MintGoldDustERC721: ContractFactory;
-  let mintGoldDustERC721: Contract;
+describe("\nMGDAuction.sol Smart Contract \n************\_\_\_************\n \nThis smart contract is responsible by all functionalities related with the marketplace auction. \n", function () {
+let MintGoldDustERC721: ContractFactory;
+let mintGoldDustERC721: Contract;
 
-  let MGDCompany: ContractFactory;
-  let mgdCompany: Contract;
+let MintGoldDustCompany: ContractFactory;
+let mgdCompany: Contract;
 
-  let MGDAuction: ContractFactory;
-  let mgdAuction: Contract;
+let MGDAuction: ContractFactory;
+let mgdAuction: Contract;
 
-  let MintGoldDustSetPrice: ContractFactory;
-  let mgdSetPrice: Contract;
+let MintGoldDustSetPrice: ContractFactory;
+let mgdSetPrice: Contract;
 
-  let deployer: SignerWithAddress;
-  let addr1: SignerWithAddress;
-  let addr2: SignerWithAddress;
-  let addr3: SignerWithAddress;
-  let addrs: SignerWithAddress[];
+let deployer: SignerWithAddress;
+let addr1: SignerWithAddress;
+let addr2: SignerWithAddress;
+let addr3: SignerWithAddress;
+let addrs: SignerWithAddress[];
 
-  let URI = "sample URI";
+let URI = "sample URI";
 
-  //const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
-  const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-  const primary_sale_fee_percent_initial = 15000000000000000000n;
-  const secondary_sale_fee_percent_initial = 5000000000000000000n;
-  const collector_fee_initial = 3000000000000000000n;
-  const max_royalty_initial = 20000000000000000000n;
-  const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+//const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+const primary_sale_fee_percent_initial = 15000000000000000000n;
+const secondary_sale_fee_percent_initial = 5000000000000000000n;
+const collector_fee_initial = 3000000000000000000n;
+const max_royalty_initial = 20000000000000000000n;
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-  let primary_sale_fee_percent = 15;
-  let secondary_sale_fee_percent = 5;
-  let collector_fee = 3;
-  let max_royalty = 20;
-  let royalty = 5;
+let primary_sale_fee_percent = 15;
+let secondary_sale_fee_percent = 5;
+let collector_fee = 3;
+let max_royalty = 20;
+let royalty = 5;
 
-  beforeEach(async function () {
-    MGDCompany = await ethers.getContractFactory("MGDCompany");
-    MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
-    MGDAuction = await ethers.getContractFactory("MGDAuction");
-    MintGoldDustSetPrice = await ethers.getContractFactory(
-      "MintGoldDustSetPrice"
-    );
+beforeEach(async function () {
+MintGoldDustCompany = await ethers.getContractFactory("MintGoldDustCompany");
+MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
+MGDAuction = await ethers.getContractFactory("MGDAuction");
+MintGoldDustSetPrice = await ethers.getContractFactory(
+"MintGoldDustSetPrice"
+);
 
     [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
 
     mgdCompany = await upgrades.deployProxy(
-      MGDCompany,
+      MintGoldDustCompany,
       [
         TEST_OWNER,
         primary_sale_fee_percent_initial,
@@ -89,10 +89,11 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
     await mgdSetPrice.deployed();
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
-  });
 
-  describe("\n_________________________________ Tests related with listing a NFT for Auction _________________________________\n", function () {
-    let price = 1;
+});
+
+describe("\n****************\_**************** Tests related with listing a NFT for Auction ****************\_****************\n", function () {
+let price = 1;
 
     beforeEach(async () => {
       // MGD owner whitelist the artist
@@ -221,13 +222,14 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       expect(idMarketItem.auctionProps.cancelled).to.be.equal(false);
       expect(idMarketItem.auctionProps.ended).to.be.equal(false);
     });
-  });
 
-  describe("\n \n ______________________________ PLACE A BID GENERAL UNHAPPY PATHS ______________________________", function () {
-    let price = 4;
-    const _duration = 3; // seconds
-    const _finalTime = 1; // seconds
-    const _timeout = 4 * 1000; // seconds
+});
+
+describe("\n \n **************\_\_************** PLACE A BID GENERAL UNHAPPY PATHS **************\_\_**************", function () {
+let price = 4;
+const \_duration = 3; // seconds
+const \_finalTime = 1; // seconds
+const \_timeout = 4 \* 1000; // seconds
 
     beforeEach(async () => {
       await mgdCompany.updateAuctionTimeDuration(_duration);
@@ -317,14 +319,15 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
         mgdAuction.connect(addr2).placeBid(1, { value: toWei(0) })
       ).to.be.revertedWithCustomError(MGDAuction, "BidTooLow");
     });
-  });
 
-  describe("\n \n _________________________________ PLACE A BID HAPPY PATHS _________________________________\n", function () {
-    let price = 4;
-    const _duration = 10; // seconds
-    const _finalTime = 8; // seconds
-    const _timeout = 3 * 1000; // seconds
-    let expectedEndTime;
+});
+
+describe("\n \n ****************\_**************** PLACE A BID HAPPY PATHS ****************\_****************\n", function () {
+let price = 4;
+const \_duration = 10; // seconds
+const \_finalTime = 8; // seconds
+const \_timeout = 3 \* 1000; // seconds
+let expectedEndTime;
 
     beforeEach(async () => {
       await mgdCompany.updateAuctionTimeDuration(_duration);
@@ -877,13 +880,14 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
         );
       });
     });
-  });
 
-  describe("\n \n _________________________________ END AUCTION UNHAPPY PATHS _________________________________\n", function () {
-    let price = 4;
-    const _duration = 10; // seconds
-    const _finalTime = 8; // seconds
-    const _timeout = 3 * 1000; // seconds
+});
+
+describe("\n \n ****************\_**************** END AUCTION UNHAPPY PATHS ****************\_****************\n", function () {
+let price = 4;
+const \_duration = 10; // seconds
+const \_finalTime = 8; // seconds
+const \_timeout = 3 \* 1000; // seconds
 
     beforeEach(async () => {
       await mgdCompany.updateAuctionTimeDuration(_duration);
@@ -933,12 +937,13 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
         "MGDMarketFunctionForSetPriceListedNFT"
       );
     });
-  });
 
-  describe("\n \n _________________________________ END AUCTION FOR PRIMARY SALE _________________________________\n", function () {
-    const _duration = 2; // seconds
-    const _finalTime = 1; // seconds
-    const _timeout = 3 * 1000; // seconds
+});
+
+describe("\n \n ****************\_**************** END AUCTION FOR PRIMARY SALE ****************\_****************\n", function () {
+const \_duration = 2; // seconds
+const \_finalTime = 1; // seconds
+const \_timeout = 3 \* 1000; // seconds
 
     let price = 20;
     // Calculate the fee and balance values based on the price
@@ -1096,12 +1101,13 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
         parseFloat(fromWei(await addr2.getBalance()))
       );
     });
-  });
 
-  describe("------------------ END AUCTION NFT FOR SECONDARY MARKET ------------------", function () {
-    const _duration = 2; // seconds
-    const _finalTime = 1; // seconds
-    const _timeout = 3 * 1000; // seconds
+});
+
+describe("------------------ END AUCTION NFT FOR SECONDARY MARKET ------------------", function () {
+const \_duration = 2; // seconds
+const \_finalTime = 1; // seconds
+const \_timeout = 3 \* 1000; // seconds
 
     let price = 20;
     let royaltyFee: number;
@@ -1273,5 +1279,6 @@ describe("\nMGDAuction.sol Smart Contract \n___________________________\n \nThis
       // expect item sold to be true
       expect((await mgdAuction.idMarketItem(1)).sold).to.be.equal(true);
     });
-  });
+
+});
 });

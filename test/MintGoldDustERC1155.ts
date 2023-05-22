@@ -7,11 +7,11 @@ import { ethers } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMGDnft.sol Smart Contract \n______________________________________________\n \nThis smart contract is responsible by mint new MGD Nfts. Actually this contract is an ERC721. \n", function () {
+describe("MintGoldDustERC1155.sol Smart Contract \n______________________________________________\n \nThis smart contract is responsible by mint new Mint Gold Dust ERC1155 tokens. Actually this contract is an ERC1155. \n", function () {
   let MintGoldDustERC1155: ContractFactory;
   let mintGoldDustERC1155: Contract;
 
-  let MGDCompany: ContractFactory;
+  let MintGoldDustCompany: ContractFactory;
   let mgdCompany: Contract;
 
   let deployer: SignerWithAddress;
@@ -30,7 +30,9 @@ describe("\nMGDnft.sol Smart Contract \n________________________________________
   const max_royalty_initial = 20000000000000000000n;
 
   beforeEach(async function () {
-    MGDCompany = await ethers.getContractFactory("MGDCompany");
+    MintGoldDustCompany = await ethers.getContractFactory(
+      "MintGoldDustCompany"
+    );
     MintGoldDustERC1155 = await ethers.getContractFactory(
       "MintGoldDustERC1155"
     );
@@ -38,7 +40,7 @@ describe("\nMGDnft.sol Smart Contract \n________________________________________
     [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
 
     mgdCompany = await upgrades.deployProxy(
-      MGDCompany,
+      MintGoldDustCompany,
       [
         TEST_OWNER,
         primary_sale_fee_percent_initial,

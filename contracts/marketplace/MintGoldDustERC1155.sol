@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "./MGDCompany.sol";
+import "./MintGoldDustCompany.sol";
 import "./MintGoldDustNFT.sol";
 import "./MGDAuction.sol";
 import "./MintGoldDustMarketplace.sol";
@@ -99,7 +99,7 @@ contract MintGoldDustERC1155 is
     /**
      * Mints a new Mint Gold Dust token.
      * @notice Fails if artist is not whitelisted or if the royalty surpass the max royalty limit
-     * setted on MGDCompany smart contract.
+     * setted on MintGoldDustCompany smart contract.
      * @dev tokenIdArtist keeps track of the work of each artist and tokenIdRoyaltyPercent the royalty
      * percent for each art work.
      * @param _tokenURI The uri of the token metadata.

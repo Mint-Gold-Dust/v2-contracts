@@ -10,8 +10,8 @@
 
 //   console.log("Deploying contracts with the account:", deployer.address);
 
-//   // Deploy MGDCompany contract
-//   const MGDCompanyFactory = await ethers.getContractFactory("MGDCompany");
+//   // Deploy MintGoldDustCompany contract
+//   const MGDCompanyFactory = await ethers.getContractFactory("MintGoldDustCompany");
 //   const mgdCompany = await MGDCompanyFactory.deploy(
 //     deployer.address,
 //     primary_sale_fee_percent_initial,
@@ -20,7 +20,7 @@
 //     max_royalty_initial
 //   );
 //   await mgdCompany.deployed();
-//   console.log("MGDCompany deployed to:", mgdCompany.address);
+//   console.log("MintGoldDustCompany deployed to:", mgdCompany.address);
 
 //   // Deploy MintGoldDustERC721 contract
 //   const MGDnftFactory = await ethers.getContractFactory("MintGoldDustERC721");
@@ -46,11 +46,11 @@
 //   await mgdAuction.deployed();
 //   console.log("MGDAuction deployed to:", mgdAuction.address);
 
-//   // Deploy MGDMemoir contract
-//   const MGDMemoirFactory = await ethers.getContractFactory("MGDMemoir");
+//   // Deploy MintGoldDustMemoir contract
+//   const MGDMemoirFactory = await ethers.getContractFactory("MintGoldDustMemoir");
 //   const mgdMemoir = await MGDMemoirFactory.deploy();
 //   await mgdMemoir.deployed();
-//   console.log("MGDMemoir deployed to:", mgdMemoir.address);
+//   console.log("MintGoldDustMemoir deployed to:", mgdMemoir.address);
 
 //   // Save important addresses to a JSON file
 //   const addresses = {

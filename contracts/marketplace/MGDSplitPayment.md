@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "./MintGoldDustERC721.sol";
-import "./MGDCompany.sol";
+import "./MintGoldDustCompany.sol";
 
 error NumberOfCollaboratorsDoesNotMatchWithPercentage();
 
@@ -20,14 +20,14 @@ using Counters for Counters.Counter;
 Counters.Counter private \_tokenIds;
 
 MintGoldDustERC721 private \_mgdNft;
-MGDCompany private \_mgdCompany;
+MintGoldDustCompany private \_mgdCompany;
 
 mapping(uint256 => uint256[5]) public tokenIdCollaboratorsPercentage;
 mapping(uint256 => address[4]) public tokenCollaborators;
 
 function initialize(address mintGoldDustERC721, address mgdCompany) public initializer {
 \_mgdNft = MintGoldDustERC721(payable(mintGoldDustERC721));
-\_mgdCompany = MGDCompany(payable(mgdCompany));
+\_mgdCompany = MintGoldDustCompany(payable(mgdCompany));
 }
 
 event NftMintedAndSplitted(

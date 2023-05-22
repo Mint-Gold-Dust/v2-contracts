@@ -3,11 +3,25 @@ pragma solidity 0.8.18;
 
 import "./MintGoldDustMarketplace.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+
+error YouCannotDelistMoreThanListed();
 
 contract MintGoldDustSetPrice is
     MintGoldDustMarketplace,
-    ReentrancyGuardUpgradeable
+    ReentrancyGuardUpgradeable,
+    IERC1155Receiver
 {
+    bytes4 private constant ERC165_ID = 0x01ffc9a7; //ERC165
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view override returns (bool) {
+        return interfaceId == ERC165_ID;
+    }
+
     /**
      *
      * @notice MGDAuction is a children of MintGoldDustMarketplace and this one is
@@ -26,6 +40,26 @@ contract MintGoldDustSetPrice is
             _mintGoldDustERC721Address,
             _mintGoldDustERC1155Address
         );
+    }
+
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    ) external override returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    ) external override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
     }
 
     event NftListedToSetPrice(
@@ -55,23 +89,22 @@ contract MintGoldDustSetPrice is
     function list(
         uint256 _tokenId,
         uint256 _price,
-        bool _isERC721,
-        uint256 _tokenAmount
-    )
-        public
-        override
-        isNFTowner(_tokenId)
-        checkBalanceForERC1155(_isERC721, _tokenId, _tokenAmount)
-    {
+        uint256 _tokenAmount,
+        address _contractAddress
+    ) public override isERC721(_contractAddress) {
         if (_price <= 0) {
             revert MGDMarketplaceInvalidInput();
         }
 
         MintGoldDustNFT _mintGoldDustNFT;
+        bool _isERC721 = false;
 
-        if (_isERC721) {
+        if (_contractAddress == mintGoldDustERC721Address) {
+            isNFTowner(_tokenId);
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
+            _isERC721 = true;
         } else {
+            checkBalanceForERC1155(_tokenId, _tokenAmount);
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
         }
 
@@ -83,34 +116,26 @@ contract MintGoldDustSetPrice is
             false
         );
 
-        idMarketItem[_tokenId] = MarketItem(
+        idMarketItemsByContract[_contractAddress][_tokenId] = MarketItem(
             _tokenId,
             msg.sender,
             _price,
             false,
             false,
-            idMarketItem[_tokenId].isSecondarySale,
+            idMarketItemsByContract[_contractAddress][_tokenId].isSecondarySale,
             _isERC721,
             _tokenAmount,
             auctionProps
         );
 
-        /**
-         * @dev Here we have an external call to the MGD ERC721 or to the
-         * ERC1155 contract because of that we have the try catch.
-         */
-        try
-            _mintGoldDustNFT.transfer(
-                msg.sender,
-                address(this),
-                _tokenId,
-                _tokenAmount
-            )
-        {
-            emit NftListedToSetPrice(_tokenId, msg.sender, _price);
-        } catch {
-            revert MGDMarketErrorToTransfer();
-        }
+        _mintGoldDustNFT.transfer(
+            msg.sender,
+            address(this),
+            _tokenId,
+            _tokenAmount
+        );
+
+        emit NftListedToSetPrice(_tokenId, msg.sender, _price);
     }
 
     /**
@@ -124,22 +149,32 @@ contract MintGoldDustSetPrice is
      */
     function updateListedNft(
         uint256 _tokenId,
-        uint256 _price
-    ) public isListed(_tokenId) isSeller(_tokenId) {
+        uint256 _price,
+        address _contractAddress
+    )
+        public
+        isERC721(_contractAddress)
+        isListed(_tokenId, _contractAddress)
+        isSeller(_tokenId, _contractAddress)
+    {
         if (_price <= 0) {
             revert MGDMarketplaceInvalidInput();
         }
 
-        idMarketItem[_tokenId] = MarketItem(
-            idMarketItem[_tokenId].tokenId,
-            idMarketItem[_tokenId].seller,
+        MarketItem memory _marketItem = idMarketItemsByContract[
+            _contractAddress
+        ][_tokenId];
+
+        idMarketItemsByContract[_contractAddress][_tokenId] = MarketItem(
+            _marketItem.tokenId,
+            _marketItem.seller,
             _price,
-            idMarketItem[_tokenId].sold,
-            idMarketItem[_tokenId].isAuction,
-            idMarketItem[_tokenId].isSecondarySale,
-            idMarketItem[_tokenId].isERC721,
-            idMarketItem[_tokenId].tokenAmount,
-            idMarketItem[_tokenId].auctionProps
+            _marketItem.sold,
+            _marketItem.isAuction,
+            _marketItem.isSecondarySale,
+            _marketItem.isERC721,
+            _marketItem.tokenAmount,
+            _marketItem.auctionProps
         );
 
         emit NftListedItemUpdated(_tokenId, msg.sender, _price);
@@ -156,28 +191,31 @@ contract MintGoldDustSetPrice is
      */
     function delistNft(
         uint256 _tokenId,
-        uint256 _tokenAmount
-    ) public nonReentrant isSeller(_tokenId) {
-        if (idMarketItem[_tokenId].sold) {
-            revert MGDMarketplaceItemIsNotListed();
-        }
+        address _contractAddress
+    )
+        public
+        nonReentrant
+        isERC721(_contractAddress)
+        isListed(_tokenId, _contractAddress)
+        isSeller(_tokenId, _contractAddress)
+    {
+        MarketItem memory _marketItem = idMarketItemsByContract[
+            _contractAddress
+        ][_tokenId];
 
-        if (
-            !idMarketItem[_tokenId].isERC721 &&
-            _tokenAmount > idMarketItem[_tokenId].tokenAmount
-        ) {
+        if (_marketItem.sold) {
             revert MGDMarketplaceItemIsNotListed();
         }
 
         MintGoldDustNFT _mintGoldDustNFT;
 
-        if (idMarketItem[_tokenId].isERC721) {
+        if (_marketItem.isERC721) {
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
         } else {
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
         }
 
-        idMarketItem[_tokenId].sold = true;
+        idMarketItemsByContract[_contractAddress][_tokenId].sold = true;
 
         /**
          * @dev Here we have an external call to the MGD ERC721 contract
@@ -188,12 +226,12 @@ contract MintGoldDustSetPrice is
                 address(this),
                 msg.sender,
                 _tokenId,
-                _tokenAmount
+                _marketItem.tokenAmount
             )
         {
             emit NftRemovedFromMarketplace(_tokenId, msg.sender);
         } catch {
-            idMarketItem[_tokenId].sold = false;
+            idMarketItemsByContract[_contractAddress][_tokenId].sold = false;
             revert MGDMarketErrorToTransfer();
         }
     }

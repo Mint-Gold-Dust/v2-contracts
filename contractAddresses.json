@@ -1,5 +1,5 @@
 {
-  "MGDCompany": {
+  "MintGoldDustCompany": {
     "proxy": "0xC38e6Fe07769397482236b4eC62c899159F74780",
     "implementation": "0xd0F350b13465B5251bb03E4bbf9Fa1DbC4a378F3",
     "proxyAdmin": "0xa27bC320252d51EEAA24BCCF6cc003979E485860"
@@ -19,7 +19,7 @@
     "implementation": "0x2e7663a37789dD74484773275F722A7944480A08",
     "proxyAdmin": "0xa27bC320252d51EEAA24BCCF6cc003979E485860"
   },
-  "MGDMemoir": {
+  "MintGoldDustMemoir": {
     "proxy": "0x415C6a41898DFFB2AD1F0e82e80369D1cD77c319",
     "implementation": "0x6D765AE425aDcdb00c9feD174683340248C96a34",
     "proxyAdmin": "0xa27bC320252d51EEAA24BCCF6cc003979E485860"
