@@ -18,8 +18,13 @@ contract MintGoldDustSetPrice is
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view override returns (bool) {
+    ) public pure override returns (bool) {
         return interfaceId == ERC165_ID;
+    }
+
+    struct DelistDTO {
+        uint256 tokenId;
+        address contractAddress;
     }
 
     /**
@@ -62,80 +67,81 @@ contract MintGoldDustSetPrice is
         return this.onERC1155BatchReceived.selector;
     }
 
-    event NftListedToSetPrice(
+    /**
+     * @notice that this event show the info about a new listing to the set price market.
+     * @dev this event will be triggered when a MintGoldDustNFT is listed for the set price marketplace.
+     * @param tokenId the sequence number for the item.
+     * @param seller the seller of this tokenId.
+     * @param price the price for this item sale.
+     *    @dev it cannot be zero.
+     */
+    event MintGoldDustNftListedToSetPrice(
         uint256 indexed tokenId,
         address seller,
         uint256 price
     );
 
-    event NftListedItemUpdated(
+    /**
+     * @notice that this event show the info when a market item has its price updated.
+     * @dev this event will be triggered when a market item has its price updated.
+     * @param tokenId the sequence number for the item.
+     * @param seller the seller of this tokenId.
+     * @param price the new price for this item sale.
+     *    @dev it cannot be zero.
+     */
+    event MintGoldDustNftListedItemUpdated(
         uint256 indexed tokenId,
         address seller,
         uint256 price
     );
 
-    event NftRemovedFromMarketplace(uint256 indexed tokenId, address seller);
+    /**
+     * @notice that this event show the info about a delisting.
+     * @dev this event will be triggered when a market item is delisted from the marketplace.
+     * @param tokenId the sequence number for the item.
+     * @param seller the seller of this tokenId.
+     */
+    event MintGoldDustNftRemovedFromMarketplace(
+        uint256 indexed tokenId,
+        address seller
+    );
 
     /**
      *
-     * @notice Only the owner of the NFT can call this function.
+     * @notice that is function to list a MintGoldDustNFT for the marketplace set price market.
      * @dev This is an implementation of a virtual function declared in the father
-     * contract. Here we're listing an NFT to the Set Price MGD Market that the item has
-     * a fixed price. After that the user can update the price of this item or if necessary
-     * delist it. After delist is possible to list again here of for auction.
-     * @param _tokenId The id of the NFT token to be listed.
-     * @param _price  The respective price that the seller wants to list this item.
+     *      contract. Here we're listing an NFT to the MintGoldDustSetPrice market that the item has
+     *      a fixed price. After that the user can update the price of this item or if necessary
+     *      delist it. After delist is possible to list again here of for auction or another set price.
+     *    @notice that here we call the more generic list function passing the correct params for the set price market.
+     * @param _tokenId: The tokenId of the marketItem.
+     * @param _amount: The quantity of tokens to be listed for an MintGoldDustERC1155.
+     *    @dev For MintGoldDustERC721 the amout must be always one.
+     * @param _contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+     * @param _price: The price or reserve price for the item.
      */
     function list(
         uint256 _tokenId,
-        uint256 _price,
-        uint256 _tokenAmount,
-        address _contractAddress
-    ) public override isERC721(_contractAddress) {
-        if (_price <= 0) {
-            revert MGDMarketplaceInvalidInput();
-        }
-
-        MintGoldDustNFT _mintGoldDustNFT;
-        bool _isERC721 = false;
-
-        if (_contractAddress == mintGoldDustERC721Address) {
-            isNFTowner(_tokenId);
-            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
-            _isERC721 = true;
-        } else {
-            checkBalanceForERC1155(_tokenId, _tokenAmount);
-            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
-        }
-
-        AuctionProps memory auctionProps = AuctionProps(
-            0,
-            address(0),
-            0,
-            false,
-            false
-        );
-
-        idMarketItemsByContract[_contractAddress][_tokenId] = MarketItem(
+        uint256 _amount,
+        address _contractAddress,
+        uint256 _price
+    ) public override {
+        SaleDTO memory _saleDTO = SaleDTO(
             _tokenId,
-            msg.sender,
-            _price,
-            false,
-            false,
-            idMarketItemsByContract[_contractAddress][_tokenId].isSecondarySale,
-            _isERC721,
-            _tokenAmount,
-            auctionProps
+            _amount,
+            _contractAddress,
+            msg.sender
         );
 
-        _mintGoldDustNFT.transfer(
-            msg.sender,
-            address(this),
-            _tokenId,
-            _tokenAmount
-        );
+        ListDTO memory _listDTO = ListDTO(_saleDTO, _price);
 
-        emit NftListedToSetPrice(_tokenId, msg.sender, _price);
+        list(_listDTO, false, address(this));
+
+        emit MintGoldDustNftListedToSetPrice(
+            _listDTO.saleDTO.tokenId,
+            msg.sender,
+            _listDTO.price
+        );
     }
 
     /**
@@ -146,26 +152,30 @@ contract MintGoldDustSetPrice is
      * Market Item struct.
      * @param _tokenId The token ID of the the token to update.
      * @param _price The price of the NFT.
+     * @param _contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+     * @param _seller The seller of the marketItem.
      */
     function updateListedNft(
         uint256 _tokenId,
         uint256 _price,
-        address _contractAddress
-    )
-        public
-        isERC721(_contractAddress)
-        isListed(_tokenId, _contractAddress)
-        isSeller(_tokenId, _contractAddress)
-    {
+        address _contractAddress,
+        address _seller
+    ) public {
+        mustBeMintGoldDustERC721Or1155(_contractAddress);
+        isTokenIdListed(_tokenId, _contractAddress);
+        isSeller(_tokenId, _contractAddress, _seller);
+
         if (_price <= 0) {
-            revert MGDMarketplaceInvalidInput();
+            revert MintGoldDustListPriceMustBeGreaterThanZero();
         }
 
-        MarketItem memory _marketItem = idMarketItemsByContract[
+        MarketItem memory _marketItem = idMarketItemsByContractByOwner[
             _contractAddress
-        ][_tokenId];
+        ][_tokenId][_seller];
 
-        idMarketItemsByContract[_contractAddress][_tokenId] = MarketItem(
+        idMarketItemsByContractByOwner[_contractAddress][_tokenId][
+            _seller
+        ] = MarketItem(
             _marketItem.tokenId,
             _marketItem.seller,
             _price,
@@ -177,7 +187,7 @@ contract MintGoldDustSetPrice is
             _marketItem.auctionProps
         );
 
-        emit NftListedItemUpdated(_tokenId, msg.sender, _price);
+        emit MintGoldDustNftListedItemUpdated(_tokenId, msg.sender, _price);
     }
 
     /**
@@ -187,35 +197,31 @@ contract MintGoldDustSetPrice is
      * really the owner of the item. And set the sold attribute to true.
      * This in conjunction with the fact that this contract address is not more the
      * owner of the item, means that the item is not listed.
-     * @param _tokenId The token ID of the the token to delist
+     * @param _delistDTO The DelistDTO parameter to use.
+     *                 It consists of the following fields:
+     *                    - tokenid: The tokenId of the marketItem.
+     *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+     *                    - seller: The seller of the marketItem.
      */
-    function delistNft(
-        uint256 _tokenId,
-        address _contractAddress
-    )
-        public
-        nonReentrant
-        isERC721(_contractAddress)
-        isListed(_tokenId, _contractAddress)
-        isSeller(_tokenId, _contractAddress)
-    {
-        MarketItem memory _marketItem = idMarketItemsByContract[
-            _contractAddress
-        ][_tokenId];
+    function delistNft(DelistDTO memory _delistDTO) public nonReentrant {
+        mustBeMintGoldDustERC721Or1155(_delistDTO.contractAddress);
+        isTokenIdListed(_delistDTO.tokenId, _delistDTO.contractAddress);
+        isSeller(_delistDTO.tokenId, _delistDTO.contractAddress, msg.sender);
+        MarketItem memory _marketItem = idMarketItemsByContractByOwner[
+            _delistDTO.contractAddress
+        ][_delistDTO.tokenId][msg.sender];
 
-        if (_marketItem.sold) {
-            revert MGDMarketplaceItemIsNotListed();
-        }
+        // if (_marketItem.sold) {
+        //   revert MGDMarketplaceItemIsNotListed();
+        // }
 
-        MintGoldDustNFT _mintGoldDustNFT;
+        MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(
+            _marketItem.isERC721
+        );
 
-        if (_marketItem.isERC721) {
-            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
-        } else {
-            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
-        }
-
-        idMarketItemsByContract[_contractAddress][_tokenId].sold = true;
+        idMarketItemsByContractByOwner[_delistDTO.contractAddress][
+            _delistDTO.tokenId
+        ][msg.sender].sold = true;
 
         /**
          * @dev Here we have an external call to the MGD ERC721 contract
@@ -225,14 +231,19 @@ contract MintGoldDustSetPrice is
             _mintGoldDustNFT.transfer(
                 address(this),
                 msg.sender,
-                _tokenId,
+                _delistDTO.tokenId,
                 _marketItem.tokenAmount
             )
         {
-            emit NftRemovedFromMarketplace(_tokenId, msg.sender);
+            emit MintGoldDustNftRemovedFromMarketplace(
+                _delistDTO.tokenId,
+                msg.sender
+            );
         } catch {
-            idMarketItemsByContract[_contractAddress][_tokenId].sold = false;
-            revert MGDMarketErrorToTransfer();
+            idMarketItemsByContractByOwner[_delistDTO.contractAddress][
+                _delistDTO.tokenId
+            ][msg.sender].sold = false;
+            revert MintGoldDustErrorToTransfer("At set price delist!");
         }
     }
 }

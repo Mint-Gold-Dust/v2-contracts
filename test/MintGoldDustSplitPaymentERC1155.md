@@ -7,56 +7,56 @@ import { ethers } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDustMarketplace.sol Smart Contracts \n______________________________________________\n \n\tThe process of the split payments starts at the moment of the minting. It means that the artist can choose to mint with or without adding of collaborators. After that, the flow ends at the moment of the sale process. For the primary sales the balance will be divided between the artist creator and its collaborators and in the secondary market the royalty gonna be diveded by the same people. \n", function () {
-  let MintGoldDustERC721: ContractFactory;
-  let mintGoldDustERC721: Contract;
+describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDustMarketplace.sol Smart Contracts \n**********************\_\_**********************\n \n\tThe process of the split payments starts at the moment of the minting. It means that the artist can choose to mint with or without adding of collaborators. After that, the flow ends at the moment of the sale process. For the primary sales the balance will be divided between the artist creator and its collaborators and in the secondary market the royalty gonna be diveded by the same people. \n", function () {
+let MintGoldDustERC721: ContractFactory;
+let mintGoldDustERC721: Contract;
 
-  let MintGoldDustERC1155: ContractFactory;
-  let mintGoldDustERC1155: Contract;
+let MintGoldDustERC1155: ContractFactory;
+let mintGoldDustERC1155: Contract;
 
-  let MintGoldDustCompany: ContractFactory;
-  let mgdCompany: Contract;
+let MintGoldDustCompany: ContractFactory;
+let mgdCompany: Contract;
 
-  let MintGoldDustSetPrice: ContractFactory;
-  let mgdSetPrice: Contract;
+let MintGoldDustSetPrice: ContractFactory;
+let mgdSetPrice: Contract;
 
-  let deployer: SignerWithAddress;
-  let addr1: SignerWithAddress;
-  let addr2: SignerWithAddress;
-  let addr3: SignerWithAddress;
-  let addr4: SignerWithAddress;
-  let addr5: SignerWithAddress;
-  let addr6: SignerWithAddress;
-  let addr7: SignerWithAddress;
-  let addrs: SignerWithAddress[];
+let deployer: SignerWithAddress;
+let addr1: SignerWithAddress;
+let addr2: SignerWithAddress;
+let addr3: SignerWithAddress;
+let addr4: SignerWithAddress;
+let addr5: SignerWithAddress;
+let addr6: SignerWithAddress;
+let addr7: SignerWithAddress;
+let addrs: SignerWithAddress[];
 
-  let URI = "sample URI";
-  let baseURI = "https://example.com/{id}.json";
+let URI = "sample URI";
+let baseURI = "https://example.com/{id}.json";
 
-  //const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
-  const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-  const primary_sale_fee_percent_initial = 15000000000000000000n;
-  const secondary_sale_fee_percent_initial = 5000000000000000000n;
-  const collector_fee_initial = 3000000000000000000n;
-  const max_royalty_initial = 20000000000000000000n;
+//const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+const primary_sale_fee_percent_initial = 15000000000000000000n;
+const secondary_sale_fee_percent_initial = 5000000000000000000n;
+const collector_fee_initial = 3000000000000000000n;
+const max_royalty_initial = 20000000000000000000n;
 
-  let primary_sale_fee_percent = 15;
-  let secondary_sale_fee_percent = 5;
-  let collector_fee = 3;
-  let max_royalty = 20;
-  let royalty = 5;
+let primary_sale_fee_percent = 15;
+let secondary_sale_fee_percent = 5;
+let collector_fee = 3;
+let max_royalty = 20;
+let royalty = 5;
 
-  beforeEach(async function () {
-    MintGoldDustCompany = await ethers.getContractFactory(
-      "MintGoldDustCompany"
-    );
-    MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
-    MintGoldDustSetPrice = await ethers.getContractFactory(
-      "MintGoldDustSetPrice"
-    );
-    MintGoldDustERC1155 = await ethers.getContractFactory(
-      "MintGoldDustERC1155"
-    );
+beforeEach(async function () {
+MintGoldDustCompany = await ethers.getContractFactory(
+"MintGoldDustCompany"
+);
+MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
+MintGoldDustSetPrice = await ethers.getContractFactory(
+"MintGoldDustSetPrice"
+);
+MintGoldDustERC1155 = await ethers.getContractFactory(
+"MintGoldDustERC1155"
+);
 
     [deployer, addr1, addr2, addr3, addr4, addr5, addr6, addr7, ...addrs] =
       await ethers.getSigners();
@@ -104,26 +104,27 @@ describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDus
     await mgdSetPrice.deployed();
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
-  });
 
-  describe("\n--------------- Test related with the mint a splitted NFT functionality ---------------\n", function () {
-    it("Should revert with a NumberOfCollaboratorsAndPercentagesNotMatch if the number of collaborators plus one is different of the number of percentages.", async function () {
-      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-      await expect(
-        mintGoldDustERC1155
-          .connect(addr1)
-          .splitMint(
-            URI,
-            toWei(5),
-            [addr2.address, addr3.address],
-            [toWei(20), toWei(20)],
-            1
-          )
-      ).to.be.revertedWithCustomError(
-        mintGoldDustERC1155,
-        "NumberOfCollaboratorsAndPercentagesNotMatch"
-      );
-    });
+});
+
+describe("\n--------------- Test related with the mint a splitted NFT functionality ---------------\n", function () {
+it("Should revert with a NumberOfCollaboratorsAndPercentagesNotMatch if the number of collaborators plus one is different of the number of percentages.", async function () {
+await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+await expect(
+mintGoldDustERC1155
+.connect(addr1)
+.splitMint(
+URI,
+toWei(5),
+[addr2.address, addr3.address],
+[toWei(20), toWei(20)],
+1
+)
+).to.be.revertedWithCustomError(
+mintGoldDustERC1155,
+"NumberOfCollaboratorsAndPercentagesNotMatch"
+);
+});
 
     it("Should revert with a TheTotalPercentageCantBeGreaterThan100 if total percentage passed to the spliPayment function surpass 100.", async function () {
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
@@ -346,7 +347,7 @@ describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDus
           (
             await mgdSetPrice
               .connect(addr1)
-              .idMarketItemsByContract(mintGoldDustERC1155.address, 1)
+              .idMarketItemsByContractByOwner(mintGoldDustERC1155.address, 1)
           ).isSecondarySale
         ).to.be.equal(false);
 
@@ -438,7 +439,7 @@ describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDus
         //       (
         //         await mgdSetPrice
         //           .connect(addr1)
-        //           .idMarketItemsByContract(mintGoldDustERC1155.address, 1)
+        //           .idMarketItemsByContractByOwner(mintGoldDustERC1155.address, 1)
         //       ).isSecondarySale
         //     ).to.be.equal(true);
 
@@ -505,7 +506,7 @@ describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDus
         //     // expect item sold to be true
         //     expect(
         //       (
-        //         await mgdSetPrice.idMarketItemsByContract(
+        //         await mgdSetPrice.idMarketItemsByContractByOwner(
         //           mintGoldDustERC1155.address,
         //           1
         //         )
@@ -863,5 +864,6 @@ describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDus
         //     );
       });
     });
-  });
+
+});
 });

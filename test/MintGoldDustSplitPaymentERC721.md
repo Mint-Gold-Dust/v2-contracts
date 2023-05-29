@@ -340,7 +340,7 @@ describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDus
           (
             await mgdSetPrice
               .connect(addr1)
-              .idMarketItemsByContract(mintGoldDustERC721.address, 1)
+              .idMarketItemsByContractByOwner(mintGoldDustERC721.address, 1)
           ).isSecondarySale
         ).to.be.equal(false);
 
@@ -424,7 +424,7 @@ describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDus
           (
             await mgdSetPrice
               .connect(addr1)
-              .idMarketItemsByContract(mintGoldDustERC721.address, 1)
+              .idMarketItemsByContractByOwner(mintGoldDustERC721.address, 1)
           ).isSecondarySale
         ).to.be.equal(true);
 
@@ -491,7 +491,7 @@ describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDus
         // expect item sold to be true
         expect(
           (
-            await mgdSetPrice.idMarketItemsByContract(
+            await mgdSetPrice.idMarketItemsByContractByOwner(
               mintGoldDustERC721.address,
               1
             )

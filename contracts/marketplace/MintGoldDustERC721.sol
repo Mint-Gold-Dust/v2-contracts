@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 import "./MintGoldDustNFT.sol";
-import "./MGDAuction.sol";
+import "./MintGoldDustMarketplaceAuction.sol";
 
 /// @title A contract responsible by mint and transfer Mint Gold Dust ERC721 tokens.
 /// @notice Contains functions to mint and transfer MGD ERC721 tokens.
@@ -39,6 +39,7 @@ contract MintGoldDustERC721 is
      * @param _from sender of the token.
      * @param _to token destionation.
      * @param _tokenId id of the token.
+     * @param _amount is unused for MintGoldDustERC721.
      */
     function transfer(
         address _from,
@@ -77,7 +78,13 @@ contract MintGoldDustERC721 is
         tokenIdArtist[newTokenId] = msg.sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
 
-        emit NftMinted(newTokenId, msg.sender, _royaltyPercent, 1);
+        emit MintGoldDustNFTMinted(
+            newTokenId,
+            msg.sender,
+            _royaltyPercent,
+            1,
+            address(this)
+        );
         return newTokenId;
     }
 

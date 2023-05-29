@@ -9,10 +9,8 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIS
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 import "./MintGoldDustNFT.sol";
-import "./MGDAuction.sol";
+import "./MintGoldDustMarketplaceAuction.sol";
 import "./MintGoldDustMarketplace.sol";
-
-error InsufficientTokensForSale();
 
 contract MintGoldDustERC1155 is
     Initializable,
@@ -49,21 +47,6 @@ contract MintGoldDustERC1155 is
         return super.uri(tokenId);
     }
 
-    // function purchaseNft(
-    //   uint256 _tokenId,
-    //   address payable _marketplaceContractAddress,
-    //   uint256 _amount
-    // ) public payable {
-    //   MintGoldDustMarketplace mgdMarketplace = MintGoldDustMarketplace(
-    //     _marketplaceContractAddress
-    //   );
-    //   uint256 contractBalance = balanceOf(mgdMarketplace, _tokenId);
-    //   if (contractBalance < _amount) {
-    //     revert InsufficientTokensForSale();
-    //   }
-    //   mgdMarketplace.purchaseNft(_tokenId, address(this), _amount);
-    // }
-
     /**
      * @dev The transfer function wraps the safeTransferFrom function of ERC1155.
      * @param from Sender of the token.
@@ -79,22 +62,6 @@ contract MintGoldDustERC1155 is
     ) public override {
         safeTransferFrom(from, to, tokenId, amount, "");
     }
-
-    // function listForSetPrice(
-    //   uint256 _tokenId,
-    //   uint256 _price,
-    //   uint256 _amount
-    // ) public override {
-    //   _mgdSetPrice.list(_tokenId, _price, false, _amount);
-    // }
-
-    // function listForAuction(
-    //   uint256 _tokenId,
-    //   uint256 _price,
-    //   uint256 _amount
-    // ) public override {
-    //   _mgdAuction.list(_tokenId, _price, false, _amount);
-    // }
 
     /**
      * Mints a new Mint Gold Dust token.
@@ -124,7 +91,14 @@ contract MintGoldDustERC1155 is
         tokenIdArtist[newTokenId] = msg.sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
 
-        emit NftMinted(newTokenId, msg.sender, _royaltyPercent, _amount);
+        emit MintGoldDustNFTMinted(
+            newTokenId,
+            msg.sender,
+            _royaltyPercent,
+            _amount,
+            address(this)
+        );
+
         return newTokenId;
     }
 }
