@@ -273,6 +273,7 @@ abstract contract MintGoldDustMarketplace is Initializable {
 
         MintGoldDustNFT _mintGoldDustNFT;
         bool _isERC721 = false;
+        uint256 _realAmount = 1;
 
         if (_listDTO.saleDTO.contractAddress == mintGoldDustERC721Address) {
             isNFTowner(_listDTO.saleDTO.tokenId);
@@ -284,6 +285,7 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 _listDTO.saleDTO.amount
             );
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
+            _realAmount = _listDTO.saleDTO.amount;
         }
 
         AuctionProps memory auctionProps = AuctionProps(
@@ -306,7 +308,7 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 _listDTO.saleDTO.tokenId
             ][msg.sender].isSecondarySale,
             _isERC721,
-            _listDTO.saleDTO.amount,
+            _realAmount,
             auctionProps
         );
 
@@ -315,7 +317,7 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 msg.sender,
                 _marketAddress,
                 _listDTO.saleDTO.tokenId,
-                _listDTO.saleDTO.amount
+                _realAmount
             )
         {} catch {
             revert MintGoldDustErrorToTransfer("At listing!");
@@ -350,11 +352,16 @@ abstract contract MintGoldDustMarketplace is Initializable {
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function primarySale(
         MarketItem memory _marketItem,
         SaleDTO memory _saleDTO,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(
             _marketItem.isERC721
@@ -385,7 +392,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
             fee,
             collFee,
             true,
-            _value
+            _value,
+            _sender
         );
 
         payable(mgdCompany.owner()).transfer(collFee + fee);
@@ -403,6 +411,10 @@ abstract contract MintGoldDustMarketplace is Initializable {
      * @param _collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
      * @param isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function checkIfIsSplitPaymentAndCall(
         MintGoldDustNFT _mintGoldDustNFT,
@@ -412,7 +424,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
         uint256 _fee,
         uint256 _collFeeOrRoyalty,
         bool isPrimarySale,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         uint256 balanceOrRoyalty = _collFeeOrRoyalty;
         address _artistOrSeller = _mintGoldDustNFT.tokenIdArtist(
@@ -433,7 +446,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 _collFeeOrRoyalty,
                 _artistOrSeller,
                 true,
-                _value
+                _value,
+                _sender
             );
             return;
         }
@@ -446,7 +460,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 _fee,
                 _collFeeOrRoyalty,
                 _balance,
-                _value
+                _value,
+                _sender
             );
             return;
         }
@@ -459,7 +474,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
             _fee,
             _collFeeOrRoyalty,
             _balance,
-            _value
+            _value,
+            _sender
         );
     }
 
@@ -473,6 +489,10 @@ abstract contract MintGoldDustMarketplace is Initializable {
      * @param _collFee represent the collector fee.
      * @param _balance represents the total amount to be received by the seller after fee calculations.
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function uniqueOwnerPrimarySale(
         MintGoldDustNFT _mintGoldDustNFT,
@@ -481,18 +501,19 @@ abstract contract MintGoldDustMarketplace is Initializable {
         uint256 _fee,
         uint256 _collFee,
         uint256 _balance,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         try
             _mintGoldDustNFT.transfer(
                 address(this),
-                msg.sender,
+                _sender,
                 _saleDTO.tokenId,
                 _saleDTO.amount
             )
         {
             payable(_marketItem.seller).transfer(_balance);
-            updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
+            updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
             emitPrimarySaleEvent(
                 _marketItem,
                 _saleDTO,
@@ -500,7 +521,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 _collFee,
                 _fee,
                 false,
-                _value
+                _value,
+                _sender
             );
         } catch {
             revertInCaseOfErrorInTransfer(_saleDTO, true);
@@ -508,11 +530,12 @@ abstract contract MintGoldDustMarketplace is Initializable {
     }
 
     function updateIdMarketItemsByContractByOwnerMapping(
-        SaleDTO memory _saleDTO
+        SaleDTO memory _saleDTO,
+        address _sender
     ) private {
         idMarketItemsByContractByOwner[_saleDTO.contractAddress][
             _saleDTO.tokenId
-        ][_saleDTO.seller].seller = msg.sender;
+        ][_saleDTO.seller].seller = _sender;
 
         MarketItem memory newMarketItem = idMarketItemsByContractByOwner[
             _saleDTO.contractAddress
@@ -520,7 +543,7 @@ abstract contract MintGoldDustMarketplace is Initializable {
 
         idMarketItemsByContractByOwner[_saleDTO.contractAddress][
             _saleDTO.tokenId
-        ][msg.sender] = newMarketItem;
+        ][_sender] = newMarketItem;
 
         delete idMarketItemsByContractByOwner[_saleDTO.contractAddress][
             _saleDTO.tokenId
@@ -538,6 +561,10 @@ abstract contract MintGoldDustMarketplace is Initializable {
      *    @dev FYI if it is true. So another event will be fired after the sale finalization.
      *         It is the NftPurchasedCollaboratorAmount event. It will be triggered for each one of the collaborators.
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function emitPrimarySaleEvent(
         MarketItem memory _marketItem,
@@ -546,13 +573,14 @@ abstract contract MintGoldDustMarketplace is Initializable {
         uint256 _collFee,
         uint256 _fee,
         bool _hasCollaborators,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         emit MintGoldDustNftPurchasedPrimaryMarket(
             itemsSold.current(),
             _saleDTO.tokenId,
             _saleDTO.seller,
-            msg.sender,
+            _sender,
             _value,
             _balance,
             _fee,
@@ -575,6 +603,10 @@ abstract contract MintGoldDustMarketplace is Initializable {
      * @param _royalty represent the royalty to be paid for the artist.
      * @param _balance represents the total amount to be received by the seller after fee calculations.
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function uniqueOwnerSecondarySale(
         MarketItem memory _marketItem,
@@ -584,18 +616,19 @@ abstract contract MintGoldDustMarketplace is Initializable {
         uint256 _fee,
         uint256 _royalty,
         uint256 _balance,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         try
             _mintGoldDustNFT.transfer(
                 address(this),
-                msg.sender,
+                _sender,
                 _saleDTO.tokenId,
                 _saleDTO.amount
             )
         {
             payable(_artist).transfer(_royalty);
-            updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
+            updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
             emitSecondarySaleEvent(
                 _marketItem,
                 _saleDTO,
@@ -605,7 +638,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 _royalty,
                 _fee,
                 false,
-                _value
+                _value,
+                _sender
             );
         } catch {
             revertInCaseOfErrorInTransfer(_saleDTO, true);
@@ -625,6 +659,10 @@ abstract contract MintGoldDustMarketplace is Initializable {
      *    @dev FYI if it is true. So another event will be fired after the sale finalization.
      *         It is the NftPurchasedCollaboratorAmount event. It will be triggered for each one of the collaborators.
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function emitSecondarySaleEvent(
         MarketItem memory _marketItem,
@@ -635,13 +673,14 @@ abstract contract MintGoldDustMarketplace is Initializable {
         uint256 _royalty,
         uint256 _fee,
         bool _hasCollaborators,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         emit MintGoldDustNftPurchasedSecondaryMarket(
             itemsSold.current(),
             _saleDTO.tokenId,
             _saleDTO.seller,
-            msg.sender,
+            _sender,
             _value,
             _balance,
             _royaltyPercent,
@@ -673,6 +712,10 @@ abstract contract MintGoldDustMarketplace is Initializable {
      *                    - seller: The seller of the marketItem.
      * @param _isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function splittedSale(
         uint256 _balance,
@@ -682,7 +725,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
         MintGoldDustNFT _mintGoldDustNFT,
         SaleDTO memory _saleDTO,
         bool _isPrimarySale,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         MarketItem memory _marketItem = getMarketItem(_saleDTO);
 
@@ -723,7 +767,7 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 balanceSplitPart
             );
         }
-        updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
+        updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
         emitEventForSplitPayment(
             _saleDTO,
             _marketItem,
@@ -733,7 +777,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
             _fee,
             _collFeeOrRoyalty,
             _isPrimarySale,
-            _value
+            _value,
+            _sender
         );
     }
 
@@ -749,6 +794,10 @@ abstract contract MintGoldDustMarketplace is Initializable {
      * @param _collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
      * @param _isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function emitEventForSplitPayment(
         SaleDTO memory _saleDTO,
@@ -759,7 +808,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
         uint256 _fee,
         uint256 _collFeeOrRoyalty,
         bool _isPrimarySale,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         if (_isPrimarySale) {
             emitPrimarySaleEvent(
@@ -769,7 +819,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 _collFeeOrRoyalty,
                 _fee,
                 true,
-                _value
+                _value,
+                _sender
             );
             return;
         }
@@ -783,7 +834,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
             _collFeeOrRoyalty,
             _fee,
             true,
-            _value
+            _value,
+            _sender
         );
     }
 
@@ -819,6 +871,10 @@ abstract contract MintGoldDustMarketplace is Initializable {
      * @param _artistOrSeller address for the artist on secondary sales and for the seller on the primary sales.
      * @param _isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function handleSplitPaymentCall(
         MintGoldDustNFT _mintGoldDustNFT,
@@ -828,12 +884,13 @@ abstract contract MintGoldDustMarketplace is Initializable {
         uint256 _collFeeOrRoyalty,
         address _artistOrSeller,
         bool _isPrimarySale,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         try
             _mintGoldDustNFT.transfer(
                 address(this),
-                msg.sender,
+                _sender,
                 _saleDTO.tokenId,
                 _saleDTO.amount
             )
@@ -846,7 +903,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 _mintGoldDustNFT,
                 _saleDTO,
                 _isPrimarySale,
-                _value
+                _value,
+                _sender
             );
         } catch {
             revertInCaseOfErrorInTransfer(_saleDTO, _isPrimarySale);
@@ -897,11 +955,16 @@ abstract contract MintGoldDustMarketplace is Initializable {
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function secondarySale(
         MarketItem memory _marketItem,
         SaleDTO memory _saleDTO,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(
             _marketItem.isERC721
@@ -934,7 +997,8 @@ abstract contract MintGoldDustMarketplace is Initializable {
             fee,
             royalty,
             false,
-            _value
+            _value,
+            _sender
         );
 
         payable(mgdCompany.owner()).transfer(fee);
@@ -1013,12 +1077,13 @@ abstract contract MintGoldDustMarketplace is Initializable {
             _realAmount = 1;
         }
 
-        isMsgValueEnough(_marketItem.price, _realAmount);
+        isMsgValueEnough(_marketItem.price, _realAmount, msg.value);
 
         checkIfIsPrimaryOrSecondarySaleAndCall(
             _marketItem,
             _saleDTO,
-            msg.value
+            msg.value,
+            msg.sender
         );
     }
 
@@ -1028,22 +1093,27 @@ abstract contract MintGoldDustMarketplace is Initializable {
      * @param _marketItem The MarketItem struct parameter to use.
      * @param _saleDTO The SaleDTO struct parameter to use.
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function checkIfIsPrimaryOrSecondarySaleAndCall(
         MarketItem memory _marketItem,
         SaleDTO memory _saleDTO,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) private {
         bool _isSecondarySale = idMarketItemsByContractByOwner[
             _saleDTO.contractAddress
         ][_marketItem.tokenId][_saleDTO.seller].isSecondarySale;
 
         if (!_isSecondarySale) {
-            primarySale(_marketItem, _saleDTO, _value);
+            primarySale(_marketItem, _saleDTO, _value, _sender);
             return;
         }
 
-        secondarySale(_marketItem, _saleDTO, _value);
+        secondarySale(_marketItem, _saleDTO, _value, _sender);
     }
 
     /**
@@ -1063,10 +1133,15 @@ abstract contract MintGoldDustMarketplace is Initializable {
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      * @param _value The value to be paid for the purchase.
+     * @param _sender The address that started this flow.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function purchaseAuctionNft(
         SaleDTO memory _saleDTO,
-        uint256 _value
+        uint256 _value,
+        address _sender
     ) internal {
         isAuction(_saleDTO.tokenId, _saleDTO.contractAddress, _saleDTO.seller);
 
@@ -1082,9 +1157,14 @@ abstract contract MintGoldDustMarketplace is Initializable {
             _realAmount = 1;
         }
 
-        isMsgValueEnough(_marketItem.price, _realAmount);
+        isMsgValueEnough(_marketItem.price, _realAmount, _value);
 
-        checkIfIsPrimaryOrSecondarySaleAndCall(_marketItem, _saleDTO, _value);
+        checkIfIsPrimaryOrSecondarySaleAndCall(
+            _marketItem,
+            _saleDTO,
+            _value,
+            _sender
+        );
     }
 
     /// @dev it is a private function to verify if the msg.value is enough to pay the product between the
@@ -1092,8 +1172,12 @@ abstract contract MintGoldDustMarketplace is Initializable {
     /// @param _price the price of one market item.
     /// @param _amount the quantity desired for this purchase.
     /// @notice that it REVERTS with a MintGoldDustInvalidAmountForThisPurchase() error if the condition is not met.
-    function isMsgValueEnough(uint256 _price, uint256 _amount) private {
-        if (msg.value != (_price * (_amount * (10 ** 18))) / (10 ** 18)) {
+    function isMsgValueEnough(
+        uint256 _price,
+        uint256 _amount,
+        uint256 _value
+    ) private pure {
+        if (_value != (_price * (_amount * (10 ** 18))) / (10 ** 18)) {
             revert MintGoldDustInvalidAmountForThisPurchase();
         }
     }

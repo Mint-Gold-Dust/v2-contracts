@@ -58,12 +58,14 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @param price the reserve price for this auction.
      *    @dev it can be zero (so the auction does not has a reserve price).
      * @param timeOfCreation the timestamp that the auction was created.
+     * @param contractAddress the MintGoldDustERC721 address or the MintGoldDustERC1155 address.
      */
     event MintGoldDustNftListedToAuction(
         uint256 indexed tokenId,
         address seller,
         uint256 price,
-        uint256 timeOfCreation
+        uint256 timeOfCreation,
+        address contractAddress
     );
 
     /**
@@ -140,7 +142,8 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             _listDTO.saleDTO.tokenId,
             payable(msg.sender),
             _listDTO.price,
-            block.timestamp
+            block.timestamp,
+            _contractAddress
         );
     }
 
@@ -420,7 +423,10 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             ),
             idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                 _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.highestBid
+            ][_bidDTO.seller].auctionProps.highestBid,
+            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
+                _bidDTO.tokenId
+            ][_bidDTO.seller].auctionProps.highestBidder
         );
     }
 
