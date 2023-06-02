@@ -2,6 +2,8 @@
 pragma solidity 0.8.18;
 
 import "./MintGoldDustMarketplace.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 error AuctionMustBeEnded(uint256 _tokenId);
 error AuctionEndedAlready();
@@ -16,7 +18,19 @@ error LastBidderCannotPlaceNextBid();
 /// check if an auction time is ended and end an auction.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
+contract MintGoldDustMarketplaceAuction is
+    MintGoldDustMarketplace,
+    ReentrancyGuardUpgradeable,
+    IERC1155Receiver
+{
+    bytes4 private constant ERC165_ID = 0x01ffc9a7; //ERC165
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public pure override returns (bool) {
+        return interfaceId == ERC165_ID;
+    }
+
     /**
      *
      * @notice MGDAuction is a children of MintGoldDustMarketplace and this one is
@@ -35,6 +49,26 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             _mintGoldDustERC721Address,
             _mintGoldDustERC1155Address
         );
+    }
+
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    ) external override returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address operator,
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata values,
+        bytes calldata data
+    ) external override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
     }
 
     /**
@@ -134,7 +168,13 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             msg.sender
         );
 
-        ListDTO memory _listDTO = ListDTO(_saleDTO, _price);
+        uint256 _realPrice = _price;
+
+        if (_contractAddress == mintGoldDustERC1155Address) {
+            _realPrice = _price / _amount;
+        }
+
+        ListDTO memory _listDTO = ListDTO(_saleDTO, _realPrice);
 
         list(_listDTO, true, address(this));
 
@@ -169,7 +209,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     }
 
     /**
-     * @dev the maigoal of this function is check the amount paid by the buyer is valid.
+     * @dev the goal of this function is check the amount paid by the buyer is valid.
      * @notice that first if the reserve price is zero so the amount paid must be greater than it.
      * @notice that in the second case if we have a reserve price and the highest bid is zero. It means
      *         that the first bid needs to be greater than the reserve price.
@@ -178,7 +218,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @notice if one of the conditions was not met the function REVERTS with a BidTooLow() error.
      * @param _bidDTO BidDTO struct.
      */
-    function isBitTooLow(BidDTO memory _bidDTO) private {
+    function isBidTooLow(BidDTO memory _bidDTO) private {
         if (
             idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                 _bidDTO.tokenId
@@ -189,6 +229,21 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             revert BidTooLow();
         }
 
+        /// @dev OLD in this case the item did not received any bids yet and the bid is less than the reserve price
+        // if (
+        //   idMarketItemsByContractByOwner[_bidDTO.contractAddress][_bidDTO.tokenId][
+        //     _bidDTO.seller
+        //   ].auctionProps.highestBid ==
+        //   0 &&
+        //   msg.value <
+        //   idMarketItemsByContractByOwner[_bidDTO.contractAddress][_bidDTO.tokenId][
+        //     _bidDTO.seller
+        //   ].price
+        // ) {
+        //   revert BidTooLow();
+        // }
+
+        /// @dev in this case the item did not received any bids yet and the bid is less than the reserve price
         if (
             idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                 _bidDTO.tokenId
@@ -197,11 +252,15 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             msg.value <
             idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                 _bidDTO.tokenId
-            ][_bidDTO.seller].price
+            ][_bidDTO.seller].price *
+                idMarketItemsByContractByOwner[_bidDTO.contractAddress][
+                    _bidDTO.tokenId
+                ][_bidDTO.seller].tokenAmount
         ) {
             revert BidTooLow();
         }
 
+        /// @dev in this case the item have already received bids and the bid is less or equal the latest highest bid
         if (
             idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                 _bidDTO.tokenId
@@ -359,7 +418,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
         isNotLastBidder(_bidDTO);
         isTokenIdListed(_bidDTO.tokenId, _bidDTO.contractAddress);
         isAuctionTimeEnded(_bidDTO);
-        isBitTooLow(_bidDTO);
+        isBidTooLow(_bidDTO);
 
         /// @dev starts auction flow
         isAuctionTimeStarted(_bidDTO);
