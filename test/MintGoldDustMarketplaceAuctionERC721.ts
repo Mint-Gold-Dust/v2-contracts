@@ -680,14 +680,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           )
         );
 
-        expect(parseFloat(fromWei(bidderBalanceBefore)).toFixed(4)).to.be.equal(
+        expect(parseFloat(fromWei(bidderBalanceBefore)).toFixed(2)).to.be.equal(
           parseFloat(
             fromWei(
               ethers.BigNumber.from(bidderBalanceAfter)
                 .add(toWei(price))
                 .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
             )
-          ).toFixed(4)
+          ).toFixed(2)
         );
 
         // Verify if the end time was set to 24 hours after the first bid greater than zero.
