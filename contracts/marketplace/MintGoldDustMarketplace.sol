@@ -20,6 +20,7 @@ error MintGoldDustFunctionForAuctionListedNFT();
 error MintGoldDustMustBeERC721OrERC1155();
 error MintGoldDustLessItemsListedThanThePurchaseAmount();
 error MintGoldDustInvalidAmountForThisPurchase();
+error MintGoldDustPurchaseOfERC1155InAuctionThatCoverAllListedItems();
 
 /// @title An abstract contract responsible to define some general responsibilites related with
 /// a marketplace for its childrens.
@@ -1072,9 +1073,10 @@ abstract contract MintGoldDustMarketplace is Initializable {
         MarketItem memory _marketItem = getMarketItem(_saleDTO);
 
         /// @dev if the flow goes for ERC721 the amount of tokens MUST be ONE.
-        uint256 _realAmount = _saleDTO.amount;
-        if (_marketItem.isERC721) {
-            _realAmount = 1;
+        uint256 _realAmount = 1;
+
+        if (!_marketItem.isERC721) {
+            _realAmount = _saleDTO.amount;
         }
 
         isMsgValueEnough(_marketItem.price, _realAmount, msg.value);
@@ -1152,12 +1154,13 @@ abstract contract MintGoldDustMarketplace is Initializable {
         MarketItem memory _marketItem = getMarketItem(_saleDTO);
 
         /// @dev if the flow goes for ERC721 the amount of tokens MUST be ONE.
-        uint256 _realAmount = _saleDTO.amount;
-        if (_marketItem.isERC721) {
-            _realAmount = 1;
-        }
+        uint256 _realAmount = 1;
 
-        isMsgValueEnough(_marketItem.price, _realAmount, _value);
+        if (!_marketItem.isERC721) {
+            _realAmount = _saleDTO.amount;
+            isBuyingAllListedTokens(_saleDTO);
+            //isMsgValueEnough(_marketItem.price, _realAmount, _value);
+        }
 
         checkIfIsPrimaryOrSecondarySaleAndCall(
             _marketItem,
@@ -1165,6 +1168,26 @@ abstract contract MintGoldDustMarketplace is Initializable {
             _value,
             _sender
         );
+    }
+
+    /**
+     * @dev for the auction market, when an artist or collector decides to put a MintGoldDustERC1155 for auction
+     *      is necessary to inform the quantity of tokens to be listed.
+     *    @notice that in this case, at the moment of the purchase, the buyer needs to buy all the tokens
+     *            listed for auction.
+     *    @notice that this function check if the _amount being purchased by the onwer is the same of the amount
+     *            of listed MintGoldDustERC1155 tokenId.
+     * @param _saleDTO a parameter just like in doxygen (must be followed by parameter name)
+     */
+    function isBuyingAllListedTokens(SaleDTO memory _saleDTO) private view {
+        if (
+            _saleDTO.amount <
+            idMarketItemsByContractByOwner[_saleDTO.contractAddress][
+                _saleDTO.tokenId
+            ][_saleDTO.seller].tokenAmount
+        ) {
+            revert MintGoldDustPurchaseOfERC1155InAuctionThatCoverAllListedItems();
+        }
     }
 
     /// @dev it is a private function to verify if the msg.value is enough to pay the product between the
