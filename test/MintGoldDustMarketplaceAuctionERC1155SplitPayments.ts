@@ -255,7 +255,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
         .withArgs("Not owner!");
     });
 
-    it("Should track a creation of an auction without a reserve price that expect the following conditions: \n \t - Expect emit the AuctionCreated event; \n \t - Expect auction structure attributes match with all passed to create auction function; \n \t - Auction end time should not be started yet to 24 hours and should be zero. \n \t - The auction price (initial price) should be zero. This way after any bid greater than zero the time of 24 hours should starts.", async () => {
+    it("Should track a creation of an auction without a reserve price that expect the following conditions: \n \t - Expect emit the MintGoldDustNftListedToAuction event; \n \t - Expect auction structure attributes match with all passed to create auction function; \n \t - Auction end time should not be started yet to 24 hours and should be zero. \n \t - The auction price (initial price) should be zero. This way after any bid greater than zero the time of 24 hours should starts.", async () => {
       const tx = await mintGoldDustMarketplaceAuction
         .connect(addr1)
         .list(1, quantityToList, mintGoldDustERC1155.address, toWei(0));
@@ -297,7 +297,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       expect(marketItem.auctionProps.ended).to.be.equal(false);
     });
 
-    it("Should track a creation of an auction with a reserve price that expect the following conditions: \n \t - Expect emit the AuctionCreated event; \n \t - Expect auction structure attributes match with all passed to create auction function; \n \t - Auction end time should not be started yet to 24 hours and should be zero. \n \t - The auction price (initial price) should be zero. This way after any bid greater than zero the time of 24 hours should starts.", async () => {
+    it("Should track a creation of an auction with a reserve price that expect the following conditions: \n \t - Expect emit the MintGoldDustNftListedToAuction event; \n \t - Expect auction structure attributes match with all passed to create auction function; \n \t - Auction end time should not be started yet to 24 hours and should be zero. \n \t - The auction price (initial price) should be zero. This way after any bid greater than zero the time of 24 hours should starts.", async () => {
       const tx = await mintGoldDustMarketplaceAuction
         .connect(addr1)
         .list(
@@ -1736,7 +1736,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       balance = priceToPurchase - primarySaleFee;
     });
 
-    it("Should:\n \t - Simulate a primary sale that transfer an NFT to the buyer;\n \t - Verify if the item changed status for sale;\n \t - Verify if the seller balance increases;\n \t - Verify if the marketplace's owner receives the fee;\n \t - Verify if the isSecondarySale attribute was set to true;\n \t - Verify if the buyer balance was deacresed exactly the gas fee + the token price;", async function () {
+    it("Should:\n \t - Simulate a primary sale that transfer a mintGoldDustERC721 to the buyer;\n \t - Verify if the item changed status for sale; \n \t - Verify if the hasCollaborator flag is true; \n \t - Check if the isERC721 attribute is false;\n \t -  And also the isAuction attribute must be true;\n \t - Verify if the seller balance increases;\n \t - Verify if the marketplace's owner receives the fee;\n \t - Verify if the isSecondarySale attribute was set to true;\n \t - Verify if the buyer balance was deacresed exactly the gas fee + the token price;", async function () {
       // get the balances for the seller and the owner of the marketplace.
       const sellerInitalEthBal = await addr1.getBalance();
       const colaborator1InitialBalance = await addr5.getBalance();
@@ -2090,7 +2090,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
   //     );
   //   });
 
-  //   it("Should simulate a secondary sale that transfer an NFT to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the artist creator have received the royalty.", async function () {
+  //   it("Should simulate a secondary sale that transfer a mintGoldDustERC721 to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the artist creator have received the royalty. Verify if the hasCollaborator flag is true, the isERC721 attribute is false and if the isAuction attribute is true.", async function () {
   //     await new Promise((resolve) => setTimeout(resolve, _timeout));
 
   //     await mintGoldDustMarketplaceAuction.endAuction({
