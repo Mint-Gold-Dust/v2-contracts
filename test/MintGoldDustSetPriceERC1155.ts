@@ -310,8 +310,8 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       expect(marketItem.price).to.equal(toWei(primaryPrice));
 
       // Update the listed NFT
-      expect(
-        await mintGoldDustSetPrice
+      await expect(
+         mintGoldDustSetPrice
           .connect(addr1)
           .updateListedNft(
             1,
@@ -448,7 +448,8 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         );
     });
 
-    it("Should delist a NFT from the marketplace and emit the NFTRemovedFromMarketplace event.", async function () {
+    
+    it("Should delist a NFT from the marketplace and emit the MintGoldDustNftRemovedFromMarketplace event.", async function () {
       console.log(
         "\t ARTIST BALANCE BEFORE DELIST (ETH): ",
         parseFloat(fromWei(await addr1.getBalance()))
@@ -467,13 +468,14 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         ).sold
       ).to.be.equal(false);
       // addr2 relist a purchased NFT
-      expect(
-        await mintGoldDustSetPrice.connect(addr1).delistNft({
+      await expect(
+          mintGoldDustSetPrice.connect(addr1).delistNft({
           tokenId: 1,
           contractAddress: mintGoldDustERC1155.address,
         })
       )
-        .to.emit(mintGoldDustSetPrice, "NFTRemovedFromMarketplace")
+      
+        .to.emit(mintGoldDustSetPrice, "MintGoldDustNftRemovedFromMarketplace")
         .withArgs(1, addr1.address);
       // the market item should be sold
       expect(
@@ -863,6 +865,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         .connect(addr1)
         .setApprovalForAll(mintGoldDustSetPrice.address, true);
 
+
       expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(
         amountToMint
       );
@@ -935,10 +938,11 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       const artistCreatorInitialBal = await provider.getBalance(
         artistCreatorAddress
       );
+
       // get the addr2 buyer initial balance
       const artistSellerInitialBal = await addr2.getBalance();
       let gasPrice = await mintGoldDustSetPrice.signer.getGasPrice();
-      let gasLimit = await mintGoldDustSetPrice.estimateGas.purchaseNft(
+        let gasLimit = await mintGoldDustSetPrice.estimateGas.purchaseNft(
         {
           tokenId: 1,
           amount: amountToBuyForSecondary,
@@ -950,15 +954,15 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         }
       );
       console.log("\t GAS PRICE: ", gasPrice);
-      console.log("\t GAS LIMIT: ", gasLimit);
+        console.log("\t GAS LIMIT: ", gasLimit);
       console.log(
         "\t\t TOTAL GAS ESTIMATION (USD): ",
         (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
           2500
       );
       // execute the buyNft function
-      expect(
-        await mintGoldDustSetPrice.connect(addr3).purchaseNft(
+        await expect(
+          mintGoldDustSetPrice.connect(addr3).purchaseNft(
           {
             tokenId: 1,
             amount: amountToBuyForSecondary,
@@ -975,7 +979,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           "MintGoldDustNftPurchasedSecondaryMarket"
         )
         .withArgs(
-          1,
+          2,
           1,
           addr2.address,
           addr3.address,
@@ -991,7 +995,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           false
         );
       // prepare the future balance that the owner should have after the transaction
-      const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
+        const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
         feeAccountInitialEthBal
       ).add(toWei(secondarySaleFee));
       // verify if the owner of the NFT changed for the buyer

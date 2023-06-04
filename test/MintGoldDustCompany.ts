@@ -84,14 +84,14 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
           2500
       );
       // GD owner set a new validator
-      expect(
-        await mgdCompany.connect(deployer).setValidator(addr1.address, true)
+      await expect(
+        mgdCompany.connect(deployer).setValidator(addr1.address, true)
       )
         .to.emit(mgdCompany, "ValidatorAdded")
         .withArgs(addr1.address, true);
 
       // The new validator should can whitelist
-      expect(await mgdCompany.connect(addr1).whitelist(addr1.address, true))
+      await expect(mgdCompany.connect(addr1).whitelist(addr1.address, true))
         .to.emit(mgdCompany, "ArtistWhitelisted")
         .withArgs(addr1.address, true);
     });
