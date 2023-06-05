@@ -23,7 +23,6 @@ error MintGoldDustLessItemsListedThanThePurchaseAmount();
 error MintGoldDustInvalidAmountForThisPurchase();
 error MintGoldDustPurchaseOfERC1155InAuctionThatCoverAllListedItems();
 error MintGoldDustCollectorMintDataNotMatch();
-error Teste(uint256 valor);
 
 /// @title An abstract contract responsible to define some general responsibilites related with
 /// a marketplace for its childrens.
@@ -94,6 +93,8 @@ abstract contract MintGoldDustMarketplace is
         uint256 tokenAmount;
         AuctionProps auctionProps;
     }
+
+    error Teste(MarketItem valor);
 
     /**
      * This struct consists of the following fields:
@@ -477,7 +478,7 @@ abstract contract MintGoldDustMarketplace is
                 _fee,
                 _collFeeOrRoyalty,
                 _artistOrSeller,
-                true,
+                isPrimarySale,
                 _value,
                 _sender
             );
@@ -572,6 +573,16 @@ abstract contract MintGoldDustMarketplace is
         MarketItem memory newMarketItem = idMarketItemsByContractByOwner[
             _saleDTO.contractAddress
         ][_saleDTO.tokenId][_saleDTO.seller];
+
+        AuctionProps memory auctionProps = AuctionProps(
+            0,
+            payable(address(0)),
+            0,
+            false,
+            false
+        );
+
+        newMarketItem.auctionProps = auctionProps;
 
         idMarketItemsByContractByOwner[_saleDTO.contractAddress][
             _saleDTO.tokenId
@@ -726,6 +737,8 @@ abstract contract MintGoldDustMarketplace is
         );
     }
 
+    error Teste123(address add1, uint256 add2);
+
     /**
      * @notice that is the function responsible to manage the split sale flow.
      * @dev the _isPrimarySale is very important. It define if the value to be received is
@@ -776,6 +789,7 @@ abstract contract MintGoldDustMarketplace is
                 _saleDTO.tokenId,
                 0
             )) / (100 * 10 ** 18);
+        // revert Teste123(_artist, balanceOrRoayalty);
         payable(_artist).transfer(balanceSplitPart);
         emit NftPurchasedCollaboratorAmount(
             itemsSold.current(),
@@ -998,6 +1012,7 @@ abstract contract MintGoldDustMarketplace is
         uint256 _value,
         address _sender
     ) private {
+        //revert Teste(_marketItem);
         MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(
             _marketItem.isERC721
         );

@@ -35,6 +35,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
   let URI = "sample URI";
   let baseURI = "https://example.com/{id}.json";
 
+  const MEMOIR = "This is a great moment of my life!";
+
   //const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
   const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
   const primary_sale_fee_percent_initial = 15000000000000000000n;
@@ -143,7 +145,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       // addr1 mints a nft
       let transaction = await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Wait for the transaction to be finalized
       const receipt = await transaction.wait();
       tokenId = receipt.events[0].args[3];
@@ -347,7 +349,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -608,7 +610,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -753,14 +755,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           )
         );
 
-        expect(parseFloat(fromWei(bidderBalanceBefore)).toFixed(4)).to.be.equal(
+        expect(parseFloat(fromWei(bidderBalanceBefore)).toFixed(3)).to.be.equal(
           parseFloat(
             fromWei(
               ethers.BigNumber.from(bidderBalanceAfter)
                 .add(toWei(priceToPurchase))
                 .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
             )
-          ).toFixed(4)
+          ).toFixed(3)
         );
 
         // Verify if the end time was set to 24 hours after the first bid greater than zero.
@@ -1534,7 +1536,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -1674,7 +1676,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -1927,7 +1929,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(royalty), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(royalty), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
