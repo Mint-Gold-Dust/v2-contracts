@@ -7,7 +7,7 @@ import { ethers } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDustMarketplace.sol Smart Contracts \n**********************\_\_**********************\n \n\tThe process of the split payments starts at the moment of the minting. It means that the artist can choose to mint with or without adding of collaborators. After that, the flow ends at the moment of the sale process. For the primary sales the balance will be divided between the artist creator and its collaborators and in the secondary market the royalty gonna be diveded by the same people. \n", function () {
+describe("splitMints are related with the MintGoldDustERC721.sol and MintGoldDustMarketplace.sol Smart Contracts \n**********\*\***********\_\_**********\*\***********\n \n\tThe process of the split payments starts at the moment of the minting. It means that the artist can choose to mint with or without adding of collaborators. After that, the flow ends at the moment of the sale process. For the primary sales the balance will be divided between the artist creator and its collaborators and in the secondary market the royalty gonna be diveded by the same people. \n", function () {
 let MintGoldDustERC721: ContractFactory;
 let mintGoldDustERC721: Contract;
 
