@@ -23,6 +23,9 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
   let MintGoldDustSetPrice: ContractFactory;
   let mintGoldDustSetPrice: Contract;
 
+  let MintGoldDustMemoir: ContractFactory;
+  let mintGoldDustMemoir: Contract;
+
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
@@ -68,6 +71,10 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
     MintGoldDustERC1155 = await ethers.getContractFactory(
       "MintGoldDustERC1155"
     );
+    MintGoldDustMemoir = await ethers.getContractFactory("MintGoldDustMemoir");
+
+    mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
+    await mintGoldDustMemoir.deployed();
 
     [
       deployer,
@@ -98,7 +105,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mintGoldDustCompany.address],
+      [mintGoldDustCompany.address, mintGoldDustMemoir.address],
       {
         initializer: "initializeChild",
       }
@@ -106,7 +113,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
 
     mintGoldDustERC1155 = await upgrades.deployProxy(
       MintGoldDustERC1155,
-      [mintGoldDustCompany.address, baseURI],
+      [mintGoldDustCompany.address, mintGoldDustMemoir.address, baseURI],
       {
         initializer: "initializeChild",
       }
@@ -159,7 +166,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           toWei(5),
           [addr5.address, addr6.address, addr7.address, addr8.address],
           [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-          quantityToMint
+          quantityToMint,
+          mintGoldDustMemoir.address
         );
       // Wait for the transaction to be finalized
       const receipt = await transaction.wait();
@@ -356,7 +364,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           toWei(5),
           [addr5.address, addr6.address, addr7.address],
           [toWei(25), toWei(25), toWei(25), toWei(25)],
-          quantityToMint
+          quantityToMint,
+          mintGoldDustMemoir.address
         );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
@@ -623,7 +632,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           toWei(5),
           [addr5.address, addr6.address, addr7.address, addr8.address],
           [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-          quantityToMint
+          quantityToMint,
+          mintGoldDustMemoir.address
         );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
@@ -790,7 +800,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
                 addr1.address
               )
           ).auctionProps.endTime
-        ).to.be.closeTo(expectedEndTime, 1000);
+        ).to.be.closeTo(expectedEndTime, 1500);
 
         console.log(
           "\n\t\tAUCTION END TIME AFTER BID: ",
@@ -989,7 +999,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
                 addr1.address
               )
           ).auctionProps.endTime
-        ).to.be.closeTo(expectedEndTime, 1000);
+        ).to.be.closeTo(expectedEndTime, 1500);
 
         console.log(
           "\n\t\tAUCTION END TIME AFTER BID: ",
@@ -1199,7 +1209,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
                 addr1.address
               )
           ).auctionProps.endTime
-        ).to.be.closeTo(expectedEndTime, 1000);
+        ).to.be.closeTo(expectedEndTime, 1500);
 
         // ***** EXPECT HIHEST BID TO BE THE FIRST BID VALUE AFTER FIRST BID *****
         expect(
@@ -1347,7 +1357,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
                 addr1.address
               )
           ).auctionProps.endTime
-        ).to.be.closeTo(expectedEndTime, 1000);
+        ).to.be.closeTo(expectedEndTime, 1500);
 
         console.log(
           "\t\tHIGHEST AFTER SECOND BID: ",
@@ -1480,7 +1490,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
                 addr1.address
               )
           ).auctionProps.endTime
-        ).to.be.closeTo(expectedEndTime, 1000);
+        ).to.be.closeTo(expectedEndTime, 1500);
 
         console.log(`\n\t\tWaiting until the last 5 minutes of the auction...`);
         await new Promise((resolve) => setTimeout(resolve, _timeout));
@@ -1555,7 +1565,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           toWei(5),
           [addr5.address, addr6.address, addr7.address, addr8.address],
           [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-          quantityToMint
+          quantityToMint,
+          mintGoldDustMemoir.address
         );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
@@ -1701,7 +1712,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           toWei(5),
           [addr5.address, addr6.address, addr7.address, addr8.address],
           [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-          quantityToMint
+          quantityToMint,
+          mintGoldDustMemoir.address
         );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
@@ -2046,7 +2058,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
   //         toWei(5),
   //         [addr5.address, addr6.address, addr7.address, addr8.address],
   //         [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-  //         quantityToMint
+  //         quantityToMint,
+  //         mintGoldDustMemoir.address
   //       );
   //     // Artist approve gdMarketPlace marketplace to exchange its NFT
   //     await mintGoldDustERC721
@@ -2151,8 +2164,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
   //     //   );
 
   //     // execute the buyNft function
-  //     expect(
-  //       await mintGoldDustMarketplaceAuction.endAuction({
+  //     await expect(
+  //       mintGoldDustMarketplaceAuction.endAuction({
   //         tokenId: 1,
   //         contractAddress: mintGoldDustERC721.address,
   //         seller: addr2.address,

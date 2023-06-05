@@ -1388,11 +1388,7 @@ abstract contract MintGoldDustMarketplace is Initializable {
             (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(_tokenId) !=
             address(this)
         ) {
-            revert MintGoldDustItemIsNotListed(
-                (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(
-                    _tokenId
-                )
-            );
+            revert MintGoldDustItemIsNotListed(_contractAddress);
         }
 
         if (

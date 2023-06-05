@@ -39,6 +39,9 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
     MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
     MintGoldDustMemoir = await ethers.getContractFactory("MintGoldDustMemoir");
 
+    mgdMemoir = await MintGoldDustMemoir.deploy();
+    await mgdMemoir.deployed();
+
     [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
 
     mgdCompany = await upgrades.deployProxy(
@@ -56,15 +59,13 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mgdCompany.address],
+      [mgdCompany.address, mgdMemoir.address],
       {
         initializer: "initialize",
       }
     );
     await mintGoldDustERC721.deployed();
 
-    mgdMemoir = await MintGoldDustMemoir.deploy();
-    await mgdMemoir.deployed();
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
   });
@@ -78,18 +79,21 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
         "\t ARTIST BALANCE BEFORE ADD MEMOIR: ",
         parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
       );
+      console.log(1);
       let artistBalanceBefore = await addr1.getBalance();
 
       // MGD Owner whitelist the artist addr1
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+      console.log(1);
 
       // Mint a new MGD ERC721
       const transaction = await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), 1);
+        .mintNft(URI, toWei(5), 1, mgdMemoir.address);
       // Wait for the transaction to be finalized
       const receipt = await transaction.wait();
       const tokenId = receipt.events[0].args[2];
+      console.log(1);
 
       const MEMOIR =
         "This is my first memoir in my art history! I was very thoughtful and very creative at this moment!";
@@ -98,6 +102,7 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
         tokenId,
         MEMOIR
       );
+      console.log(1);
 
       const decoder = new TextDecoder();
       const byteArray = ethers.utils.arrayify(
@@ -106,6 +111,8 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
           tokenId
         )
       );
+      console.log(1);
+
       const memoirStringReturned = decoder.decode(byteArray);
 
       console.log(
@@ -148,7 +155,7 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       // Mint a new MGD ERC721
       const transaction = await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), 1);
+        .mintNft(URI, toWei(5), 1, mgdMemoir.address);
 
       // Wait for the transaction to be finalized
       const receipt = await transaction.wait();
@@ -186,7 +193,7 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       // Mint a new MGD ERC721
       const transaction = await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), 1);
+        .mintNft(URI, toWei(5), 1, mgdMemoir.address);
 
       // Wait for the transaction to be finalized
       const receipt = await transaction.wait();
@@ -271,7 +278,7 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
       // Mint a new MGD ERC721
-      expect(await mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5), 1));
+      expect(await mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5), 1, mgdMemoir.address));
 
       const MEMOIR = "Some string";
       await expect(
