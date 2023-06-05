@@ -14,6 +14,9 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
   let MintGoldDustCompany: ContractFactory;
   let mgdCompany: Contract;
 
+  let MintGoldDustMemoir: ContractFactory;
+  let mintGoldDustMemoir: Contract;
+
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
@@ -21,6 +24,8 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
   let baseURI = "https://example.com/{id}.json";
   let max_royalty = 20;
+
+  const MEMOIR = "This is a great moment of my life!";
 
   // const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
   const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
@@ -36,6 +41,10 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
     MintGoldDustERC1155 = await ethers.getContractFactory(
       "MintGoldDustERC1155"
     );
+    MintGoldDustMemoir = await ethers.getContractFactory("MintGoldDustMemoir");
+
+    mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
+    await mintGoldDustMemoir.deployed();
 
     [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
 
@@ -54,7 +63,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
     mintGoldDustERC1155 = await upgrades.deployProxy(
       MintGoldDustERC1155,
-      [mgdCompany.address, baseURI],
+      [mgdCompany.address, mintGoldDustMemoir.address, baseURI],
       {
         initializer: "initializeChild",
       }
@@ -80,15 +89,36 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
       // addr1 mints a nft
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-      await expect(mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 10))
-        .to.emit(mintGoldDustERC1155, "NftMinted")
-        .withArgs(1, addr1.address, toWei(5), 10);
+      await expect(
+        mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 10, MEMOIR)
+      )
+        .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
+        .withArgs(
+          1,
+          addr1.address,
+          toWei(5),
+          10,
+          mintGoldDustERC1155.address,
+          false
+        );
       expect(await mintGoldDustERC1155.tokenIdArtist(1)).to.equal(
         addr1.address
       );
       expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(
         10
       );
+
+      let decoder = new TextDecoder();
+      let byteArray = ethers.utils.arrayify(
+        await mintGoldDustMemoir.contractTokenIdMemoirs(
+          mintGoldDustERC1155.address,
+          1
+        )
+      );
+
+      let memoirStringReturned = decoder.decode(byteArray);
+
+      expect(memoirStringReturned).to.be.equal(MEMOIR);
 
       console.log(
         "\t ARTIST BALANCE AFTER MINT: ",
@@ -108,13 +138,34 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
       // addr2 mints a nft
       await mgdCompany.connect(deployer).whitelist(addr2.address, true);
-      await expect(mintGoldDustERC1155.connect(addr2).mintNft("", toWei(5), 5))
-        .to.emit(mintGoldDustERC1155, "NftMinted")
-        .withArgs(2, addr2.address, toWei(5), 5);
+      await expect(
+        mintGoldDustERC1155.connect(addr2).mintNft("", toWei(5), 5, MEMOIR)
+      )
+        .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
+        .withArgs(
+          2,
+          addr2.address,
+          toWei(5),
+          5,
+          mintGoldDustERC1155.address,
+          false
+        );
       expect(await mintGoldDustERC1155.tokenIdArtist(2)).to.equal(
         addr2.address
       );
       expect(await mintGoldDustERC1155.balanceOf(addr2.address, 2)).to.equal(5);
+
+      decoder = new TextDecoder();
+      byteArray = ethers.utils.arrayify(
+        await mintGoldDustMemoir.contractTokenIdMemoirs(
+          mintGoldDustERC1155.address,
+          2
+        )
+      );
+
+      memoirStringReturned = decoder.decode(byteArray);
+
+      expect(memoirStringReturned).to.be.equal(MEMOIR);
 
       expect(
         await mintGoldDustERC1155.connect(addr1).tokenIdRoyaltyPercent(1)
@@ -129,7 +180,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
       await expect(
         mintGoldDustERC1155
           .connect(addr1)
-          .mintNft("", toWei(max_royalty + 1), 5)
+          .mintNft("", toWei(max_royalty + 1), 5, MEMOIR)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC1155,
         "MGDnftRoyaltyInvalidPercentage"
@@ -139,7 +190,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
     it("Should revert with a MGDnftUnauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
       // addr1 try to mint a NFT without be whitelisted
       await expect(
-        mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 5)
+        mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 5, MEMOIR)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC1155,
         "MGDnftUnauthorized"
