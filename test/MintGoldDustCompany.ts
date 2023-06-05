@@ -35,6 +35,8 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
   let collectorFee = 3;
   let maxRoyalty = 20;
 
+  const MEMOIR = "This is a great moment of my life!";
+
   beforeEach(async function () {
     MintGoldDustCompany = await ethers.getContractFactory(
       "MintGoldDustCompany"
@@ -305,7 +307,7 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(valueNewFee), 1, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(valueNewFee), 1, MEMOIR);
     });
 
     it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than new max royalty that is ${valueNewFee}.`, async function () {
@@ -317,7 +319,7 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
       await expect(
         mintGoldDustERC721
           .connect(addr1)
-          .mintNft(URI, toWei(valueNewFee + 1), 1, mintGoldDustMemoir.address)
+          .mintNft(URI, toWei(valueNewFee + 1), 1, MEMOIR)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC721,
         "MGDnftRoyaltyInvalidPercentage"

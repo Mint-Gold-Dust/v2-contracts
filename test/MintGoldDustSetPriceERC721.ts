@@ -11,7 +11,7 @@ chai.use(chaiAsPromised);
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the MintGoldDustSetPrice market and the MintGoldDustERC721 tokens. \n\n", function () {
+describe("MintGoldDustSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the MintGoldDustSetPrice market and the MintGoldDustERC721 tokens. \n\n", function () {
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 
@@ -35,6 +35,8 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
 
   let URI = "sample URI";
   let baseURI = "https://example.com/{id}.json";
+
+  const MEMOIR = "This is a great moment of my life!";
 
   //const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
   const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
@@ -124,7 +126,7 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -253,7 +255,7 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -393,9 +395,7 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
     });
 
     it("Should revert the transaction with an MGDMarketplaceItemIsNotListed error if some user tries to update an item that is not on sale.", async function () {
-
-      
-        await mintGoldDustSetPrice.connect(addr2).purchaseNft(
+      await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
           amount: quantityToList,
@@ -423,7 +423,6 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
         )
         .withArgs(mintGoldDustERC721.address);
     });
-
   });
 
   describe("\n--------------- Tests related with delist NFT functionality ---------------", function () {
@@ -437,7 +436,7 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -473,7 +472,7 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
       ).to.be.equal(false);
       // addr2 relist a purchased NFT
       await expect(
-          mintGoldDustSetPrice.connect(addr1).delistNft({
+        mintGoldDustSetPrice.connect(addr1).delistNft({
           tokenId: 1,
           contractAddress: mintGoldDustERC721.address,
         })
@@ -566,7 +565,7 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), amountToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), amountToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -841,7 +840,7 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), amountToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), amountToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
