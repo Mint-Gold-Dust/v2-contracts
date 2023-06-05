@@ -49,7 +49,7 @@ contract MintGoldDustERC721 is
         address _to,
         uint256 _tokenId,
         uint256 _amount
-    ) public override {
+    ) public override whenNotPaused {
         _transfer(_from, _to, _tokenId);
     }
 
@@ -122,6 +122,7 @@ contract MintGoldDustERC721 is
         public
         view
         override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        whenNotPaused
         returns (string memory)
     {
         return super.tokenURI(tokenId);

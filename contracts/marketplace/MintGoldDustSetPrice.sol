@@ -130,7 +130,7 @@ contract MintGoldDustSetPrice is
         uint256 _amount,
         address _contractAddress,
         uint256 _price
-    ) public override {
+    ) public override whenNotPaused {
         SaleDTO memory _saleDTO = SaleDTO(
             _tokenId,
             _amount,
@@ -165,7 +165,7 @@ contract MintGoldDustSetPrice is
         uint256 _price,
         address _contractAddress,
         address _seller
-    ) public {
+    ) public whenNotPaused {
         mustBeMintGoldDustERC721Or1155(_contractAddress);
         isTokenIdListed(_tokenId, _contractAddress);
         isSeller(_tokenId, _contractAddress, _seller);
@@ -208,7 +208,9 @@ contract MintGoldDustSetPrice is
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      */
-    function delistNft(DelistDTO memory _delistDTO) public nonReentrant {
+    function delistNft(
+        DelistDTO memory _delistDTO
+    ) public nonReentrant whenNotPaused {
         mustBeMintGoldDustERC721Or1155(_delistDTO.contractAddress);
         isTokenIdListed(_delistDTO.tokenId, _delistDTO.contractAddress);
         isSeller(_delistDTO.tokenId, _delistDTO.contractAddress, msg.sender);
@@ -269,7 +271,7 @@ contract MintGoldDustSetPrice is
         CollectorMintDTO memory _collectorMintDTO,
         bytes32 _messageHash,
         bytes memory _artistSignature
-    ) public payable {
+    ) public payable whenNotPaused {
         mustBeMintGoldDustERC721Or1155(_collectorMintDTO.contractAddress);
 
         MintGoldDustNFT _mintGoldDustNFT;
