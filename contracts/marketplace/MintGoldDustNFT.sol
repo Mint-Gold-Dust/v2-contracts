@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 import "./MintGoldDustMemoir.sol";
 
@@ -11,7 +12,7 @@ error MGDnftUnauthorized();
 error NumberOfCollaboratorsAndPercentagesNotMatch();
 error TheTotalPercentageCantBeGreaterThan100();
 
-abstract contract MintGoldDustNFT is Initializable {
+abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
     // Add your custom code and functions here
     /**
      *
@@ -99,7 +100,13 @@ abstract contract MintGoldDustNFT is Initializable {
         uint256 _royaltyPercent,
         uint256 _amount,
         string calldata _memoir
-    ) public payable validPercentage(_royaltyPercent) returns (uint256) {
+    )
+        public
+        payable
+        validPercentage(_royaltyPercent)
+        whenNotPaused
+        returns (uint256)
+    {
         uint256 newTokenId = executeMintFlow(
             _tokenURI,
             _royaltyPercent,
@@ -118,7 +125,7 @@ abstract contract MintGoldDustNFT is Initializable {
         uint256 _amount,
         address _sender,
         string calldata _memoir
-    ) public validPercentage(_royaltyPercent) returns (uint256) {
+    ) public validPercentage(_royaltyPercent) whenNotPaused returns (uint256) {
         uint256 newTokenId = executeMintFlow(
             _tokenURI,
             _royaltyPercent,
@@ -159,7 +166,7 @@ abstract contract MintGoldDustNFT is Initializable {
         uint256[] calldata _ownersPercentage,
         uint256 _amount,
         string calldata _memoir
-    ) external returns (uint256) {
+    ) external whenNotPaused returns (uint256) {
         if (_ownersPercentage.length != _newOwners.length + 1) {
             revert NumberOfCollaboratorsAndPercentagesNotMatch();
         }
@@ -176,7 +183,7 @@ abstract contract MintGoldDustNFT is Initializable {
         uint256 _amount,
         address _sender,
         string calldata _memoir
-    ) external returns (uint256) {
+    ) external whenNotPaused returns (uint256) {
         if (_ownersPercentage.length != _newOwners.length + 1) {
             revert NumberOfCollaboratorsAndPercentagesNotMatch();
         }
@@ -241,6 +248,23 @@ abstract contract MintGoldDustNFT is Initializable {
             _newOwners,
             _ownersPercentage
         );
+    }
+
+    /// @notice Pause the contract
+    function pauseContract() public isowner {
+        _pause();
+    }
+
+    /// @notice Unpause the contract
+    function unpauseContract() public isowner {
+        _unpause();
+    }
+
+    modifier isowner() {
+        if (msg.sender != mintGoldDustCompany.owner()) {
+            revert MGDCompanyUnauthorized();
+        }
+        _;
     }
 
     modifier validPercentage(uint256 percentage) {
