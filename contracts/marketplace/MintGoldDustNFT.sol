@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./MintGoldDustCompany.sol";
+import "./MintGoldDustMemoir.sol";
 
 error MGDnftRoyaltyInvalidPercentage();
 error MGDnftUnauthorized();
@@ -15,13 +16,20 @@ abstract contract MintGoldDustNFT is Initializable {
     /**
      *
      * @notice that the MintGoldDustERC721 is composed by other contract.
-     * @param _mgdCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
-    function initialize(address _mgdCompany) public initializer {
-        mgdCompany = MintGoldDustCompany(payable(_mgdCompany));
+    function initialize(
+        address _mintGoldDustCompany,
+        address _mintGoldDustMemoir
+    ) public initializer {
+        mintGoldDustCompany = MintGoldDustCompany(
+            payable(_mintGoldDustCompany)
+        );
+        mintGoldDustMemoir = MintGoldDustMemoir((_mintGoldDustMemoir));
     }
 
-    MintGoldDustCompany internal mgdCompany;
+    MintGoldDustCompany internal mintGoldDustCompany;
+    MintGoldDustMemoir internal mintGoldDustMemoir;
 
     mapping(uint256 => address) public tokenIdArtist;
     mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
@@ -46,7 +54,8 @@ abstract contract MintGoldDustNFT is Initializable {
         address owner,
         uint256 royalty,
         uint256 amount,
-        address contractAddress
+        address contractAddress,
+        bool isCollectorMint
     );
 
     /**
@@ -69,18 +78,64 @@ abstract contract MintGoldDustNFT is Initializable {
         uint256 amount
     ) external virtual;
 
+    function executeMintFlow(
+        string calldata _tokenURI,
+        uint256 _royaltyPercent,
+        uint256 _amount,
+        address _sender,
+        bool isCollectorMint,
+        string calldata _memoir
+    ) internal virtual returns (uint256);
+
     /**
      * @notice that is the function responsible by the mint a new MintGoldDustNFT token.
      * @dev that is a virtual function that MUST be implemented by the NFT contracts childrens.
      * @param _tokenURI the URI that contains the metadata for the NFT.
-     * @param _royalty the royalty percentage to be applied for this NFT secondary sales.
+     * @param _royaltyPercent the royalty percentage to be applied for this NFT secondary sales.
      * @param _amount the quantity to be minted for this token.
      */
     function mintNft(
         string calldata _tokenURI,
-        uint256 _royalty,
-        uint256 _amount
-    ) public payable virtual returns (uint256);
+        uint256 _royaltyPercent,
+        uint256 _amount,
+        string calldata _memoir
+    ) public payable validPercentage(_royaltyPercent) returns (uint256) {
+        uint256 newTokenId = executeMintFlow(
+            _tokenURI,
+            _royaltyPercent,
+            _amount,
+            msg.sender,
+            false,
+            _memoir
+        );
+
+        return newTokenId;
+    }
+
+    function collectorMint(
+        string calldata _tokenURI,
+        uint256 _royaltyPercent,
+        uint256 _amount,
+        address _sender,
+        string calldata _memoir
+    ) public validPercentage(_royaltyPercent) returns (uint256) {
+        uint256 newTokenId = executeMintFlow(
+            _tokenURI,
+            _royaltyPercent,
+            _amount,
+            _sender,
+            true,
+            _memoir
+        );
+
+        return newTokenId;
+    }
+
+    //   function mintNft(
+    //     string calldata _tokenURI,
+    //     uint256 _royalty,
+    //     uint256 _amount
+    //   ) public payable virtual returns (uint256);
 
     /**
      * @notice that is the function responsible by the mint and split a new MintGoldDustNFT token.
@@ -102,12 +157,45 @@ abstract contract MintGoldDustNFT is Initializable {
         uint256 _royalty,
         address[] calldata _newOwners,
         uint256[] calldata _ownersPercentage,
-        uint256 _amount
-    ) public returns (uint256) {
+        uint256 _amount,
+        string calldata _memoir
+    ) external returns (uint256) {
         if (_ownersPercentage.length != _newOwners.length + 1) {
             revert NumberOfCollaboratorsAndPercentagesNotMatch();
         }
-        uint256 _tokenId = mintNft(_tokenURI, _royalty, _amount);
+        uint256 _tokenId = mintNft(_tokenURI, _royalty, _amount, _memoir);
+        executeSplitMintFlow(_tokenId, _newOwners, _ownersPercentage);
+        return _tokenId;
+    }
+
+    function collectorSplitMint(
+        string calldata _tokenURI,
+        uint256 _royalty,
+        address[] calldata _newOwners,
+        uint256[] calldata _ownersPercentage,
+        uint256 _amount,
+        address _sender,
+        string calldata _memoir
+    ) external returns (uint256) {
+        if (_ownersPercentage.length != _newOwners.length + 1) {
+            revert NumberOfCollaboratorsAndPercentagesNotMatch();
+        }
+        uint256 _tokenId = collectorMint(
+            _tokenURI,
+            _royalty,
+            _amount,
+            _sender,
+            _memoir
+        );
+        executeSplitMintFlow(_tokenId, _newOwners, _ownersPercentage);
+        return _tokenId;
+    }
+
+    function executeSplitMintFlow(
+        uint256 _tokenId,
+        address[] calldata _newOwners,
+        uint256[] calldata _ownersPercentage
+    ) private {
         uint256 ownersCount = 0;
         /// @dev it is a new variable to keep track of the total percentage assigned to collaborators.
         uint256 totalPercentage = 0;
@@ -153,21 +241,18 @@ abstract contract MintGoldDustNFT is Initializable {
             _newOwners,
             _ownersPercentage
         );
-
-        return _tokenId;
     }
 
     modifier validPercentage(uint256 percentage) {
-        if (percentage > mgdCompany.maxRoyalty()) {
+        if (percentage > mintGoldDustCompany.maxRoyalty()) {
             revert MGDnftRoyaltyInvalidPercentage();
         }
         _;
     }
 
-    modifier isApproved() {
-        if (mgdCompany.isArtistApproved(msg.sender) == false) {
+    function isApproved(address _msgSender) internal view {
+        if (mintGoldDustCompany.isArtistApproved(_msgSender) == false) {
             revert MGDnftUnauthorized();
         }
-        _;
     }
 }

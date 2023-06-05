@@ -21,6 +21,8 @@ error MintGoldDustMustBeERC721OrERC1155();
 error MintGoldDustLessItemsListedThanThePurchaseAmount();
 error MintGoldDustInvalidAmountForThisPurchase();
 error MintGoldDustPurchaseOfERC1155InAuctionThatCoverAllListedItems();
+error MintGoldDustCollectorMintDataNotMatch();
+error Teste(uint256 valor);
 
 /// @title An abstract contract responsible to define some general responsibilites related with
 /// a marketplace for its childrens.
@@ -215,6 +217,31 @@ abstract contract MintGoldDustMarketplace is Initializable {
     }
 
     /**
+   * @notice that is a Data Transfer Object to be transferred between functions in the Collector (lazy) mint flow.
+   *              It consists of the following fields:
+   *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+   *                    - tokenURI the URI that contains the metadata for the NFT.
+                        - royalty the royalty percentage to be applied for this NFT secondary sales.
+                        - collaborators an array of address that can be a number of maximum 4 collaborators.
+                        - ownersPercentage an array of uint256 that are the percetages for the artist and for each one of the collaborators.
+   *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
+   *                              MintGoldDustERC721 the amout must be always one.
+   *                    - artistSigner: the address of the artist creator.
+   *                    - price: the price to be paid for the item in the set price market.
+   */
+    struct CollectorMintDTO {
+        address contractAddress;
+        string tokenURI;
+        uint256 royalty;
+        string memoir;
+        address[] collaborators;
+        uint256[] ownersPercentage;
+        uint256 amount;
+        address artistSigner;
+        uint256 price;
+    }
+
+    /**
      *
      * @notice that is a general function that must be implemented by the more specif makets.
      * @dev it is a internal function and should be implemented by the childrens
@@ -277,7 +304,7 @@ abstract contract MintGoldDustMarketplace is Initializable {
         uint256 _realAmount = 1;
 
         if (_listDTO.saleDTO.contractAddress == mintGoldDustERC721Address) {
-            isNFTowner(_listDTO.saleDTO.tokenId);
+            isNFTowner(_listDTO.saleDTO.tokenId, _listDTO.saleDTO.seller);
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
             _isERC721 = true;
         } else {
@@ -299,15 +326,15 @@ abstract contract MintGoldDustMarketplace is Initializable {
 
         idMarketItemsByContractByOwner[_listDTO.saleDTO.contractAddress][
             _listDTO.saleDTO.tokenId
-        ][msg.sender] = MarketItem(
+        ][_listDTO.saleDTO.seller] = MarketItem(
             _listDTO.saleDTO.tokenId,
-            msg.sender,
+            _listDTO.saleDTO.seller,
             _listDTO.price,
             false,
             _isAuction,
             idMarketItemsByContractByOwner[_listDTO.saleDTO.contractAddress][
                 _listDTO.saleDTO.tokenId
-            ][msg.sender].isSecondarySale,
+            ][_listDTO.saleDTO.seller].isSecondarySale,
             _isERC721,
             _realAmount,
             auctionProps
@@ -315,7 +342,7 @@ abstract contract MintGoldDustMarketplace is Initializable {
 
         try
             _mintGoldDustNFT.transfer(
-                msg.sender,
+                _listDTO.saleDTO.seller,
                 _marketAddress,
                 _listDTO.saleDTO.tokenId,
                 _realAmount
@@ -1057,6 +1084,22 @@ abstract contract MintGoldDustMarketplace is Initializable {
      *                    - seller: The seller of the marketItem.
      */
     function purchaseNft(SaleDTO memory _saleDTO) external payable {
+        executePurchaseNftFlow(_saleDTO, msg.sender, msg.value);
+    }
+
+    function collectorPurchaseNft(
+        SaleDTO memory _saleDTO,
+        address _sender,
+        uint256 _value
+    ) internal {
+        executePurchaseNftFlow(_saleDTO, _sender, _value);
+    }
+
+    function executePurchaseNftFlow(
+        SaleDTO memory _saleDTO,
+        address _sender,
+        uint256 _value
+    ) private {
         isSetPrice(_saleDTO.tokenId, _saleDTO.contractAddress, _saleDTO.seller);
 
         isTokenIdListed(_saleDTO.tokenId, _saleDTO.contractAddress);
@@ -1079,13 +1122,13 @@ abstract contract MintGoldDustMarketplace is Initializable {
             _realAmount = _saleDTO.amount;
         }
 
-        isMsgValueEnough(_marketItem.price, _realAmount, msg.value);
+        isMsgValueEnough(_marketItem.price, _realAmount, _value);
 
         checkIfIsPrimaryOrSecondarySaleAndCall(
             _marketItem,
             _saleDTO,
-            msg.value,
-            msg.sender
+            _value,
+            _sender
         );
     }
 
@@ -1245,16 +1288,45 @@ abstract contract MintGoldDustMarketplace is Initializable {
         }
     }
 
+    function generateHash(
+        CollectorMintDTO memory _collectorMintDTO
+    ) private pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    _collectorMintDTO.contractAddress,
+                    _collectorMintDTO.tokenURI,
+                    _collectorMintDTO.royalty,
+                    _collectorMintDTO.memoir,
+                    _collectorMintDTO.collaborators,
+                    _collectorMintDTO.ownersPercentage,
+                    _collectorMintDTO.amount,
+                    _collectorMintDTO.artistSigner,
+                    _collectorMintDTO.price
+                )
+            );
+    }
+
+    function verifyHash(
+        CollectorMintDTO memory _collectorMintDTO,
+        bytes32 receivedHash
+    ) internal pure {
+        bytes32 generatedHash = generateHash(_collectorMintDTO);
+        if (generatedHash != receivedHash) {
+            revert MintGoldDustCollectorMintDataNotMatch();
+        }
+    }
+
     /**
      * @dev the main goal of this function is check if the address calling the function is the
      *      owner of the tokenId.
      * @notice that it REVERTS with a MintGoldDustAddressUnauthorized error if the condition is not met.
      * @param _tokenId is the id that represent the token.
      */
-    function isNFTowner(uint256 _tokenId) internal view {
+    function isNFTowner(uint256 _tokenId, address _sender) internal view {
         if (
             (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(_tokenId) !=
-            msg.sender
+            _sender
         ) {
             revert MintGoldDustAddressUnauthorized("Not owner!");
         }
@@ -1316,7 +1388,11 @@ abstract contract MintGoldDustMarketplace is Initializable {
             (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(_tokenId) !=
             address(this)
         ) {
-            revert MintGoldDustItemIsNotListed(_contractAddress);
+            revert MintGoldDustItemIsNotListed(
+                (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(
+                    _tokenId
+                )
+            );
         }
 
         if (
