@@ -7,22 +7,25 @@ import { ethers } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("MintGoldDustERC1155.sol Smart Contract \n______________________________________________\n \nThis smart contract is responsible by mint new Mint Gold Dust ERC1155 tokens. Actually this contract is an ERC1155. \n", function () {
-  let MintGoldDustERC1155: ContractFactory;
-  let mintGoldDustERC1155: Contract;
+describe("MintGoldDustERC721.sol Smart Contract \n______________________________________________\n \nThis smart contract is responsible by mint new MGD Nfts. Actually this contract is an ERC721. \n", function () {
+  let MintGoldDustERC721: ContractFactory;
+  let mintGoldDustERC721: Contract;
 
   let MintGoldDustCompany: ContractFactory;
   let mgdCompany: Contract;
+
+  let MintGoldDustMemoir: ContractFactory;
+  let mintGoldDustMemoir: Contract;
 
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
-  let baseURI = "https://example.com/{id}.json";
+  let URI = "sample URI";
   let max_royalty = 20;
 
-  // const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+  //const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
   const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
   const primary_sale_fee_percent_initial = 15000000000000000000n;
   const secondary_sale_fee_percent_initial = 5000000000000000000n;
@@ -33,9 +36,11 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
     MintGoldDustCompany = await ethers.getContractFactory(
       "MintGoldDustCompany"
     );
-    MintGoldDustERC1155 = await ethers.getContractFactory(
-      "MintGoldDustERC1155"
-    );
+    MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
+    MintGoldDustMemoir = await ethers.getContractFactory("MintGoldDustMemoir");
+
+    mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
+    await mintGoldDustMemoir.deployed();
 
     [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
 
@@ -52,22 +57,16 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
     );
     await mgdCompany.deployed();
 
-    mintGoldDustERC1155 = await upgrades.deployProxy(
-      MintGoldDustERC1155,
-      [mgdCompany.address, baseURI],
+    mintGoldDustERC721 = await upgrades.deployProxy(
+      MintGoldDustERC721,
+      [mgdCompany.address, mintGoldDustMemoir.address],
       {
-        initializer: "initializeChild",
+        initializer: "initialize",
       }
     );
-    await mintGoldDustERC1155.deployed();
+    await mintGoldDustERC721.deployed();
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
-  });
-
-  describe("\n--------------- Test related with the constructor ---------------\n", function () {
-    it("Should return the correct baseUri", async function () {
-      expect(await mintGoldDustERC1155.uri(1)).to.equal(baseURI);
-    });
   });
 
   describe("\n--------------- Test related with the mint NFT functionality ---------------\n", function () {
@@ -80,15 +79,14 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
       // addr1 mints a nft
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-      await expect(mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 10))
-        .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
-        .withArgs(1, addr1.address, toWei(5), 10, mintGoldDustERC1155.address);
-      expect(await mintGoldDustERC1155.tokenIdArtist(1)).to.equal(
-        addr1.address
-      );
-      expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(
-        10
-      );
+
+      await expect(mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5), 1, mintGoldDustMemoir.address))
+        .to.emit(mintGoldDustERC721, "MintGoldDustNFTMinted")
+        .withArgs(1, addr1.address, toWei(5), 1, mintGoldDustERC721.address, false);
+      expect(await mintGoldDustERC721.tokenURI(1)).to.equal(URI);
+      expect(await mintGoldDustERC721.tokenIdArtist(1)).to.equal(addr1.address);
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr1.address);
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr1.address);
 
       console.log(
         "\t ARTIST BALANCE AFTER MINT: ",
@@ -96,7 +94,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
       );
 
       console.log(
-        "\t \tSo the gas estimation was more less in USD:",
+        "\t \tSo the gas estimation was more less:",
         parseFloat(
           fromWei(
             ethers.BigNumber.from(artistBalanceBefore).sub(
@@ -108,30 +106,43 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
       // addr2 mints a nft
       await mgdCompany.connect(deployer).whitelist(addr2.address, true);
-      await expect(mintGoldDustERC1155.connect(addr2).mintNft("", toWei(5), 5))
-        .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
-        .withArgs(2, addr2.address, toWei(5), 5, mintGoldDustERC1155.address);
-      expect(await mintGoldDustERC1155.tokenIdArtist(2)).to.equal(
-        addr2.address
-      );
-      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 2)).to.equal(5);
+      await expect(mintGoldDustERC721.connect(addr2).mintNft(URI, toWei(5), 1, mintGoldDustMemoir.address))
+        .to.emit(mintGoldDustERC721, "MintGoldDustNFTMinted")
+        .withArgs(2, addr2.address, toWei(5), 1, mintGoldDustERC721.address, false);
+      expect(await mintGoldDustERC721.tokenURI(2)).to.equal(URI);
+      expect(await mintGoldDustERC721.tokenIdArtist(2)).to.equal(addr2.address);
+      expect(await mintGoldDustERC721.ownerOf(2)).to.equal(addr2.address);
+
+      // addr1 mints another nft
+      await expect(mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5), 1, mintGoldDustMemoir.address))
+        .to.emit(mintGoldDustERC721, "MintGoldDustNFTMinted")
+        .withArgs(3, addr1.address, toWei(5), 1, mintGoldDustERC721.address, false);
+      expect(await mintGoldDustERC721.tokenURI(3)).to.equal(URI);
+      expect(await mintGoldDustERC721.tokenIdArtist(3)).to.equal(addr1.address);
+      expect(await mintGoldDustERC721.ownerOf(3)).to.equal(addr1.address);
+
+      expect(await mintGoldDustERC721.balanceOf(addr1.address)).to.be.equal(2);
+      expect(await mintGoldDustERC721.balanceOf(addr2.address)).to.be.equal(1);
 
       expect(
-        await mintGoldDustERC1155.connect(addr1).tokenIdRoyaltyPercent(1)
+        await mintGoldDustERC721.connect(addr1).tokenIdRoyaltyPercent(1)
       ).to.be.equal(toWei(5));
       expect(
-        await mintGoldDustERC1155.connect(addr1).tokenIdRoyaltyPercent(2)
+        await mintGoldDustERC721.connect(addr1).tokenIdRoyaltyPercent(2)
+      ).to.be.equal(toWei(5));
+      expect(
+        await mintGoldDustERC721.connect(addr1).tokenIdRoyaltyPercent(3)
       ).to.be.equal(toWei(5));
     });
 
     it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than ${max_royalty}.`, async function () {
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
       await expect(
-        mintGoldDustERC1155
+        mintGoldDustERC721
           .connect(addr1)
-          .mintNft("", toWei(max_royalty + 1), 5)
+          .mintNft(URI, toWei(max_royalty + 1), 1, mintGoldDustMemoir.address)
       ).to.be.revertedWithCustomError(
-        mintGoldDustERC1155,
+        mintGoldDustERC721,
         "MGDnftRoyaltyInvalidPercentage"
       );
     });
@@ -139,11 +150,8 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
     it("Should revert with a MGDnftUnauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
       // addr1 try to mint a NFT without be whitelisted
       await expect(
-        mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 5)
-      ).to.be.revertedWithCustomError(
-        mintGoldDustERC1155,
-        "MGDnftUnauthorized"
-      );
+        mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5), 1, mintGoldDustMemoir.address)
+      ).to.be.revertedWithCustomError(mintGoldDustERC721, "MGDnftUnauthorized");
     });
   });
 });

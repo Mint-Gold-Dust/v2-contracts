@@ -14,6 +14,9 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 
+  let MintGoldDustMemoir: ContractFactory;
+  let mintGoldDustMemoir: Contract;
+
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addrs: SignerWithAddress[];
@@ -38,6 +41,11 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
     );
     MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
 
+    MintGoldDustMemoir = await ethers.getContractFactory("MintGoldDustMemoir");
+
+    mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
+    await mintGoldDustMemoir.deployed();
+
     [deployer, addr1, ...addrs] = await ethers.getSigners();
 
     mgdCompany = await upgrades.deployProxy(
@@ -55,7 +63,7 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mgdCompany.address],
+      [mgdCompany.address, mintGoldDustMemoir.address],
       {
         initializer: "initialize",
       }
@@ -120,15 +128,15 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
           2500
       );
       // MGD owner whitelist the artist
-      expect(await mgdCompany.connect(deployer).whitelist(addr1.address, true))
+      await expect(mgdCompany.connect(deployer).whitelist(addr1.address, true))
         .to.emit(mgdCompany, "ArtistWhitelisted")
         .withArgs(addr1.address, true);
-      expect(
+      await expect(
         await mgdCompany.connect(deployer).isArtistApproved(addr1.address)
       ).to.be.equal(true);
 
       // MGD owner blacklist the artist
-      expect(await mgdCompany.connect(deployer).whitelist(addr1.address, false))
+      await expect(mgdCompany.connect(deployer).whitelist(addr1.address, false))
         .to.emit(mgdCompany, "ArtistWhitelisted")
         .withArgs(addr1.address, false);
       expect(
@@ -297,7 +305,7 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(valueNewFee), 1);
+        .mintNft(URI, toWei(valueNewFee), 1, mintGoldDustMemoir.address);
     });
 
     it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than new max royalty that is ${valueNewFee}.`, async function () {
@@ -309,7 +317,7 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
       await expect(
         mintGoldDustERC721
           .connect(addr1)
-          .mintNft(URI, toWei(valueNewFee + 1), 1)
+          .mintNft(URI, toWei(valueNewFee + 1), 1, mintGoldDustMemoir.address)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC721,
         "MGDnftRoyaltyInvalidPercentage"
