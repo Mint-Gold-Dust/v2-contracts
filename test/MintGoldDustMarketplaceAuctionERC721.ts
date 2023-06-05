@@ -49,6 +49,8 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
   let max_royalty = 20;
   let royalty = 5;
 
+  const MEMOIR = "This is a great moment of my life!";
+
   beforeEach(async function () {
     MintGoldDustCompany = await ethers.getContractFactory(
       "MintGoldDustCompany"
@@ -142,7 +144,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       // addr1 mints a MintGoldDustER721
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its MintGoldDustER721
       await mintGoldDustERC721
         .connect(addr1)
@@ -179,9 +181,8 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       expect(receipt.events[1].args[3]).to.be.equal(timestamp);
       expect(receipt.events[1].args[4]).to.be.equal(mintGoldDustERC721.address);
 
-      console.log("\n\t EVENT EMITED: ",receipt.events[1].event);
-      console.log("\t WITH ARGS: ",receipt.events[1].args);
-
+      console.log("\n\t EVENT EMITED: ", receipt.events[1].event);
+      console.log("\t WITH ARGS: ", receipt.events[1].args);
 
       console.log(
         "\n\t ARTIST BALANCE AFTER LIST: ",
@@ -199,7 +200,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         ) * 2500
       );
 
-      /** 
+      /**
        * @dev owner should be the mintGoldDustMarketplaceAuction
        * */
       expect(await mintGoldDustERC721.ownerOf(1)).to.equal(
@@ -226,7 +227,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         .list(1, quantityToList, mintGoldDustERC721.address, toWei(0));
       const receipt = await tx.wait();
 
-       /** 
+      /**
        * @dev Check that the transaction emitted an event
        * */
       expect(receipt.events?.length).to.equal(2);
@@ -235,7 +236,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       const timestamp = block.timestamp;
       expect(timestamp).to.be.above(0);
 
-      console.log("EVENT 1: ",receipt.events[0]);
+      console.log("EVENT 1: ", receipt.events[0]);
 
       expect(receipt.events[1].event).to.equal(
         "MintGoldDustNftListedToAuction"
@@ -326,7 +327,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -556,7 +557,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -1476,7 +1477,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -1591,7 +1592,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -1686,7 +1687,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       console.log("\t\t Balance to seller: ", balance);
 
       /**
-       * @dev at the final of the endAuction flow the purchaseAuctionNft is called and 
+       * @dev at the final of the endAuction flow the purchaseAuctionNft is called and
        * goes throuhg the purchase flow. At the end of this flow the MintGoldDustNftPurchasedPrimaryMarket
        * must be emmited.
        */
@@ -1842,7 +1843,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(royalty), quantityToMint, mintGoldDustMemoir.address);
+        .mintNft(URI, toWei(royalty), quantityToMint, MEMOIR);
 
       // Artist approve gdMarketPlace marketplace to exchange its mintGoldDustERC721
       await mintGoldDustERC721
@@ -1935,7 +1936,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       );
 
       /**
-       * @dev at the final of the endAuction flow the purchaseAuctionNft is called and 
+       * @dev at the final of the endAuction flow the purchaseAuctionNft is called and
        * goes throuhg the purchase flow.
        */
       await expect(

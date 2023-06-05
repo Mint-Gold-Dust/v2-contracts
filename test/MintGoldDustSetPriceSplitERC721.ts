@@ -39,9 +39,10 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
   let addr9: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
-
   let URI = "sample URI";
   let baseURI = "https://example.com/{id}.json";
+
+  const MEMOIR = "This is a great moment of my life!";
 
   //const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
   const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
@@ -72,7 +73,19 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
     await mintGoldDustMemoir.deployed();
 
-    [deployer, addr1, addr2, addr3, addr4, addr5, addr6, addr7, addr8, addr9, ...addrs] = await ethers.getSigners();
+    [
+      deployer,
+      addr1,
+      addr2,
+      addr3,
+      addr4,
+      addr5,
+      addr6,
+      addr7,
+      addr8,
+      addr9,
+      ...addrs
+    ] = await ethers.getSigners();
 
     mgdCompany = await upgrades.deployProxy(
       MintGoldDustCompany,
@@ -132,13 +145,13 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       await mintGoldDustERC721
         .connect(addr1)
         .splitMint(
-            URI,
-            toWei(5),
-            [addr5.address, addr6.address, addr7.address, addr8.address],
-            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-            quantityToMint,
-            mintGoldDustMemoir.address
-          );
+          URI,
+          toWei(5),
+          [addr5.address, addr6.address, addr7.address, addr8.address],
+          [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
+          quantityToMint,
+          MEMOIR
+        );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -230,8 +243,6 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       ).to.be.equal(false);
     });
 
-
-
     it("Should revert the transaction if an artist tries to list its nft with price less than or equal zero.", async function () {
       await expect(
         mintGoldDustSetPrice
@@ -270,13 +281,13 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       await mintGoldDustERC721
         .connect(addr1)
         .splitMint(
-            URI,
-            toWei(5),
-            [addr5.address, addr6.address, addr7.address, addr8.address],
-            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-            quantityToMint,
-            mintGoldDustMemoir.address
-          );
+          URI,
+          toWei(5),
+          [addr5.address, addr6.address, addr7.address, addr8.address],
+          [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
+          quantityToMint,
+          MEMOIR
+        );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -335,7 +346,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
 
       // Update the listed NFT
       await expect(
-         mintGoldDustSetPrice
+        mintGoldDustSetPrice
           .connect(addr1)
           .updateListedNft(
             1,
@@ -457,13 +468,13 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       await mintGoldDustERC721
         .connect(addr1)
         .splitMint(
-            URI,
-            toWei(5),
-            [addr5.address, addr6.address, addr7.address, addr8.address],
-            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-            quantityToMint,
-            mintGoldDustMemoir.address
-          );
+          URI,
+          toWei(5),
+          [addr5.address, addr6.address, addr7.address, addr8.address],
+          [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
+          quantityToMint,
+          MEMOIR
+        );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -499,7 +510,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       ).to.be.equal(false);
       // addr2 relist a purchased NFT
       await expect(
-          mintGoldDustSetPrice.connect(addr1).delistNft({
+        mintGoldDustSetPrice.connect(addr1).delistNft({
           tokenId: 1,
           contractAddress: mintGoldDustERC721.address,
         })
@@ -593,13 +604,13 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       await mintGoldDustERC721
         .connect(addr1)
         .splitMint(
-            URI,
-            toWei(5),
-            [addr5.address, addr6.address, addr7.address, addr8.address],
-            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-            amountToMint
- ,
- mintGoldDustMemoir.address         );
+          URI,
+          toWei(5),
+          [addr5.address, addr6.address, addr7.address, addr8.address],
+          [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
+          amountToMint,
+          MEMOIR
+        );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -627,8 +638,6 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         feeAccountInitialEthBal
       ).add(toWei(primarySaleFee));
 
-      
-
       // verify if the flag for secondary is false
       expect(
         (
@@ -641,7 +650,6 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
             )
         ).isSecondarySale
       ).to.be.equal(false);
-      
 
       let gasPrice = await mintGoldDustSetPrice.signer.getGasPrice();
       let gasLimit = await mintGoldDustSetPrice.estimateGas.purchaseNft(
@@ -664,14 +672,12 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
           2500
       );
-      
 
       console.log("\n\t\t ITEM PRICE: ", priceToList);
       console.log("\t\t Primary Market fee: ", fee);
       console.log("\t\t Collector fee: ", collFee);
       console.log("\t\t Marketplace owner fee: ", primarySaleFee);
       console.log("\t\t Balance to seller: ", balance);
-      
 
       let addr2BalanceBefore = await addr2.getBalance();
       // execute the buyNft function
@@ -703,7 +709,6 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           false,
           true
         );
-        
 
       console.log(
         "\n\t\t MARKETPLACE OWNER BALANCE BEFORE SALE: ",
@@ -727,11 +732,9 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         parseFloat((parseFloat(fromWei(addr2ShouldBeAfter)) * 2500).toFixed(2)),
         1
       );
-      
 
       // verify if the owner of the NFT changed for the buyer
       expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr2.address);
-      
 
       // verify if the flag for secondary market changed for true
       expect(
@@ -752,23 +755,38 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       );
       // verify if the seller received the balance
       expect(await addr1.getBalance()).to.be.equal(
-        ethers.BigNumber.from(sellerInitalEthBal).mul(5).add(toWei(balance)).div(5)
+        ethers.BigNumber.from(sellerInitalEthBal)
+          .mul(5)
+          .add(toWei(balance))
+          .div(5)
       );
 
       expect(await addr5.getBalance()).to.be.equal(
-        ethers.BigNumber.from(sellerInitalEthBal5).mul(5).add(toWei(balance)).div(5)
+        ethers.BigNumber.from(sellerInitalEthBal5)
+          .mul(5)
+          .add(toWei(balance))
+          .div(5)
       );
 
       expect(await addr6.getBalance()).to.be.equal(
-        ethers.BigNumber.from(sellerInitalEthBal6).mul(5).add(toWei(balance)).div(5)
+        ethers.BigNumber.from(sellerInitalEthBal6)
+          .mul(5)
+          .add(toWei(balance))
+          .div(5)
       );
 
       expect(await addr7.getBalance()).to.be.equal(
-        ethers.BigNumber.from(sellerInitalEthBal7).mul(5).add(toWei(balance)).div(5)
+        ethers.BigNumber.from(sellerInitalEthBal7)
+          .mul(5)
+          .add(toWei(balance))
+          .div(5)
       );
 
       expect(await addr8.getBalance()).to.be.equal(
-        ethers.BigNumber.from(sellerInitalEthBal8).mul(5).add(toWei(balance)).div(5)
+        ethers.BigNumber.from(sellerInitalEthBal8)
+          .mul(5)
+          .add(toWei(balance))
+          .div(5)
       );
 
       // expect item sold to be true
@@ -875,245 +893,242 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     });
   });
 
-//   describe("\n--------------- Purchase NFT on secondary market ---------------\n", function () {
-//     let royaltyFee: number;
-//     let secondarySaleFee: number;
+  describe("\n--------------- Purchase NFT on secondary market ---------------\n", function () {
+    let royaltyFee: number;
+    let secondarySaleFee: number;
 
-//     // Calculate the fee and balance values based on the price
-//     let fee: number;
-//     let balance: number;
-//     let collFee: number;
-//     let primarySaleFee: number;
-//     let amountToMint = 1;
-//     let amountToList = 1;
-//     let amountToBuy = 1;
-//     let priceToList = 20;
-//     let priceToBuy = priceToList * amountToBuy;
+    // Calculate the fee and balance values based on the price
+    let fee: number;
+    let balance: number;
+    let collFee: number;
+    let primarySaleFee: number;
+    let amountToMint = 1;
+    let amountToList = 1;
+    let amountToBuy = 1;
+    let priceToList = 20;
+    let priceToBuy = priceToList * amountToBuy;
 
-//     let amountToListForSecondary = 1;
-//     let amountToBuyForSecondary = 1;
-//     let priceToListForSecondary = 30;
-//     let priceToBuyForSecondary =
-//       priceToListForSecondary * amountToBuyForSecondary;
+    let amountToListForSecondary = 1;
+    let amountToBuyForSecondary = 1;
+    let priceToListForSecondary = 30;
+    let priceToBuyForSecondary =
+      priceToListForSecondary * amountToBuyForSecondary;
 
-//     beforeEach(async () => {
-//       // MGD owner whitelist the artist
-//       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-//       // addr1 mints a nft
-//       await mintGoldDustERC721
-//         .connect(addr1)
-//         .splitMint(
-//             URI,
-//             toWei(5),
-//             [addr5.address, addr6.address, addr7.address, addr8.address],
-//             [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-//             amountToMint
-//  ,
-//  mintGoldDustMemoir.address         );
-//       // Artist approve gdMarketPlace marketplace to exchange its NFT
-//       await mintGoldDustERC721
-//         .connect(addr1)
-//         .setApprovalForAll(mintGoldDustSetPrice.address, true);
-      
-            
-//       expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr1.address);
+    beforeEach(async () => {
+      // MGD owner whitelist the artist
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+      // addr1 mints a nft
+      await mintGoldDustERC721
+        .connect(addr1)
+        .splitMint(
+          URI,
+          toWei(5),
+          [addr5.address, addr6.address, addr7.address, addr8.address],
+          [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
+          amountToMint,
+          MEMOIR
+        );
+      // Artist approve gdMarketPlace marketplace to exchange its NFT
+      await mintGoldDustERC721
+        .connect(addr1)
+        .setApprovalForAll(mintGoldDustSetPrice.address, true);
 
-//       await mintGoldDustSetPrice
-//         .connect(addr1)
-//         .list(1, amountToList, mintGoldDustERC721.address, toWei(priceToList));
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr1.address);
 
-//       expect(await mintGoldDustERC721.ownerOf(1)).to.equal(
-//         mintGoldDustSetPrice.address
-//       );
-      
+      await mintGoldDustSetPrice
+        .connect(addr1)
+        .list(1, amountToList, mintGoldDustERC721.address, toWei(priceToList));
 
-//       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
-//         {
-//           tokenId: 1,
-//           amount: amountToBuy,
-//           contractAddress: mintGoldDustERC721.address,
-//           seller: addr1.address,
-//         },
-//         {
-//           value: toWei(priceToBuy),
-//         }
-//       );
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(
+        mintGoldDustSetPrice.address
+      );
 
-//       expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr2.address);
-      
+      await mintGoldDustSetPrice.connect(addr2).purchaseNft(
+        {
+          tokenId: 1,
+          amount: amountToBuy,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(priceToBuy),
+        }
+      );
 
-//       // Artist approve gdMarketPlace marketplace to exchange its NFT
-//       await mintGoldDustERC721
-//         .connect(addr2)
-//         .setApprovalForAll(mintGoldDustSetPrice.address, true);
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr2.address);
 
-//       await mintGoldDustSetPrice
-//         .connect(addr2)
-//         .list(
-//           1,
-//           amountToListForSecondary,
-//           mintGoldDustERC721.address,
-//           toWei(priceToListForSecondary)
-//         );
-        
+      // Artist approve gdMarketPlace marketplace to exchange its NFT
+      await mintGoldDustERC721
+        .connect(addr2)
+        .setApprovalForAll(mintGoldDustSetPrice.address, true);
 
-//       secondarySaleFee =
-//         (priceToListForSecondary * secondary_sale_fee_percent) / 100;
-//       royaltyFee = (priceToListForSecondary * royalty) / 100;
-//       balance = priceToListForSecondary - (secondarySaleFee + royaltyFee);
-//     });
+      await mintGoldDustSetPrice
+        .connect(addr2)
+        .list(
+          1,
+          amountToListForSecondary,
+          mintGoldDustERC721.address,
+          toWei(priceToListForSecondary)
+        );
 
-//     it("Should simulate a secondary sale that transfer an NFT to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the artist creator have received the royalty.", async function () {
-      
-//       // verify if the isSecondarySale sale attribute is true
-//       expect(
-//         (
-//           await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
-//             mintGoldDustERC721.address,
-//             1,
-//             addr2.address
-//           )
-//         ).isSecondarySale
-//       ).to.equal(true);
-//       // get the balances for the seller and the owner of the marketplace.
-//       const feeAccountInitialEthBal = await deployer.getBalance();
-//       let addr3BalanceBefore = await addr3.getBalance();
-//       // get the NFT's artist creator balance
-//       const provider = ethers.provider;
-//       const artistCreatorAddress = await mintGoldDustERC721.tokenIdArtist(1);
-//       const artistCreatorInitialBal = await provider.getBalance(
-//         artistCreatorAddress
-//       );
-//       // get the addr2 buyer initial balance
-//       const artistSellerInitialBal = await addr2.getBalance();
-//       let gasPrice = await mintGoldDustSetPrice.signer.getGasPrice();
-//       let gasLimit = await mintGoldDustSetPrice.estimateGas.purchaseNft(
-//         {
-//           tokenId: 1,
-//           amount: amountToBuyForSecondary,
-//           contractAddress: mintGoldDustERC721.address,
-//           seller: addr2.address,
-//         },
-//         {
-//           value: toWei(priceToBuyForSecondary),
-//         }
-//       );
-      
-//       console.log("\t GAS PRICE: ", gasPrice);
-//       console.log("\t GAS LIMIT: ", gasLimit);
-//       console.log(
-//         "\t\t TOTAL GAS ESTIMATION (USD): ",
-//         (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
-//           2500
-//       );
-//     //   execute the buyNft function
-//       await expect(
-//         mintGoldDustSetPrice.connect(addr3).purchaseNft(
-//           {
-//             tokenId: 1,
-//             amount: amountToBuyForSecondary,
-//             contractAddress: mintGoldDustERC721.address,
-//             seller: addr2.address,
-//           },
-//           {
-//             value: toWei(priceToListForSecondary),
-//           }
-//         )
-//       )
-//         .to.emit(
-//           mintGoldDustSetPrice,
-//           "MintGoldDustNftPurchasedSecondaryMarket"
-//         )
-//         .withArgs(
-//           2,
-//           1,
-//           addr2.address,
-//           addr3.address,
-//           toWei(priceToListForSecondary),
-//           toWei(balance),
-//           toWei(royalty),
-//           toWei(royaltyFee),
-//           artistCreatorAddress,
-//           toWei(secondarySaleFee),
-//           amountToBuyForSecondary,
-//           true,
-//           false,
-//           true
-//         );
-//       // prepare the future balance that the owner should have after the transaction
-//       const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
-//         feeAccountInitialEthBal
-//       ).add(toWei(secondarySaleFee));
-//       // verify if the owner of the NFT changed for the buyer
-//       expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr3.address);
-//       console.log("\n\t\t ITEM PRICE: ", priceToListForSecondary);
-//       console.log("\t\t Secondary Market fee: ", secondarySaleFee);
-//       console.log("\t\t Royalty fee: ", royaltyFee);
-//       console.log("\t\t Balance to seller: ", balance);
-//       console.log(
-//         "\n\t\t MARKETPLACE OWNER BALANCE BEFORE SALE: ",
-//         parseFloat(fromWei(feeAccountInitialEthBal))
-//       );
-//       console.log(
-//         "\t\t MARKETPLACE OWNER BALANCE AFTER SALE: ",
-//         parseFloat(fromWei(await deployer.getBalance()))
-//       );
-//       // verify if the marketplace owner's balance increased the fee
-//       expect(await deployer.getBalance()).to.be.equal(
-//         feeAccountAfterEthBalShouldBe
-//       );
-//       // verify if the seller received the balance
-//       expect(await addr2.getBalance()).to.be.equal(
-//         ethers.BigNumber.from(artistSellerInitialBal).add(toWei(balance))
-//       );
-//       console.log(
-//         "\t\t SELLER BALANCE BEFORE SALE: ",
-//         parseFloat(fromWei(artistSellerInitialBal))
-//       );
-//       console.log(
-//         "\t\t SELLER BALANCE AFTER SALE: ",
-//         parseFloat(fromWei(await addr2.getBalance()))
-//       );
-//       const artistCreatorAfterBal = await addr1.getBalance();
-//       console.log(
-//         "\t\t ARTIST BALANCE BEFORE: ",
-//         parseFloat(fromWei(artistCreatorInitialBal))
-//       );
-//       console.log(
-//         "\t\t ARTIST BALANCE AFTER ROYALTY: ",
-//         parseFloat(fromWei(artistCreatorAfterBal))
-//       );
-//       console.log(
-//         "\t\t BUYER BALANCE BEFORE SALE: ",
-//         parseFloat(fromWei(addr3BalanceBefore))
-//       );
-//       console.log(
-//         "\t\t BUYER BALANCE AFTER SALE: ",
-//         parseFloat(fromWei(await addr3.getBalance()))
-//       );
-//       // verify if the artist received the royalty
-//       expect(await provider.getBalance(artistCreatorAddress)).to.be.equal(
-//         ethers.BigNumber.from(artistCreatorInitialBal).add(toWei(royaltyFee))
-//       );
-//       let addr3ShouldBeAfter = ethers.BigNumber.from(addr3BalanceBefore)
-//         .sub(toWei(priceToListForSecondary))
-//         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
-//       expect(
-//         parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(4))
-//       ).to.be.approximately(
-//         parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(4)),
-//         1
-//       );
-//       // expect item sold to be true
-//       expect(
-//         (
-//           await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
-//             mintGoldDustERC721.address,
-//             1,
-//             addr3.address
-//           )
-//         ).sold
-//       ).to.be.equal(true);
-//     });
-//   });
+      secondarySaleFee =
+        (priceToListForSecondary * secondary_sale_fee_percent) / 100;
+      royaltyFee = (priceToListForSecondary * royalty) / 100;
+      balance = priceToListForSecondary - (secondarySaleFee + royaltyFee);
+    });
+
+    it("Should simulate a secondary sale that transfer an NFT to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the artist creator have received the royalty.", async function () {
+      // verify if the isSecondarySale sale attribute is true
+      expect(
+        (
+          await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
+            mintGoldDustERC721.address,
+            1,
+            addr2.address
+          )
+        ).isSecondarySale
+      ).to.equal(true);
+      // get the balances for the seller and the owner of the marketplace.
+      const feeAccountInitialEthBal = await deployer.getBalance();
+      let addr3BalanceBefore = await addr3.getBalance();
+      // get the NFT's artist creator balance
+      const provider = ethers.provider;
+      const artistCreatorAddress = await mintGoldDustERC721.tokenIdArtist(1);
+      const artistCreatorInitialBal = await provider.getBalance(
+        artistCreatorAddress
+      );
+      // get the addr2 buyer initial balance
+      const artistSellerInitialBal = await addr2.getBalance();
+      let gasPrice = await mintGoldDustSetPrice.signer.getGasPrice();
+      let gasLimit = await mintGoldDustSetPrice.estimateGas.purchaseNft(
+        {
+          tokenId: 1,
+          amount: amountToBuyForSecondary,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr2.address,
+        },
+        {
+          value: toWei(priceToBuyForSecondary),
+        }
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
+      //   execute the buyNft function
+      await expect(
+        mintGoldDustSetPrice.connect(addr3).purchaseNft(
+          {
+            tokenId: 1,
+            amount: amountToBuyForSecondary,
+            contractAddress: mintGoldDustERC721.address,
+            seller: addr2.address,
+          },
+          {
+            value: toWei(priceToListForSecondary),
+          }
+        )
+      )
+        .to.emit(
+          mintGoldDustSetPrice,
+          "MintGoldDustNftPurchasedSecondaryMarket"
+        )
+        .withArgs(
+          2,
+          1,
+          addr2.address,
+          addr3.address,
+          toWei(priceToListForSecondary),
+          toWei(balance),
+          toWei(royalty),
+          toWei(royaltyFee),
+          artistCreatorAddress,
+          toWei(secondarySaleFee),
+          amountToBuyForSecondary,
+          true,
+          false,
+          true
+        );
+      // prepare the future balance that the owner should have after the transaction
+      const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
+        feeAccountInitialEthBal
+      ).add(toWei(secondarySaleFee));
+      // verify if the owner of the NFT changed for the buyer
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr3.address);
+      console.log("\n\t\t ITEM PRICE: ", priceToListForSecondary);
+      console.log("\t\t Secondary Market fee: ", secondarySaleFee);
+      console.log("\t\t Royalty fee: ", royaltyFee);
+      console.log("\t\t Balance to seller: ", balance);
+      console.log(
+        "\n\t\t MARKETPLACE OWNER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(feeAccountInitialEthBal))
+      );
+      console.log(
+        "\t\t MARKETPLACE OWNER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await deployer.getBalance()))
+      );
+      // verify if the marketplace owner's balance increased the fee
+      expect(await deployer.getBalance()).to.be.equal(
+        feeAccountAfterEthBalShouldBe
+      );
+      // verify if the seller received the balance
+      expect(await addr2.getBalance()).to.be.equal(
+        ethers.BigNumber.from(artistSellerInitialBal).add(toWei(balance))
+      );
+      console.log(
+        "\t\t SELLER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(artistSellerInitialBal))
+      );
+      console.log(
+        "\t\t SELLER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await addr2.getBalance()))
+      );
+      const artistCreatorAfterBal = await addr1.getBalance();
+      console.log(
+        "\t\t ARTIST BALANCE BEFORE: ",
+        parseFloat(fromWei(artistCreatorInitialBal))
+      );
+      console.log(
+        "\t\t ARTIST BALANCE AFTER ROYALTY: ",
+        parseFloat(fromWei(artistCreatorAfterBal))
+      );
+      console.log(
+        "\t\t BUYER BALANCE BEFORE SALE: ",
+        parseFloat(fromWei(addr3BalanceBefore))
+      );
+      console.log(
+        "\t\t BUYER BALANCE AFTER SALE: ",
+        parseFloat(fromWei(await addr3.getBalance()))
+      );
+      // verify if the artist received the royalty
+      expect(await provider.getBalance(artistCreatorAddress)).to.be.equal(
+        ethers.BigNumber.from(artistCreatorInitialBal).add(
+          toWei(royaltyFee / 5)
+        )
+      );
+      let addr3ShouldBeAfter = ethers.BigNumber.from(addr3BalanceBefore)
+        .sub(toWei(priceToListForSecondary))
+        .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
+      expect(
+        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(4))
+      ).to.be.approximately(
+        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(4)),
+        1
+      );
+      // expect item sold to be true
+      expect(
+        (
+          await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
+            mintGoldDustERC721.address,
+            1,
+            addr3.address
+          )
+        ).sold
+      ).to.be.equal(true);
+    });
+  });
 });
