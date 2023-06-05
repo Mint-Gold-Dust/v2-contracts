@@ -4,7 +4,6 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
-
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
@@ -60,7 +59,7 @@ contract MintGoldDustERC1155 is
         address to,
         uint256 tokenId,
         uint256 amount
-    ) public override {
+    ) public override whenNotPaused {
         safeTransferFrom(from, to, tokenId, amount, "");
     }
 

@@ -160,7 +160,7 @@ contract MintGoldDustMarketplaceAuction is
         uint256 _amount,
         address _contractAddress,
         uint256 _price
-    ) public override {
+    ) public override whenNotPaused {
         SaleDTO memory _saleDTO = SaleDTO(
             _tokenId,
             _amount,
@@ -412,7 +412,7 @@ contract MintGoldDustMarketplaceAuction is
      *                  - contractAddress: is a MintGoldDustNFT address.
      *                  - seller: is the address of the seller of this tokenId.
      */
-    function placeBid(BidDTO memory _bidDTO) public payable {
+    function placeBid(BidDTO memory _bidDTO) public payable whenNotPaused {
         /// @dev verifications
         isNotCreator(_bidDTO);
         isNotLastBidder(_bidDTO);
@@ -439,7 +439,7 @@ contract MintGoldDustMarketplaceAuction is
      *                  - contractAddress: is a MintGoldDustNFT address.
      *                  - seller: is the address of the seller of this tokenId.
      */
-    function endAuction(BidDTO memory _bidDTO) public {
+    function endAuction(BidDTO memory _bidDTO) public whenNotPaused {
         isTokenIdListed(_bidDTO.tokenId, _bidDTO.contractAddress);
 
         if (

@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 import "./MintGoldDustERC721.sol";
 import "./MintGoldDustNFT.sol";
@@ -29,7 +30,10 @@ error MintGoldDustCollectorMintDataNotMatch();
 /// and also a virtual function that each children should have a specif implementation.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-abstract contract MintGoldDustMarketplace is Initializable {
+abstract contract MintGoldDustMarketplace is
+    Initializable,
+    PausableUpgradeable
+{
     /**
      *
      * @notice MintGoldDustMarketplace is composed by other two contracts.
@@ -1098,7 +1102,9 @@ abstract contract MintGoldDustMarketplace is Initializable {
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      */
-    function purchaseNft(SaleDTO memory _saleDTO) external payable {
+    function purchaseNft(
+        SaleDTO memory _saleDTO
+    ) external payable whenNotPaused {
         executePurchaseNftFlow(_saleDTO, msg.sender, msg.value);
     }
 
@@ -1476,6 +1482,23 @@ abstract contract MintGoldDustMarketplace is Initializable {
                 .sold
         ) {
             revert MintGoldDustItemIsAlreadyListed(_contractAddress);
+        }
+        _;
+    }
+
+    /// @notice Pause the contract
+    function pauseContract() public isowner {
+        _pause();
+    }
+
+    /// @notice Unpause the contract
+    function unpauseContract() public isowner {
+        _unpause();
+    }
+
+    modifier isowner() {
+        if (msg.sender != mgdCompany.owner()) {
+            revert MGDCompanyUnauthorized();
         }
         _;
     }
