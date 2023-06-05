@@ -22,14 +22,15 @@ contract MintGoldDustERC1155 is
     /**
      *
      * @notice that the MintGoldDustERC721 is composed by other contract.
-     * @param _mgdCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
     function initializeChild(
-        address _mgdCompany,
+        address _mintGoldDustCompany,
+        address _mintGoldDustMemoir,
         string calldata baseURI
     ) public initializer {
         __ERC1155_init(baseURI);
-        MintGoldDustNFT.initialize(_mgdCompany);
+        MintGoldDustNFT.initialize(_mintGoldDustCompany, _mintGoldDustMemoir);
     }
 
     using Counters for Counters.Counter;
@@ -73,32 +74,46 @@ contract MintGoldDustERC1155 is
      * @param _royaltyPercent The royalty percentage for this art work.
      * @param _amount The amount of tokens to be minted.
      */
-    function mintNft(
+    function executeMintFlow(
         string calldata _tokenURI,
         uint256 _royaltyPercent,
-        uint256 _amount
-    )
-        public
-        payable
-        override
-        validPercentage(_royaltyPercent)
-        isApproved
-        returns (uint256)
-    {
+        uint256 _amount,
+        address _sender,
+        bool isCollectorMint,
+        string calldata _memoir
+    ) internal override returns (uint256) {
+        isApproved(_sender);
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
-        _mint(msg.sender, newTokenId, _amount, "");
-        tokenIdArtist[newTokenId] = msg.sender;
+        _mint(_sender, newTokenId, _amount, "");
+        tokenIdArtist[newTokenId] = _sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
+
+        mintGoldDustMemoir.addMemoirForContract(
+            address(this),
+            newTokenId,
+            _memoir
+        );
 
         emit MintGoldDustNFTMinted(
             newTokenId,
             msg.sender,
             _royaltyPercent,
             _amount,
-            address(this)
+            address(this),
+            isCollectorMint
         );
 
         return newTokenId;
+    }
+
+    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
+    fallback() external payable {
+        payable(mintGoldDustCompany.owner()).transfer(msg.value);
+    }
+
+    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
+    receive() external payable {
+        payable(mintGoldDustCompany.owner()).transfer(msg.value);
     }
 }

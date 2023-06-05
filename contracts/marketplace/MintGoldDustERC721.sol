@@ -22,11 +22,14 @@ contract MintGoldDustERC721 is
     /**
      *
      * @notice that the MintGoldDustERC721 is composed by other contract.
-     * @param _mgdCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
-    function initializeChild(address _mgdCompany) public initializer {
+    function initializeChild(
+        address _mintGoldDustCompany,
+        address _mintGoldDustMemoir
+    ) public initializer {
         __ERC721_init("Mint Gold Dust NFT", "MGDNFT");
-        super.initialize(_mgdCompany);
+        super.initialize(_mintGoldDustCompany, _mintGoldDustMemoir);
     }
 
     using Counters for Counters.Counter;
@@ -50,40 +53,59 @@ contract MintGoldDustERC721 is
         _transfer(_from, _to, _tokenId);
     }
 
-    /**
-     * Mints a new Mint Gold Dust token.
-     * @notice Fails if artist is not whitelisted or if the royalty surpass the max royalty limit
-     * setted on MintGoldDustCompany smart contract.
-     * @dev tokenIdArtist keeps track of the work of each artist and tokenIdRoyaltyPercent the royalty
-     * percent for each art work.
-     * @param _tokenURI The uri of the the token metadata.
-     * @param _royaltyPercent The royalty percentage for this art work.
-     */
-    function mintNft(
+    //   /**
+    //    * Mints a new Mint Gold Dust token.
+    //    * @notice Fails if artist is not whitelisted or if the royalty surpass the max royalty limit
+    //    * setted on MintGoldDustCompany smart contract.
+    //    * @dev tokenIdArtist keeps track of the work of each artist and tokenIdRoyaltyPercent the royalty
+    //    * percent for each art work.
+    //    * @param _tokenURI The uri of the the token metadata.
+    //    * @param _royaltyPercent The royalty percentage for this art work.
+    //    */
+    //   function mintNft(
+    //     string calldata _tokenURI,
+    //     uint256 _royaltyPercent,
+    //     uint256 _amount
+    //   ) public payable override validPercentage(_royaltyPercent) returns (uint256) {
+    //     uint256 newTokenId = executeMintFlow(
+    //       _tokenURI,
+    //       _royaltyPercent,
+    //       msg.sender,
+    //       false
+    //     );
+
+    //     return newTokenId;
+    //   }
+
+    function executeMintFlow(
         string calldata _tokenURI,
         uint256 _royaltyPercent,
-        uint256 _amount
-    )
-        public
-        payable
-        override
-        validPercentage(_royaltyPercent)
-        isApproved
-        returns (uint256)
-    {
+        uint256 _amount,
+        address _sender,
+        bool isCollectorMint,
+        string calldata _memoir
+    ) internal override returns (uint256) {
+        isApproved(_sender);
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
-        _safeMint(msg.sender, newTokenId);
+        _safeMint(_sender, newTokenId);
         _setTokenURI(newTokenId, _tokenURI);
-        tokenIdArtist[newTokenId] = msg.sender;
+        tokenIdArtist[newTokenId] = _sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
+
+        mintGoldDustMemoir.addMemoirForContract(
+            address(this),
+            newTokenId,
+            _memoir
+        );
 
         emit MintGoldDustNFTMinted(
             newTokenId,
-            msg.sender,
+            _sender,
             _royaltyPercent,
             1,
-            address(this)
+            address(this),
+            isCollectorMint
         );
         return newTokenId;
     }
@@ -107,11 +129,11 @@ contract MintGoldDustERC721 is
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
     fallback() external payable {
-        payable(mgdCompany.owner()).transfer(msg.value);
+        payable(mintGoldDustCompany.owner()).transfer(msg.value);
     }
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
     receive() external payable {
-        payable(mgdCompany.owner()).transfer(msg.value);
+        payable(mintGoldDustCompany.owner()).transfer(msg.value);
     }
 }

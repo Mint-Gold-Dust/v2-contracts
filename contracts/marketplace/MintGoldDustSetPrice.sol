@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 error YouCannotDelistMoreThanListed();
 
@@ -26,6 +27,10 @@ contract MintGoldDustSetPrice is
         uint256 tokenId;
         address contractAddress;
     }
+
+    /// contract -> tokenId -> seller -> amount
+    mapping(address => mapping(uint256 => mapping(address => uint256)))
+        public tokenIdOffChainAmountByContractByOwner;
 
     /**
      *
@@ -245,5 +250,115 @@ contract MintGoldDustSetPrice is
             ][msg.sender].sold = false;
             revert MintGoldDustErrorToTransfer("At set price delist!");
         }
+    }
+
+    /**
+     * @notice Explain to an end user what this does
+     * @dev Explain to a developer any extra details
+     * @param _collectorMintDTO is the CollectorMintDTO struct
+     *                It consists of the following fields:
+     *                    - tokenid: The tokenId of the marketItem.
+     *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
+     *                              MintGoldDustERC721 the amout must be always one.
+     *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+     *                    - seller: The seller of the marketItem.
+     * @param _messageHash is the hash of the _collectorMintDTO
+     * @param _artistSignature is the signature of the artist on top of the _messageHash
+     */
+    function collectorMintPurchase(
+        CollectorMintDTO memory _collectorMintDTO,
+        bytes32 _messageHash,
+        bytes memory _artistSignature
+    ) public payable {
+        mustBeMintGoldDustERC721Or1155(_collectorMintDTO.contractAddress);
+
+        MintGoldDustNFT _mintGoldDustNFT;
+
+        if (_collectorMintDTO.contractAddress == mintGoldDustERC721Address) {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
+        } else {
+            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
+        }
+
+        verifyHash(_collectorMintDTO, _messageHash);
+
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+
+        // Split the signature into its components
+        assembly {
+            r := mload(add(_artistSignature, 32))
+            s := mload(add(_artistSignature, 64))
+            v := byte(0, mload(add(_artistSignature, 96)))
+        }
+
+        // Recover the signer address
+        address signer = ecrecover(_messageHash, v, r, s);
+        //require(signer == address(0), "Invalid signature");
+
+        uint256 _tokenId;
+
+        if (_collectorMintDTO.collaborators.length == 0) {
+            _tokenId = _mintGoldDustNFT.collectorMint(
+                _collectorMintDTO.tokenURI,
+                _collectorMintDTO.royalty,
+                _collectorMintDTO.amount,
+                _collectorMintDTO.artistSigner,
+                _collectorMintDTO.memoir
+            );
+        } else {
+            _tokenId = _mintGoldDustNFT.collectorSplitMint(
+                _collectorMintDTO.tokenURI,
+                _collectorMintDTO.royalty,
+                _collectorMintDTO.collaborators,
+                _collectorMintDTO.ownersPercentage,
+                _collectorMintDTO.amount,
+                _collectorMintDTO.artistSigner,
+                _collectorMintDTO.memoir
+            );
+        }
+
+        SaleDTO memory _saleDTO = SaleDTO(
+            _tokenId,
+            _collectorMintDTO.amount,
+            _collectorMintDTO.contractAddress,
+            _collectorMintDTO.artistSigner
+        );
+
+        ListDTO memory _listDTO = ListDTO(_saleDTO, _collectorMintDTO.price);
+
+        list(_listDTO, false, address(this));
+
+        emit MintGoldDustNftListedToSetPrice(
+            _listDTO.saleDTO.tokenId,
+            _collectorMintDTO.artistSigner,
+            _listDTO.price
+        );
+
+        callPurchase(
+            _tokenId,
+            _collectorMintDTO.amount,
+            _collectorMintDTO.contractAddress,
+            _collectorMintDTO.artistSigner,
+            msg.value
+        );
+    }
+
+    function callPurchase(
+        uint256 _tokenId,
+        uint256 _amount,
+        address _contractAddress,
+        address _artistSigner,
+        uint256 _value
+    ) private {
+        SaleDTO memory _saleDTO = SaleDTO(
+            _tokenId,
+            _amount,
+            _contractAddress,
+            _artistSigner
+        );
+
+        collectorPurchaseNft(_saleDTO, msg.sender, _value);
     }
 }
