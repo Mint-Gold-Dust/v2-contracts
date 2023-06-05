@@ -304,8 +304,8 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
       expect(marketItem.price).to.equal(toWei(primaryPrice));
 
       // Update the listed NFT
-      expect(
-        await mintGoldDustSetPrice
+      await expect(
+        mintGoldDustSetPrice
           .connect(addr1)
           .updateListedNft(
             1,
@@ -442,7 +442,7 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
         );
     });
 
-    it("Should delist a NFT from the marketplace and emit the NFTRemovedFromMarketplace event.", async function () {
+    it("Should delist a NFT from the marketplace and emit the MintGoldDustNftRemovedFromMarketplace event.", async function () {
       console.log(
         "\t ARTIST BALANCE BEFORE DELIST (ETH): ",
         parseFloat(fromWei(await addr1.getBalance()))
@@ -461,13 +461,13 @@ describe("\MintGoldDustSetPrice.sol Smart Contract \n___________________________
         ).sold
       ).to.be.equal(false);
       // addr2 relist a purchased NFT
-      expect(
-        await mintGoldDustSetPrice.connect(addr1).delistNft({
+      await expect(
+          mintGoldDustSetPrice.connect(addr1).delistNft({
           tokenId: 1,
           contractAddress: mintGoldDustERC721.address,
         })
       )
-        .to.emit(mintGoldDustSetPrice, "NFTRemovedFromMarketplace")
+        .to.emit(mintGoldDustSetPrice, "MintGoldDustNftRemovedFromMarketplace")
         .withArgs(1, addr1.address);
       // the market item should be sold
       expect(
