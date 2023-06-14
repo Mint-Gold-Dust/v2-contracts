@@ -244,6 +244,7 @@ abstract contract MintGoldDustMarketplace is
         uint256 amount;
         address artistSigner;
         uint256 price;
+        uint256 collectorMintId;
     }
 
     /**

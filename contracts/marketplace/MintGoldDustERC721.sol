@@ -82,7 +82,7 @@ contract MintGoldDustERC721 is
         uint256 _royaltyPercent,
         uint256 _amount,
         address _sender,
-        bool isCollectorMint,
+        uint256 _collectorMintId,
         string calldata _memoir
     ) internal override returns (uint256) {
         isApproved(_sender);
@@ -101,11 +101,12 @@ contract MintGoldDustERC721 is
 
         emit MintGoldDustNFTMinted(
             newTokenId,
+            _tokenURI,
             _sender,
             _royaltyPercent,
             1,
-            address(this),
-            isCollectorMint
+            true,
+            _collectorMintId
         );
         return newTokenId;
     }
