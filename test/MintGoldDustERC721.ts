@@ -86,14 +86,7 @@ describe("MintGoldDustERC721.sol Smart Contract \n______________________________
         mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5), 1, MEMOIR)
       )
         .to.emit(mintGoldDustERC721, "MintGoldDustNFTMinted")
-        .withArgs(
-          1,
-          addr1.address,
-          toWei(5),
-          1,
-          mintGoldDustERC721.address,
-          false
-        );
+        .withArgs(1, URI, addr1.address, toWei(5), 1, true, 0);
       expect(await mintGoldDustERC721.tokenURI(1)).to.equal(URI);
       expect(await mintGoldDustERC721.tokenIdArtist(1)).to.equal(addr1.address);
       expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr1.address);
@@ -133,14 +126,7 @@ describe("MintGoldDustERC721.sol Smart Contract \n______________________________
         mintGoldDustERC721.connect(addr2).mintNft(URI, toWei(5), 1, MEMOIR)
       )
         .to.emit(mintGoldDustERC721, "MintGoldDustNFTMinted")
-        .withArgs(
-          2,
-          addr2.address,
-          toWei(5),
-          1,
-          mintGoldDustERC721.address,
-          false
-        );
+        .withArgs(2, URI, addr2.address, toWei(5), 1, true, 0);
       expect(await mintGoldDustERC721.tokenURI(2)).to.equal(URI);
       expect(await mintGoldDustERC721.tokenIdArtist(2)).to.equal(addr2.address);
       expect(await mintGoldDustERC721.ownerOf(2)).to.equal(addr2.address);
@@ -162,14 +148,7 @@ describe("MintGoldDustERC721.sol Smart Contract \n______________________________
         mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5), 1, MEMOIR)
       )
         .to.emit(mintGoldDustERC721, "MintGoldDustNFTMinted")
-        .withArgs(
-          3,
-          addr1.address,
-          toWei(5),
-          1,
-          mintGoldDustERC721.address,
-          false
-        );
+        .withArgs(3, URI, addr1.address, toWei(5), 1, true, 0);
       expect(await mintGoldDustERC721.tokenURI(3)).to.equal(URI);
       expect(await mintGoldDustERC721.tokenIdArtist(3)).to.equal(addr1.address);
       expect(await mintGoldDustERC721.ownerOf(3)).to.equal(addr1.address);

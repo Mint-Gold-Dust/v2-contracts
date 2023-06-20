@@ -184,12 +184,13 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       expect(receipt.events[1].event).to.equal(
         "MintGoldDustNftListedToAuction"
       );
-      expect(receipt.events[1].args.length).to.equal(5);
+      expect(receipt.events[1].args.length).to.equal(6);
       expect(receipt.events[1].args[0]).to.be.equal(1);
-      expect(receipt.events[1].args[1]).to.be.equal(addr1.address);
-      expect(receipt.events[1].args[2]).to.be.equal(toWei(price));
-      expect(receipt.events[1].args[3]).to.be.equal(timestamp);
-      expect(receipt.events[1].args[4]).to.be.equal(
+      expect(receipt.events[1].args[1]).to.be.equal(1);
+      expect(receipt.events[1].args[2]).to.be.equal(addr1.address);
+      expect(receipt.events[1].args[3]).to.be.equal(toWei(price));
+      expect(receipt.events[1].args[4]).to.be.equal(timestamp);
+      expect(receipt.events[1].args[5]).to.be.equal(
         mintGoldDustERC1155.address
       );
 
@@ -257,11 +258,15 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       expect(receipt.events[1].event).to.equal(
         "MintGoldDustNftListedToAuction"
       );
-      expect(receipt.events[1].args.length).to.equal(5);
+      expect(receipt.events[1].args.length).to.equal(6);
       expect(receipt.events[1].args[0]).to.be.equal(1);
-      expect(receipt.events[1].args[1]).to.be.equal(addr1.address);
-      expect(receipt.events[1].args[2]).to.be.equal(toWei(0));
-      expect(receipt.events[1].args[3]).to.be.equal(timestamp);
+      expect(receipt.events[1].args[1]).to.be.equal(1);
+      expect(receipt.events[1].args[2]).to.be.equal(addr1.address);
+      expect(receipt.events[1].args[3]).to.be.equal(toWei(0));
+      expect(receipt.events[1].args[4]).to.be.equal(timestamp);
+      expect(receipt.events[1].args[5]).to.be.equal(
+        mintGoldDustERC1155.address
+      );
 
       let marketItem =
         await mintGoldDustMarketplaceAuction.idMarketItemsByContractByOwner(
@@ -304,11 +309,15 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       expect(receipt.events[1].event).to.equal(
         "MintGoldDustNftListedToAuction"
       );
-      expect(receipt.events[1].args.length).to.equal(5);
+      expect(receipt.events[1].args.length).to.equal(6);
       expect(receipt.events[1].args[0]).to.be.equal(1);
-      expect(receipt.events[1].args[1]).to.be.equal(addr1.address);
-      expect(receipt.events[1].args[2]).to.be.equal(toWei(price));
-      expect(receipt.events[1].args[3]).to.be.equal(timestamp);
+      expect(receipt.events[1].args[1]).to.be.equal(1);
+      expect(receipt.events[1].args[2]).to.be.equal(addr1.address);
+      expect(receipt.events[1].args[3]).to.be.equal(toWei(price));
+      expect(receipt.events[1].args[4]).to.be.equal(timestamp);
+      expect(receipt.events[1].args[5]).to.be.equal(
+        mintGoldDustERC1155.address
+      );
 
       let marketItem =
         await mintGoldDustMarketplaceAuction.idMarketItemsByContractByOwner(

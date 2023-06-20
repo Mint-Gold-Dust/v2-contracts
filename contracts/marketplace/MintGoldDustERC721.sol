@@ -53,36 +53,12 @@ contract MintGoldDustERC721 is
         _transfer(_from, _to, _tokenId);
     }
 
-    //   /**
-    //    * Mints a new Mint Gold Dust token.
-    //    * @notice Fails if artist is not whitelisted or if the royalty surpass the max royalty limit
-    //    * setted on MintGoldDustCompany smart contract.
-    //    * @dev tokenIdArtist keeps track of the work of each artist and tokenIdRoyaltyPercent the royalty
-    //    * percent for each art work.
-    //    * @param _tokenURI The uri of the the token metadata.
-    //    * @param _royaltyPercent The royalty percentage for this art work.
-    //    */
-    //   function mintNft(
-    //     string calldata _tokenURI,
-    //     uint256 _royaltyPercent,
-    //     uint256 _amount
-    //   ) public payable override validPercentage(_royaltyPercent) returns (uint256) {
-    //     uint256 newTokenId = executeMintFlow(
-    //       _tokenURI,
-    //       _royaltyPercent,
-    //       msg.sender,
-    //       false
-    //     );
-
-    //     return newTokenId;
-    //   }
-
     function executeMintFlow(
         string calldata _tokenURI,
         uint256 _royaltyPercent,
         uint256 _amount,
         address _sender,
-        bool isCollectorMint,
+        uint256 _collectorMintId,
         string calldata _memoir
     ) internal override returns (uint256) {
         isApproved(_sender);
@@ -101,11 +77,12 @@ contract MintGoldDustERC721 is
 
         emit MintGoldDustNFTMinted(
             newTokenId,
+            _tokenURI,
             _sender,
             _royaltyPercent,
             1,
-            address(this),
-            isCollectorMint
+            true,
+            _collectorMintId
         );
         return newTokenId;
     }

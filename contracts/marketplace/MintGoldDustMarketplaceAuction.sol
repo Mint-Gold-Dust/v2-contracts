@@ -25,6 +25,9 @@ contract MintGoldDustMarketplaceAuction is
 {
     bytes4 private constant ERC165_ID = 0x01ffc9a7; //ERC165
 
+    using Counters for Counters.Counter;
+    Counters.Counter public auctionIds;
+
     function supportsInterface(
         bytes4 interfaceId
     ) public pure override returns (bool) {
@@ -57,7 +60,7 @@ contract MintGoldDustMarketplaceAuction is
         uint256 id,
         uint256 value,
         bytes calldata data
-    ) external override returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return this.onERC1155Received.selector;
     }
 
@@ -67,7 +70,7 @@ contract MintGoldDustMarketplaceAuction is
         uint256[] calldata ids,
         uint256[] calldata values,
         bytes calldata data
-    ) external override returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
     }
 
@@ -87,6 +90,7 @@ contract MintGoldDustMarketplaceAuction is
     /**
      * @notice that this event show the info about the creation of a new auction.
      * @dev this event will be triggered when a MintGoldDustNFT is listed for the  marketplace auction.
+     * @param auctionId the sequence number for the auction.
      * @param tokenId the sequence number for the item.
      * @param seller the seller of this tokenId.
      * @param price the reserve price for this auction.
@@ -95,6 +99,7 @@ contract MintGoldDustMarketplaceAuction is
      * @param contractAddress the MintGoldDustERC721 address or the MintGoldDustERC1155 address.
      */
     event MintGoldDustNftListedToAuction(
+        uint256 indexed auctionId,
         uint256 indexed tokenId,
         address seller,
         uint256 price,
@@ -105,12 +110,12 @@ contract MintGoldDustMarketplaceAuction is
     /**
      * @notice that this event show the info about new bids in an auction.
      * @dev this event will be triggered if a new bid was placed.
-     * @param tokenId the sequence number for the item.
+     * @param auctionId the sequence number for the auction.
      * @param startTime the timestamp that the time was initialized for this auction.
      * @param endTime the startTime plus 24 hours.
      */
     event AuctionTimeStarted(
-        uint256 indexed tokenId,
+        uint256 indexed auctionId,
         uint256 startTime,
         uint256 endTime
     );
@@ -118,17 +123,14 @@ contract MintGoldDustMarketplaceAuction is
     /**
      * @notice that this event show the info about new bids in an auction.
      * @dev this event will be triggered if a new bid was placed.
-     * @param tokenId the sequence number for the item.
-     * @param seller the seller of this tokenId.
-     *    @dev is interesting to have it here so is possible to inform the seller when its artwork receives a new bid.
+     * @param auctionId the sequence number for the auction.
      * @param previousBidder the address that did the latest highest bid.
      * @param currentBidder the address is doing the new highest bid.
      * @param bid the amount that is being payed in the new bid.
      * @param bidTime the timestamp of the bid.
      */
     event AuctionNewBid(
-        uint256 indexed tokenId,
-        address seller,
+        uint256 indexed auctionId,
         address previousBidder,
         address currentBidder,
         uint256 bid,
@@ -139,10 +141,10 @@ contract MintGoldDustMarketplaceAuction is
      * @notice that this event is triggered when an auction has the time extended.
      * @dev if an auction receives a new highest bid, in the last five minutes of the auction time,
      *      then more five minutes are added to the auction endTime. So at this moment this event is triggered.
-     * @param tokenId the sequence number for the item.
+     * @param auctionId the sequence number for the auction.
      * @param newEndTime the auction endTime plus five minutes.
      */
-    event AuctionExtended(uint256 tokenId, uint256 newEndTime);
+    event AuctionExtended(uint256 auctionId, uint256 newEndTime);
 
     /**
      * @notice that is function to list a MintGoldDustNFT for the marketplace auction.
@@ -176,11 +178,14 @@ contract MintGoldDustMarketplaceAuction is
 
         ListDTO memory _listDTO = ListDTO(_saleDTO, _realPrice);
 
-        list(_listDTO, true, address(this));
+        auctionIds.increment();
+
+        list(_listDTO, true, address(this), auctionIds.current());
 
         emit MintGoldDustNftListedToAuction(
+            auctionIds.current(),
             _listDTO.saleDTO.tokenId,
-            payable(msg.sender),
+            msg.sender,
             _listDTO.price,
             block.timestamp,
             _contractAddress
@@ -228,20 +233,6 @@ contract MintGoldDustMarketplaceAuction is
         ) {
             revert BidTooLow();
         }
-
-        /// @dev OLD in this case the item did not received any bids yet and the bid is less than the reserve price
-        // if (
-        //   idMarketItemsByContractByOwner[_bidDTO.contractAddress][_bidDTO.tokenId][
-        //     _bidDTO.seller
-        //   ].auctionProps.highestBid ==
-        //   0 &&
-        //   msg.value <
-        //   idMarketItemsByContractByOwner[_bidDTO.contractAddress][_bidDTO.tokenId][
-        //     _bidDTO.seller
-        //   ].price
-        // ) {
-        //   revert BidTooLow();
-        // }
 
         /// @dev in this case the item did not received any bids yet and the bid is less than the reserve price
         if (
@@ -378,10 +369,9 @@ contract MintGoldDustMarketplaceAuction is
         ][_bidDTO.seller].auctionProps.highestBidder = msg.sender;
 
         emit AuctionNewBid(
-            _bidDTO.tokenId,
             idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                 _bidDTO.tokenId
-            ][_bidDTO.seller].seller,
+            ][_bidDTO.seller].auctionProps.auctionId,
             previousBidder,
             msg.sender,
             msg.value,
