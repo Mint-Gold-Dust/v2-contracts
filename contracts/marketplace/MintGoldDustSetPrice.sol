@@ -79,11 +79,16 @@ contract MintGoldDustSetPrice is
      * @param seller the seller of this tokenId.
      * @param price the price for this item sale.
      *    @dev it cannot be zero.
+     * @param amount the quantity of tokens to be listed for an MintGoldDustERC1155.
+     *    @dev For MintGoldDustERC721 the amout must be always one.
+     * @param contractAddress the MintGoldDustERC1155 or the MintGoldDustERC721 address.
      */
     event MintGoldDustNftListedToSetPrice(
         uint256 indexed tokenId,
         address seller,
-        uint256 price
+        uint256 price,
+        uint256 amount,
+        address contractAddress
     );
 
     /**
@@ -93,11 +98,13 @@ contract MintGoldDustSetPrice is
      * @param seller the seller of this tokenId.
      * @param price the new price for this item sale.
      *    @dev it cannot be zero.
+     * @param contractAddress the MintGoldDustERC1155 or the MintGoldDustERC721 address.
      */
     event MintGoldDustNftListedItemUpdated(
         uint256 indexed tokenId,
         address seller,
-        uint256 price
+        uint256 price,
+        address contractAddress
     );
 
     /**
@@ -105,10 +112,12 @@ contract MintGoldDustSetPrice is
      * @dev this event will be triggered when a market item is delisted from the marketplace.
      * @param tokenId the sequence number for the item.
      * @param seller the seller of this tokenId.
+     * @param contractAddress the MintGoldDustERC1155 or the MintGoldDustERC721 address.
      */
     event MintGoldDustNftRemovedFromMarketplace(
         uint256 indexed tokenId,
-        address seller
+        address seller,
+        address contractAddress
     );
 
     /**
@@ -140,12 +149,14 @@ contract MintGoldDustSetPrice is
 
         ListDTO memory _listDTO = ListDTO(_saleDTO, _price);
 
-        list(_listDTO, false, address(this));
+        list(_listDTO, false, address(this), 0);
 
         emit MintGoldDustNftListedToSetPrice(
             _listDTO.saleDTO.tokenId,
             msg.sender,
-            _listDTO.price
+            _listDTO.price,
+            _contractAddress == mintGoldDustERC721Address ? 1 : _amount,
+            _contractAddress
         );
     }
 
@@ -192,7 +203,12 @@ contract MintGoldDustSetPrice is
             _marketItem.auctionProps
         );
 
-        emit MintGoldDustNftListedItemUpdated(_tokenId, msg.sender, _price);
+        emit MintGoldDustNftListedItemUpdated(
+            _tokenId,
+            msg.sender,
+            _price,
+            _contractAddress
+        );
     }
 
     /**
@@ -221,6 +237,10 @@ contract MintGoldDustSetPrice is
         // if (_marketItem.sold) {
         //   revert MGDMarketplaceItemIsNotListed();
         // }
+        bool isERC721 = false;
+        if (_delistDTO.contractAddress == mintGoldDustERC721Address) {
+            isERC721 = true;
+        }
 
         MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(
             _marketItem.isERC721
@@ -244,7 +264,8 @@ contract MintGoldDustSetPrice is
         {
             emit MintGoldDustNftRemovedFromMarketplace(
                 _delistDTO.tokenId,
-                msg.sender
+                msg.sender,
+                _delistDTO.contractAddress
             );
         } catch {
             idMarketItemsByContractByOwner[_delistDTO.contractAddress][
@@ -307,7 +328,8 @@ contract MintGoldDustSetPrice is
                 _collectorMintDTO.royalty,
                 _collectorMintDTO.amount,
                 _collectorMintDTO.artistSigner,
-                _collectorMintDTO.memoir
+                _collectorMintDTO.memoir,
+                _collectorMintDTO.collectorMintId
             );
         } else {
             _tokenId = _mintGoldDustNFT.collectorSplitMint(
@@ -317,7 +339,8 @@ contract MintGoldDustSetPrice is
                 _collectorMintDTO.ownersPercentage,
                 _collectorMintDTO.amount,
                 _collectorMintDTO.artistSigner,
-                _collectorMintDTO.memoir
+                _collectorMintDTO.memoir,
+                _collectorMintDTO.collectorMintId
             );
         }
 
@@ -330,12 +353,14 @@ contract MintGoldDustSetPrice is
 
         ListDTO memory _listDTO = ListDTO(_saleDTO, _collectorMintDTO.price);
 
-        list(_listDTO, false, address(this));
+        list(_listDTO, false, address(this), 0);
 
         emit MintGoldDustNftListedToSetPrice(
             _listDTO.saleDTO.tokenId,
             _collectorMintDTO.artistSigner,
-            _listDTO.price
+            _listDTO.price,
+            _collectorMintDTO.amount,
+            _collectorMintDTO.contractAddress
         );
 
         callPurchase(
