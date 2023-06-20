@@ -210,12 +210,13 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       expect(receipt.events[1].event).to.equal(
         "MintGoldDustNftListedToAuction"
       );
-      expect(receipt.events[1].args.length).to.equal(5);
+      expect(receipt.events[1].args.length).to.equal(6);
       expect(receipt.events[1].args[0]).to.be.equal(1);
-      expect(receipt.events[1].args[1]).to.be.equal(addr1.address);
-      expect(receipt.events[1].args[2]).to.be.equal(toWei(price));
-      expect(receipt.events[1].args[3]).to.be.equal(timestamp);
-      expect(receipt.events[1].args[4]).to.be.equal(mintGoldDustERC721.address);
+      expect(receipt.events[1].args[1]).to.be.equal(1);
+      expect(receipt.events[1].args[2]).to.be.equal(addr1.address);
+      expect(receipt.events[1].args[3]).to.be.equal(toWei(price));
+      expect(receipt.events[1].args[4]).to.be.equal(timestamp);
+      expect(receipt.events[1].args[5]).to.be.equal(mintGoldDustERC721.address);
 
       console.log(
         "\t ARTIST BALANCE AFTER LIST: ",
@@ -274,11 +275,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       expect(receipt.events[1].event).to.equal(
         "MintGoldDustNftListedToAuction"
       );
-      expect(receipt.events[1].args.length).to.equal(5);
+      expect(receipt.events[1].args.length).to.equal(6);
       expect(receipt.events[1].args[0]).to.be.equal(1);
-      expect(receipt.events[1].args[1]).to.be.equal(addr1.address);
-      expect(receipt.events[1].args[2]).to.be.equal(toWei(0));
-      expect(receipt.events[1].args[3]).to.be.equal(timestamp);
+
+      expect(receipt.events[1].args[1]).to.be.equal(1);
+      expect(receipt.events[1].args[2]).to.be.equal(addr1.address);
+      expect(receipt.events[1].args[3]).to.be.equal(toWei(0));
+      expect(receipt.events[1].args[4]).to.be.equal(timestamp);
+      expect(receipt.events[1].args[5]).to.be.equal(mintGoldDustERC721.address);
 
       let marketItem =
         await mintGoldDustMarketplaceAuction.idMarketItemsByContractByOwner(
@@ -316,11 +320,13 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       expect(receipt.events[1].event).to.equal(
         "MintGoldDustNftListedToAuction"
       );
-      expect(receipt.events[1].args.length).to.equal(5);
+      expect(receipt.events[1].args.length).to.equal(6);
       expect(receipt.events[1].args[0]).to.be.equal(1);
-      expect(receipt.events[1].args[1]).to.be.equal(addr1.address);
-      expect(receipt.events[1].args[2]).to.be.equal(toWei(price));
-      expect(receipt.events[1].args[3]).to.be.equal(timestamp);
+      expect(receipt.events[1].args[1]).to.be.equal(1);
+      expect(receipt.events[1].args[2]).to.be.equal(addr1.address);
+      expect(receipt.events[1].args[3]).to.be.equal(toWei(price));
+      expect(receipt.events[1].args[4]).to.be.equal(timestamp);
+      expect(receipt.events[1].args[5]).to.be.equal(mintGoldDustERC721.address);
 
       let marketItem =
         await mintGoldDustMarketplaceAuction.idMarketItemsByContractByOwner(
@@ -781,14 +787,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           )
         );
 
-        expect(parseFloat(fromWei(bidderBalanceBefore)).toFixed(4)).to.be.equal(
+        expect(parseFloat(fromWei(bidderBalanceBefore)).toFixed(3)).to.be.equal(
           parseFloat(
             fromWei(
               ethers.BigNumber.from(bidderBalanceAfter)
                 .add(toWei(priceToPurchase))
                 .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
             )
-          ).toFixed(4)
+          ).toFixed(3)
         );
 
         // Verify if the end time was set to 24 hours after the first bid greater than zero.

@@ -149,13 +149,13 @@ contract MintGoldDustSetPrice is
 
         ListDTO memory _listDTO = ListDTO(_saleDTO, _price);
 
-        list(_listDTO, false, address(this));
+        list(_listDTO, false, address(this), 0);
 
         emit MintGoldDustNftListedToSetPrice(
             _listDTO.saleDTO.tokenId,
             msg.sender,
             _listDTO.price,
-            _amount,
+            _contractAddress == mintGoldDustERC721Address ? 1 : _amount,
             _contractAddress
         );
     }
@@ -353,7 +353,7 @@ contract MintGoldDustSetPrice is
 
         ListDTO memory _listDTO = ListDTO(_saleDTO, _collectorMintDTO.price);
 
-        list(_listDTO, false, address(this));
+        list(_listDTO, false, address(this), 0);
 
         emit MintGoldDustNftListedToSetPrice(
             _listDTO.saleDTO.tokenId,

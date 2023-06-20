@@ -94,8 +94,6 @@ abstract contract MintGoldDustMarketplace is
         AuctionProps auctionProps;
     }
 
-    error Teste(MarketItem valor);
-
     /**
      * This struct consists of the following fields:
      *    - endTime: the time that the auction must be finished. Is the start time plus 24 hours.
@@ -104,6 +102,7 @@ abstract contract MintGoldDustMarketplace is
      *    - ended: a boolean that indicates if the auction was already finished or not.
      */
     struct AuctionProps {
+        uint256 auctionId;
         uint256 endTime;
         address highestBidder;
         uint256 highestBid;
@@ -293,7 +292,8 @@ abstract contract MintGoldDustMarketplace is
     function list(
         ListDTO memory _listDTO,
         bool _isAuction,
-        address _marketAddress
+        address _marketAddress,
+        uint256 _auctionId
     ) internal {
         mustBeMintGoldDustERC721Or1155(_listDTO.saleDTO.contractAddress);
 
@@ -323,6 +323,7 @@ abstract contract MintGoldDustMarketplace is
         }
 
         AuctionProps memory auctionProps = AuctionProps(
+            _auctionId,
             0,
             payable(address(0)),
             0,
@@ -577,6 +578,7 @@ abstract contract MintGoldDustMarketplace is
 
         AuctionProps memory auctionProps = AuctionProps(
             0,
+            0,
             payable(address(0)),
             0,
             false,
@@ -737,8 +739,6 @@ abstract contract MintGoldDustMarketplace is
             _marketItem.isERC721
         );
     }
-
-    error Teste123(address add1, uint256 add2);
 
     /**
      * @notice that is the function responsible to manage the split sale flow.
@@ -1094,7 +1094,7 @@ abstract contract MintGoldDustMarketplace is
      * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
      * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
      * @dev This function is specific for the set price market.
-     * For the auction market we have a second purchaseNft function. See below.
+     * For the auction market we have a second purchaseAuctionNft function. See below.
      * @param _saleDTO The SaleDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
@@ -1324,7 +1324,8 @@ abstract contract MintGoldDustMarketplace is
                     _collectorMintDTO.ownersPercentage,
                     _collectorMintDTO.amount,
                     _collectorMintDTO.artistSigner,
-                    _collectorMintDTO.price
+                    _collectorMintDTO.price,
+                    _collectorMintDTO.collectorMintId
                 )
             );
     }

@@ -93,14 +93,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
         mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 10, MEMOIR)
       )
         .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
-        .withArgs(
-          1,
-          addr1.address,
-          toWei(5),
-          10,
-          mintGoldDustERC1155.address,
-          false
-        );
+        .withArgs(1, "", addr1.address, toWei(5), 10, false, 0);
       expect(await mintGoldDustERC1155.tokenIdArtist(1)).to.equal(
         addr1.address
       );
@@ -142,14 +135,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
         mintGoldDustERC1155.connect(addr2).mintNft("", toWei(5), 5, MEMOIR)
       )
         .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
-        .withArgs(
-          2,
-          addr2.address,
-          toWei(5),
-          5,
-          mintGoldDustERC1155.address,
-          false
-        );
+        .withArgs(2, "", addr2.address, toWei(5), 5, false, 0);
       expect(await mintGoldDustERC1155.tokenIdArtist(2)).to.equal(
         addr2.address
       );

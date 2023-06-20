@@ -171,7 +171,13 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price))
       )
         .to.emit(mintGoldDustSetPrice, "MintGoldDustNftListedToSetPrice")
-        .withArgs(1, addr1.address, toWei(price));
+        .withArgs(
+          1,
+          addr1.address,
+          toWei(price),
+          quantityToList,
+          mintGoldDustERC1155.address
+        );
 
       console.log(
         "\t ARTIST BALANCE AFTER LIST: ",
@@ -330,7 +336,12 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           )
       )
         .to.emit(mintGoldDustSetPrice, "MintGoldDustNftListedItemUpdated")
-        .withArgs(1, addr1.address, toWei(newPrice));
+        .withArgs(
+          1,
+          addr1.address,
+          toWei(newPrice),
+          mintGoldDustERC1155.address
+        );
 
       console.log(
         "\t ARTIST BALANCE AFTER UPDATE A LISTED ITEM (ETH): ",
@@ -483,7 +494,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         })
       )
         .to.emit(mintGoldDustSetPrice, "MintGoldDustNftRemovedFromMarketplace")
-        .withArgs(1, addr1.address);
+        .withArgs(1, addr1.address, mintGoldDustERC1155.address);
       // the market item should be sold
       expect(
         (
