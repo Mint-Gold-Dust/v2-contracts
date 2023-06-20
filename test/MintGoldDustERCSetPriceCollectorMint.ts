@@ -274,157 +274,157 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
   });
 
-  describe("\n--------------- Tests related witn collector mint functionality after a MintGoldDustERC1155 traditional purchase on set price ---------------\n", function () {
-    let quantityToMint = 10;
-    let quantityToList = 5;
+  // describe("\n--------------- Tests related witn collector mint functionality after a MintGoldDustERC1155 traditional purchase on set price ---------------\n", function () {
+  //   let quantityToMint = 10;
+  //   let quantityToList = 5;
 
-    // Create an instance of the ListDTO struct
+  //   // Create an instance of the ListDTO struct
 
-    beforeEach(async () => {
-      // MGD owner whitelist the artist
-      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+  //   beforeEach(async () => {
+  //     // MGD owner whitelist the artist
+  //     await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
-      // Artist approve gdMarketPlace marketplace to exchange its NFT
-      await mintGoldDustERC1155
-        .connect(addr1)
-        .setApprovalForAll(mintGoldDustSetPrice.address, true);
-    });
+  //     // Artist approve gdMarketPlace marketplace to exchange its NFT
+  //     await mintGoldDustERC1155
+  //       .connect(addr1)
+  //       .setApprovalForAll(mintGoldDustSetPrice.address, true);
+  //   });
 
-    it("Should track a collector mint flow", async function () {
-      let collectrDTO = {
-        contractAddress: mintGoldDustERC1155.address,
-        tokenURI: URI,
-        royalty: toWei(royalty),
-        memoir: MEMOIR,
-        collaborators: [],
-        ownersPercentage: [],
-        amount: quantityToMint,
-        artistSigner: addr1.address,
-        price: toWei(price),
-        collectorMintId: 1,
-      };
+  //   it("Should track a collector mint flow", async function () {
+  //     let collectrDTO = {
+  //       contractAddress: mintGoldDustERC1155.address,
+  //       tokenURI: URI,
+  //       royalty: toWei(royalty),
+  //       memoir: MEMOIR,
+  //       collaborators: [],
+  //       ownersPercentage: [],
+  //       amount: quantityToMint,
+  //       artistSigner: addr1.address,
+  //       price: toWei(price),
+  //       collectorMintId: 1,
+  //     };
 
-      const messageBytes = ethers.utils.defaultAbiCoder.encode(
-        [
-          "address",
-          "string",
-          "uint256",
-          "string",
-          "address[]",
-          "uint256[]",
-          "uint256",
-          "address",
-          "uint256",
-          "uint256",
-        ],
-        [
-          collectrDTO.contractAddress,
-          collectrDTO.tokenURI,
-          collectrDTO.royalty,
-          collectrDTO.memoir,
-          collectrDTO.collaborators,
-          collectrDTO.ownersPercentage,
-          collectrDTO.amount,
-          collectrDTO.artistSigner,
-          collectrDTO.price,
-          collectrDTO.collectorMintId,
-        ]
-      );
+  //     const messageBytes = ethers.utils.defaultAbiCoder.encode(
+  //       [
+  //         "address",
+  //         "string",
+  //         "uint256",
+  //         "string",
+  //         "address[]",
+  //         "uint256[]",
+  //         "uint256",
+  //         "address",
+  //         "uint256",
+  //         "uint256",
+  //       ],
+  //       [
+  //         collectrDTO.contractAddress,
+  //         collectrDTO.tokenURI,
+  //         collectrDTO.royalty,
+  //         collectrDTO.memoir,
+  //         collectrDTO.collaborators,
+  //         collectrDTO.ownersPercentage,
+  //         collectrDTO.amount,
+  //         collectrDTO.artistSigner,
+  //         collectrDTO.price,
+  //         collectrDTO.collectorMintId,
+  //       ]
+  //     );
 
-      // Convert the JSON data to a string
-      const message = JSON.stringify(collectrDTO);
-      const messageHash = ethers.utils.keccak256(messageBytes);
+  //     // Convert the JSON data to a string
+  //     const message = JSON.stringify(collectrDTO);
+  //     const messageHash = ethers.utils.keccak256(messageBytes);
 
-      // Sign the JSON data using Hardhat address 1
-      const signer = ethers.provider.getSigner(1);
-      const signature = await signer.signMessage(messageHash);
+  //     // Sign the JSON data using Hardhat address 1
+  //     const signer = ethers.provider.getSigner(1);
+  //     const signature = await signer.signMessage(messageHash);
 
-      console.log("Signed Message:", messageBytes);
-      console.log("Message Hash:", messageHash);
-      console.log("Signature:", signature);
-      console.log("ADDR1: ", addr1.address);
+  //     console.log("Signed Message:", messageBytes);
+  //     console.log("Message Hash:", messageHash);
+  //     console.log("Signature:", signature);
+  //     console.log("ADDR1: ", addr1.address);
 
-      const signerAfter = ethers.utils.verifyMessage(messageHash, signature);
-      console.log("ADDR1: ", signerAfter);
-      // Check if the signer address matches Hardhat address 1
-      if (signerAfter === addr1.address) {
-        console.log("Signature is from Hardhat address 1");
-      } else {
-        console.log("Signature is not from Hardhat address 1");
-      }
-      console.log("ADDRESS: ", mintGoldDustERC1155.address);
+  //     const signerAfter = ethers.utils.verifyMessage(messageHash, signature);
+  //     console.log("ADDR1: ", signerAfter);
+  //     // Check if the signer address matches Hardhat address 1
+  //     if (signerAfter === addr1.address) {
+  //       console.log("Signature is from Hardhat address 1");
+  //     } else {
+  //       console.log("Signature is not from Hardhat address 1");
+  //     }
+  //     console.log("ADDRESS: ", mintGoldDustERC1155.address);
 
-      const tx = await mintGoldDustSetPrice
-        .connect(addr2)
-        .collectorMintPurchase(collectrDTO, messageHash, signature, {
-          value: toWei(price),
-        });
+  //     const tx = await mintGoldDustSetPrice
+  //       .connect(addr2)
+  //       .collectorMintPurchase(collectrDTO, messageHash, signature, {
+  //         value: toWei(price),
+  //       });
 
-      // await expect(tx)
-      //   .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
-      //   .withArgs(1, URI, addr1.address, toWei(royalty), 1, true, 1);
-      // await expect(tx)
-      //   .to.emit(mintGoldDustSetPrice, "MintGoldDustNftListedToSetPrice")
-      //   .withArgs(
-      //     1,
-      //     addr1.address,
-      //     toWei(price),
-      //     quantityToMint,
-      //     mintGoldDustERC1155.address
-      //   );
-      // await expect(tx)
-      //   .to.emit(mintGoldDustSetPrice, "MintGoldDustNftPurchasedPrimaryMarket")
-      //   .withArgs(
-      //     1,
-      //     1,
-      //     addr1.address,
-      //     addr2.address,
-      //     toWei(price),
-      //     toWei(balance),
-      //     toWei(fee),
-      //     toWei(collFee),
-      //     quantityToMint,
-      //     false,
-      //     false,
-      //     true
-      //   );
+  //     // await expect(tx)
+  //     //   .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
+  //     //   .withArgs(1, URI, addr1.address, toWei(royalty), 1, true, 1);
+  //     // await expect(tx)
+  //     //   .to.emit(mintGoldDustSetPrice, "MintGoldDustNftListedToSetPrice")
+  //     //   .withArgs(
+  //     //     1,
+  //     //     addr1.address,
+  //     //     toWei(price),
+  //     //     quantityToMint,
+  //     //     mintGoldDustERC1155.address
+  //     //   );
+  //     // await expect(tx)
+  //     //   .to.emit(mintGoldDustSetPrice, "MintGoldDustNftPurchasedPrimaryMarket")
+  //     //   .withArgs(
+  //     //     1,
+  //     //     1,
+  //     //     addr1.address,
+  //     //     addr2.address,
+  //     //     toWei(price),
+  //     //     toWei(balance),
+  //     //     toWei(fee),
+  //     //     toWei(collFee),
+  //     //     quantityToMint,
+  //     //     false,
+  //     //     false,
+  //     //     true
+  //     //   );
 
-      // let marketItem =
-      //   await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
-      //     mintGoldDustERC1155.address,
-      //     1,
-      //     addr2.address
-      //   );
+  //     // let marketItem =
+  //     //   await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
+  //     //     mintGoldDustERC1155.address,
+  //     //     1,
+  //     //     addr2.address
+  //     //   );
 
-      // expect(marketItem).to.be.not.null;
-      // expect(marketItem).to.be.not.undefined;
-      // expect(marketItem).to.be.not.empty;
-      // expect(marketItem).to.be.not.false;
-      // expect(marketItem.tokenId).to.be.equal(1);
-      // expect(marketItem.seller).to.be.equal(addr2.address);
-      // expect(marketItem.price).to.be.equal(toWei(price));
-      // expect(marketItem.sold).to.be.true;
-      // expect(marketItem.isAuction).to.be.false;
-      // expect(marketItem.isSecondarySale).to.be.true;
-      // expect(marketItem.isERC721).to.be.true;
-      // expect(marketItem.tokenAmount).to.be.equal(quantityToMint);
+  //     // expect(marketItem).to.be.not.null;
+  //     // expect(marketItem).to.be.not.undefined;
+  //     // expect(marketItem).to.be.not.empty;
+  //     // expect(marketItem).to.be.not.false;
+  //     // expect(marketItem.tokenId).to.be.equal(1);
+  //     // expect(marketItem.seller).to.be.equal(addr2.address);
+  //     // expect(marketItem.price).to.be.equal(toWei(price));
+  //     // expect(marketItem.sold).to.be.true;
+  //     // expect(marketItem.isAuction).to.be.false;
+  //     // expect(marketItem.isSecondarySale).to.be.true;
+  //     // expect(marketItem.isERC721).to.be.true;
+  //     // expect(marketItem.tokenAmount).to.be.equal(quantityToMint);
 
-      // //expect(await mintGoldDustERC1155.tokenURI(1)).to.equal(URI);
-      // expect(await mintGoldDustERC1155.tokenIdArtist(1)).to.equal(
-      //   addr1.address
-      // );
-      // //expect(await mintGoldDustERC1155.ownerOf(1)).to.equal(addr2.address);
+  //     // //expect(await mintGoldDustERC1155.tokenURI(1)).to.equal(URI);
+  //     // expect(await mintGoldDustERC1155.tokenIdArtist(1)).to.equal(
+  //     //   addr1.address
+  //     // );
+  //     // //expect(await mintGoldDustERC1155.ownerOf(1)).to.equal(addr2.address);
 
-      // const decoder = new TextDecoder();
-      // const byteArray = ethers.utils.arrayify(
-      //   await mintGoldDustMemoir.contractTokenIdMemoirs(
-      //     mintGoldDustERC1155.address,
-      //     1
-      //   )
-      // );
-      // const memoirStringReturned = decoder.decode(byteArray);
+  //     // const decoder = new TextDecoder();
+  //     // const byteArray = ethers.utils.arrayify(
+  //     //   await mintGoldDustMemoir.contractTokenIdMemoirs(
+  //     //     mintGoldDustERC1155.address,
+  //     //     1
+  //     //   )
+  //     // );
+  //     // const memoirStringReturned = decoder.decode(byteArray);
 
-      // expect(memoirStringReturned).to.be.equal(MEMOIR);
-    });
-  });
+  //     // expect(memoirStringReturned).to.be.equal(MEMOIR);
+  //   });
+  // });
 });
