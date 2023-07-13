@@ -179,7 +179,7 @@ describe("MintGoldDustERC721.sol Smart Contract \n______________________________
       ).to.be.equal(toWei(5));
     });
 
-    it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than ${max_royalty}.`, async function () {
+    it(`Should revert with a royaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than ${max_royalty}.`, async function () {
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
       await expect(
         mintGoldDustERC721
@@ -187,15 +187,15 @@ describe("MintGoldDustERC721.sol Smart Contract \n______________________________
           .mintNft(URI, toWei(max_royalty + 1), 1, MEMOIR)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC721,
-        "MGDnftRoyaltyInvalidPercentage"
+        "royaltyInvalidPercentage"
       );
     });
 
-    it("Should revert with a MGDnftUnauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
+    it("Should revert with a Unauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
       // addr1 try to mint a NFT without be whitelisted
       await expect(
         mintGoldDustERC721.connect(addr1).mintNft(URI, toWei(5), 1, MEMOIR)
-      ).to.be.revertedWithCustomError(mintGoldDustERC721, "MGDnftUnauthorized");
+      ).to.be.revertedWithCustomError(mintGoldDustERC721, "Unauthorized");
     });
   });
 });

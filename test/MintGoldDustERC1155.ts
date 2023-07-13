@@ -1,8 +1,9 @@
 require("dotenv").config();
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect, use } from "chai";
-import { Contract, ContractFactory } from "ethers";
+import { Contract, ContractFactory, ethers as ethers_ethers } from "ethers";
 import { ethers } from "hardhat";
+import { gasEstimator } from "../utils/gasEstimator";
 
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
@@ -22,7 +23,8 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
   let addr2: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
-  let baseURI = "https://example.com/{id}.json";
+  let baseURI = "";
+  let URI = "https://example.com/{id}.json";
   let max_royalty = 20;
 
   const MEMOIR = "This is a great moment of my life!";
@@ -81,25 +83,74 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
   describe("\n--------------- Test related with the mint NFT functionality ---------------\n", function () {
     it("Should track each minted NFT. This is verifying if: \n \t - The tokenURI was set correctly. \n \t - The tokenId was bound with the artist for future royalties payments. \n \t - The artist is the owner of the token. \n \t - The royalty percentage was set correctly. \n \t - The balanceOf the artists that mint an NFT was increased.", async function () {
-      console.log(
-        "\t ARTIST BALANCE BEFORE MINT: ",
-        parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
-      );
       let artistBalanceBefore = await addr1.getBalance();
-
-      // addr1 mints a nft
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-      await expect(
-        mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 10, MEMOIR)
-      )
-        .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
-        .withArgs(1, "", addr1.address, toWei(5), 10, false, 0);
+
+      const tx = await mintGoldDustERC1155
+        .connect(addr1)
+        .mintNft(URI, toWei(5), 10, MEMOIR);
+      const receipt = await tx.wait();
+
+      const events = receipt.events;
+
+      // Example assertion for the TransferSingle event
+      const transferSingleEvent: ethers_ethers.Event = events.find(
+        (event: ethers_ethers.Event) => {
+          return (
+            event.eventSignature ===
+            "TransferSingle(address,address,address,uint256,uint256)"
+          );
+        }
+      );
+
+      expect(transferSingleEvent).to.not.be.undefined;
+      expect(transferSingleEvent.args!.operator).to.equal(addr1.address);
+      expect(transferSingleEvent.args!.from).to.equal(
+        ethers_ethers.constants.AddressZero
+      );
+      expect(transferSingleEvent.args!.to).to.equal(addr1.address);
+      expect(transferSingleEvent.args!.id).to.equal(1);
+      expect(transferSingleEvent.args!.value).to.equal(10);
+
+      gasEstimator(tx, "whitelist");
+
+      console.log("EVENTS: ", events);
+
+      const URIEvent: ethers_ethers.Event = events.find(
+        (event: ethers_ethers.Event) => {
+          return event.eventSignature === "URI(string,uint256)";
+        }
+      );
+
+      expect(URIEvent).to.not.be.undefined;
+      expect(URIEvent.args!.value).to.equal(URI);
+      expect(URIEvent.args!.id).to.equal(1);
+
+      const mintGoldDustNFTMintedEvent: ethers_ethers.Event = events.find(
+        (event: ethers_ethers.Event) => {
+          return (
+            event.eventSignature ===
+            "MintGoldDustNFTMinted(uint256,string,address,uint256,uint256,bool,uint256)"
+          );
+        }
+      );
+
+      expect(mintGoldDustNFTMintedEvent).to.not.be.undefined;
+      expect(mintGoldDustNFTMintedEvent.args!.tokenId).to.equal(1);
+      expect(mintGoldDustNFTMintedEvent.args!.tokenURI).to.equal(URI);
+      expect(mintGoldDustNFTMintedEvent.args!.owner).to.equal(addr1.address);
+      expect(mintGoldDustNFTMintedEvent.args!.royalty).to.equal(toWei(5));
+      expect(mintGoldDustNFTMintedEvent.args!.amount).to.equal(10);
+      expect(mintGoldDustNFTMintedEvent.args!.isERC721).to.be.false;
+      expect(mintGoldDustNFTMintedEvent.args!.collectorMintId).to.equal(0);
+
       expect(await mintGoldDustERC1155.tokenIdArtist(1)).to.equal(
         addr1.address
       );
       expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(
         10
       );
+      expect(await mintGoldDustERC1155.uri(1)).to.equal(URI);
 
       let decoder = new TextDecoder();
       let byteArray = ethers.utils.arrayify(
@@ -113,20 +164,10 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
       expect(memoirStringReturned).to.be.equal(MEMOIR);
 
+      console.log("\t ARTIST BALANCE BEFORE MINT: ", artistBalanceBefore);
       console.log(
         "\t ARTIST BALANCE AFTER MINT: ",
         parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
-      );
-
-      console.log(
-        "\t \tSo the gas estimation was more less in USD:",
-        parseFloat(
-          fromWei(
-            ethers.BigNumber.from(artistBalanceBefore).sub(
-              await addr1.getBalance()
-            )
-          )
-        ) * 2500
       );
 
       // addr2 mints a nft
@@ -161,7 +202,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
       ).to.be.equal(toWei(5));
     });
 
-    it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than ${max_royalty}.`, async function () {
+    it(`Should revert with a royaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than ${max_royalty}.`, async function () {
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
       await expect(
         mintGoldDustERC1155
@@ -169,18 +210,15 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
           .mintNft("", toWei(max_royalty + 1), 5, MEMOIR)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC1155,
-        "MGDnftRoyaltyInvalidPercentage"
+        "royaltyInvalidPercentage"
       );
     });
 
-    it("Should revert with a MGDnftUnauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
+    it("Should revert with a Unauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
       // addr1 try to mint a NFT without be whitelisted
       await expect(
         mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 5, MEMOIR)
-      ).to.be.revertedWithCustomError(
-        mintGoldDustERC1155,
-        "MGDnftUnauthorized"
-      );
+      ).to.be.revertedWithCustomError(mintGoldDustERC1155, "Unauthorized");
     });
   });
 });

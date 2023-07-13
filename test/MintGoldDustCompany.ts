@@ -310,7 +310,7 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
         .mintNft(URI, toWei(valueNewFee), 1, MEMOIR);
     });
 
-    it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than new max royalty that is ${valueNewFee}.`, async function () {
+    it(`Should revert with a royaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than new max royalty that is ${valueNewFee}.`, async function () {
       // GD owner update the max_royalty_fee
       await mgdCompany.connect(deployer).updateMaxRoyalty(toWei(valueNewFee));
 
@@ -322,7 +322,7 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
           .mintNft(URI, toWei(valueNewFee + 1), 1, MEMOIR)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC721,
-        "MGDnftRoyaltyInvalidPercentage"
+        "royaltyInvalidPercentage"
       );
     });
   });
