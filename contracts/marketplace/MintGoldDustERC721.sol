@@ -14,23 +14,7 @@ import "./MintGoldDustMarketplaceAuction.sol";
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
 
-contract MintGoldDustERC721 is
-    ERC721Upgradeable,
-    ERC721URIStorageUpgradeable,
-    MintGoldDustNFT
-{
-    function supportsInterface(
-        bytes4 interfaceId
-    )
-        public
-        view
-        virtual
-        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
-        returns (bool)
-    {
-        return ERC165Upgradeable.supportsInterface(interfaceId);
-    }
-
+contract MintGoldDustERC721 is ERC721URIStorageUpgradeable, MintGoldDustNFT {
     /**
      *
      * @notice that the MintGoldDustERC721 is composed by other contract.
@@ -95,7 +79,7 @@ contract MintGoldDustERC721 is
 
     function _burn(
         uint256 tokenId
-    ) internal override(ERC721Upgradeable, ERC721URIStorageUpgradeable) {
+    ) internal override(ERC721URIStorageUpgradeable) {
         super._burn(tokenId);
     }
 
@@ -104,7 +88,7 @@ contract MintGoldDustERC721 is
     )
         public
         view
-        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        override(ERC721URIStorageUpgradeable)
         whenNotPaused
         returns (string memory)
     {
