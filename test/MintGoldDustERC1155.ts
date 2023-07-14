@@ -63,7 +63,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
     mintGoldDustERC1155 = await upgrades.deployProxy(
       MintGoldDustERC1155,
-      [mgdCompany.address, mintGoldDustMemoir.address, baseURI],
+      [mgdCompany.address, baseURI],
       {
         initializer: "initializeChild",
       }
@@ -89,11 +89,17 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
       // addr1 mints a nft
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       await expect(
-        mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 10, MEMOIR)
+        mintGoldDustERC1155
+          .connect(addr1)
+          .mintNft("", toWei(5), 10, bytesMemoir)
       )
         .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
-        .withArgs(1, "", addr1.address, toWei(5), 10, false, 0);
+        .withArgs(1, "", addr1.address, toWei(5), 10, false, 0, bytesMemoir);
       expect(await mintGoldDustERC1155.tokenIdArtist(1)).to.equal(
         addr1.address
       );
@@ -103,10 +109,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
       let decoder = new TextDecoder();
       let byteArray = ethers.utils.arrayify(
-        await mintGoldDustMemoir.contractTokenIdMemoirs(
-          mintGoldDustERC1155.address,
-          1
-        )
+        await mintGoldDustERC1155.tokenIdMemoir(1)
       );
 
       let memoirStringReturned = decoder.decode(byteArray);
@@ -131,11 +134,12 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
       // addr2 mints a nft
       await mgdCompany.connect(deployer).whitelist(addr2.address, true);
+
       await expect(
-        mintGoldDustERC1155.connect(addr2).mintNft("", toWei(5), 5, MEMOIR)
+        mintGoldDustERC1155.connect(addr2).mintNft("", toWei(5), 5, bytesMemoir)
       )
         .to.emit(mintGoldDustERC1155, "MintGoldDustNFTMinted")
-        .withArgs(2, "", addr2.address, toWei(5), 5, false, 0);
+        .withArgs(2, "", addr2.address, toWei(5), 5, false, 0, bytesMemoir);
       expect(await mintGoldDustERC1155.tokenIdArtist(2)).to.equal(
         addr2.address
       );
@@ -143,10 +147,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
       decoder = new TextDecoder();
       byteArray = ethers.utils.arrayify(
-        await mintGoldDustMemoir.contractTokenIdMemoirs(
-          mintGoldDustERC1155.address,
-          2
-        )
+        await mintGoldDustERC1155.tokenIdMemoir(2)
       );
 
       memoirStringReturned = decoder.decode(byteArray);
@@ -163,10 +164,14 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
     it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than ${max_royalty}.`, async function () {
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       await expect(
         mintGoldDustERC1155
           .connect(addr1)
-          .mintNft("", toWei(max_royalty + 1), 5, MEMOIR)
+          .mintNft("", toWei(max_royalty + 1), 5, bytesMemoir)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC1155,
         "MGDnftRoyaltyInvalidPercentage"
@@ -175,8 +180,12 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
     it("Should revert with a MGDnftUnauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
       // addr1 try to mint a NFT without be whitelisted
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       await expect(
-        mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 5, MEMOIR)
+        mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 5, bytesMemoir)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC1155,
         "MGDnftUnauthorized"

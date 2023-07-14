@@ -88,7 +88,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mintGoldDustCompany.address, mintGoldDustMemoir.address],
+      [mintGoldDustCompany.address],
       {
         initializer: "initializeChild",
       }
@@ -97,7 +97,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
     mintGoldDustERC1155 = await upgrades.deployProxy(
       MintGoldDustERC1155,
-      [mintGoldDustCompany.address, mintGoldDustMemoir.address, baseURI],
+      [mintGoldDustCompany.address, baseURI],
       {
         initializer: "initializeChild",
       }
@@ -142,9 +142,13 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         .connect(deployer)
         .whitelist(addr1.address, true);
       // addr1 mints a MintGoldDustER721
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its MintGoldDustER721
       await mintGoldDustERC721
         .connect(addr1)
@@ -329,10 +333,14 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -559,10 +567,14 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -1479,10 +1491,14 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -1594,10 +1610,14 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
@@ -1845,10 +1865,13 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         .connect(deployer)
         .whitelist(addr1.address, true);
 
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(royalty), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(royalty), quantityToMint, bytesMemoir);
 
       // Artist approve gdMarketPlace marketplace to exchange its mintGoldDustERC721
       await mintGoldDustERC721

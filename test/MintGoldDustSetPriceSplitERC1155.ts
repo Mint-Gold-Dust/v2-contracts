@@ -102,7 +102,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mgdCompany.address, mintGoldDustMemoir.address],
+      [mgdCompany.address],
       {
         initializer: "initializeChild",
       }
@@ -110,7 +110,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
 
     mintGoldDustERC1155 = await upgrades.deployProxy(
       MintGoldDustERC1155,
-      [mgdCompany.address, mintGoldDustMemoir.address, baseURI],
+      [mgdCompany.address, baseURI],
       {
         initializer: "initializeChild",
       }
@@ -141,6 +141,10 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     beforeEach(async () => {
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+
+      const encode = new TextEncoder();
+      const bytesMemoir = encode.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
@@ -150,7 +154,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           [addr5.address, addr6.address, addr7.address, addr8.address],
           [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
           quantityToMint,
-          MEMOIR
+          bytesMemoir
         );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
@@ -289,6 +293,10 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     beforeEach(async () => {
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+
+      const encode = new TextEncoder();
+      const bytesMemoir = encode.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
@@ -298,7 +306,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           [addr5.address, addr6.address, addr7.address, addr8.address],
           [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
           quantityToMint,
-          MEMOIR
+          bytesMemoir
         );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
@@ -481,6 +489,10 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     beforeEach(async () => {
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+
+      const encode = new TextEncoder();
+      const bytesMemoir = encode.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
@@ -490,7 +502,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           [addr5.address, addr6.address, addr7.address, addr8.address],
           [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
           quantityToMint,
-          MEMOIR
+          bytesMemoir
         );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
@@ -617,6 +629,10 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     beforeEach(async () => {
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+
+      const encode = new TextEncoder();
+      const bytesMemoir = encode.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
@@ -626,7 +642,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           [addr5.address, addr6.address, addr7.address, addr8.address],
           [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
           amountToMint,
-          MEMOIR
+          bytesMemoir
         );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
@@ -952,6 +968,10 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     beforeEach(async () => {
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+
+      const encode = new TextEncoder();
+      const bytesMemoir = encode.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
@@ -961,7 +981,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           [addr5.address, addr6.address, addr7.address, addr8.address],
           [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
           amountToMint,
-          MEMOIR
+          bytesMemoir
         );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155

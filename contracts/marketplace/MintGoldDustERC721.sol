@@ -61,8 +61,7 @@ contract MintGoldDustERC721 is ERC721URIStorageUpgradeable, MintGoldDustNFT {
         _setTokenURI(newTokenId, _tokenURI);
         tokenIdArtist[newTokenId] = _sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
-
-        //mintGoldDustMemoir.addMemoirForContract(address(this), newTokenId, _memoir);
+        tokenIdMemoir[newTokenId] = _memoir;
 
         emit MintGoldDustNFTMinted(
             newTokenId,

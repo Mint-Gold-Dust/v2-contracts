@@ -89,7 +89,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mintGoldDustCompany.address, mintGoldDustMemoir.address],
+      [mintGoldDustCompany.address],
       {
         initializer: "initializeChild",
       }
@@ -97,7 +97,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
 
     mintGoldDustERC1155 = await upgrades.deployProxy(
       MintGoldDustERC1155,
-      [mintGoldDustCompany.address, mintGoldDustMemoir.address, baseURI],
+      [mintGoldDustCompany.address, baseURI],
       {
         initializer: "initializeChild",
       }
@@ -142,10 +142,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       let transaction = await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Wait for the transaction to be finalized
       const receipt = await transaction.wait();
       tokenId = receipt.events[0].args[3];
@@ -355,10 +359,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -616,10 +624,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -1542,10 +1554,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -1682,10 +1698,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -1935,10 +1955,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(royalty), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(royalty), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)

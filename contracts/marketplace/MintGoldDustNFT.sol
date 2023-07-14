@@ -30,6 +30,8 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
     mapping(uint256 => address) public tokenIdArtist;
     mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
 
+    mapping(uint256 => bytes) public tokenIdMemoir;
+
     mapping(uint256 => address[4]) public tokenCollaborators;
     mapping(uint256 => uint256[5]) public tokenIdCollaboratorsPercentage;
     mapping(uint256 => bool) public hasTokenCollaborators;

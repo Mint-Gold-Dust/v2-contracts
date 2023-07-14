@@ -93,7 +93,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mgdCompany.address, mintGoldDustMemoir.address],
+      [mgdCompany.address],
       {
         initializer: "initializeChild",
       }
@@ -101,7 +101,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     mintGoldDustERC1155 = await upgrades.deployProxy(
       MintGoldDustERC1155,
-      [mgdCompany.address, mintGoldDustMemoir.address, baseURI],
+      [mgdCompany.address, baseURI],
       {
         initializer: "initializeChild",
       }

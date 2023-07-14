@@ -86,8 +86,7 @@ contract MintGoldDustERC1155 is
         _mint(_sender, newTokenId, _amount, "");
         tokenIdArtist[newTokenId] = _sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
-
-        //mintGoldDustMemoir.addMemoirForContract(address(this), newTokenId, _memoir);
+        tokenIdMemoir[newTokenId] = _memoir;
 
         emit MintGoldDustNFTMinted(
             newTokenId,
