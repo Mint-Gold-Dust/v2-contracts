@@ -60,7 +60,7 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mgdCompany.address, mgdMemoir.address],
+      [mgdCompany.address],
       {
         initializer: "initialize",
       }
@@ -68,90 +68,6 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
     await mintGoldDustERC721.deployed();
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
-  });
-
-  describe("* TESTS RELATED WITH TOKENS MEMOIRS\n", () => {
-    it("Should add a new memoir for a new MGD ERC721 minted by the MintGoldDustERC721 contract.", async () => {
-      console.log(
-        "--------------------------------------------------------------------------------------------"
-      );
-      console.log(
-        "\t ARTIST BALANCE BEFORE ADD MEMOIR: ",
-        parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
-      );
-
-      let artistBalanceBefore = await addr1.getBalance();
-
-      // MGD Owner whitelist the artist addr1
-      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-
-      // Mint a new MGD ERC721
-      const transaction = await mintGoldDustERC721
-        .connect(addr1)
-        .mintNft(URI, toWei(5), 1, MEMOIR);
-      // Wait for the transaction to be finalized
-      const receipt = await transaction.wait();
-      const tokenId = receipt.events[0].args[2];
-
-      const decoder = new TextDecoder();
-      const byteArray = ethers.utils.arrayify(
-        await mgdMemoir.contractTokenIdMemoirs(
-          mintGoldDustERC721.address,
-          tokenId
-        )
-      );
-
-      const memoirStringReturned = decoder.decode(byteArray);
-
-      console.log(
-        "\t ARTIST BALANCE AFTER ADD MEMOIR: ",
-        parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
-      );
-
-      console.log(
-        "\t \tSo the gas estimation was more less (USD):",
-        parseFloat(
-          fromWei(
-            ethers.BigNumber.from(artistBalanceBefore).sub(
-              await addr1.getBalance()
-            )
-          )
-        ) * 2500
-      );
-
-      console.log(
-        `\n\t\tTOKEN ID MEMOIR FOR THE CONTRACT MGDNFT (${mintGoldDustERC721.address}):\n\t\t `,
-        memoirStringReturned
-      );
-      expect(memoirStringReturned).to.be.equal(MEMOIR);
-    });
-
-    it("Should revert with a YouCannotUpdateThisMemoir error if someone try update a memoir created for a specif NFT token. It means that is not possible to update memoirs created to NFTs at the minting moment.", async () => {
-      console.log(
-        "\n--------------------------------------------------------------------------------------------"
-      );
-      // MGD Owner whitelist the artist addr1
-      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-
-      // Mint a new MGD ERC721
-      const transaction = await mintGoldDustERC721
-        .connect(addr1)
-        .mintNft(URI, toWei(5), 1, MEMOIR);
-
-      // Wait for the transaction to be finalized
-      const receipt = await transaction.wait();
-      const tokenId = receipt.events[0].args[2];
-
-      // Artist try to update this memoir
-      let MEMOIR2 = "NEW Some string";
-      await expect(
-        mgdMemoir.addMemoirForContract(
-          mintGoldDustERC721.address,
-          tokenId,
-          MEMOIR2
-        )
-      ).to.be.revertedWithCustomError(mgdMemoir, "YouCannotUpdateThisMemoir");
-    });
   });
 
   describe("\n\n * TESTS RELATED WITH EXTERNALLY OWNED ACCOUNTS MEMOIRS\n", () => {
@@ -167,7 +83,9 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
 
       const MEMOIR =
         "This is my first memoir in my art history! I think web3 will revolutionize the art world!";
-      await mgdMemoir.addMemoirForEOA(addr1.address, MEMOIR);
+      const encoder = new TextEncoder();
+      const bytesMEMOIR = encoder.encode(MEMOIR);
+      await mgdMemoir.addMemoirForEOA(addr1.address, bytesMEMOIR);
 
       const decoder = new TextDecoder();
       const byteArray = ethers.utils.arrayify(
@@ -212,16 +130,21 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       // MGD Owner whitelist the artist addr1
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
+      const encoder = new TextEncoder();
+      const bytesMEMOIR = encoder.encode(MEMOIR);
+
       // Mint a new MGD ERC721
       expect(
         await mintGoldDustERC721
           .connect(addr1)
-          .mintNft(URI, toWei(5), 1, MEMOIR)
+          .mintNft(URI, toWei(5), 1, bytesMEMOIR)
       );
 
       const MEMOIR1 = "Some string";
+      const bytesMEMOIR1 = encoder.encode(MEMOIR1);
+
       await expect(
-        mgdMemoir.addMemoirForEOA(mintGoldDustERC721.address, MEMOIR1)
+        mgdMemoir.addMemoirForEOA(mintGoldDustERC721.address, bytesMEMOIR1)
       ).to.be.revertedWithCustomError(mgdMemoir, "UseThisFunctionForEOA");
 
       console.log(
@@ -250,10 +173,12 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
 
       // MGD Owner whitelist the artist addr1
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+      const encoder = new TextEncoder();
 
       const MEMOIR1 =
         "This is my first memoir in my art history! I think web3 will revolutionize the art world!";
-      await mgdMemoir.addMemoirForEOA(addr1.address, MEMOIR1);
+      const bytesMEMOIR1 = encoder.encode(MEMOIR1);
+      await mgdMemoir.addMemoirForEOA(addr1.address, bytesMEMOIR1);
 
       let byteArray = ethers.utils.arrayify(
         await mgdMemoir.userCounterMemoirs(addr1.address, 1)
@@ -270,7 +195,8 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       // artist add your second memoir
       const MEMOIR2 =
         "This is my second memoir in my art history! I think web3 is really revolutionizing the art world!";
-      await mgdMemoir.addMemoirForEOA(addr1.address, MEMOIR2);
+      const bytesMEMOIR2 = encoder.encode(MEMOIR2);
+      await mgdMemoir.addMemoirForEOA(addr1.address, bytesMEMOIR2);
 
       byteArray = ethers.utils.arrayify(
         await mgdMemoir.userCounterMemoirs(addr1.address, 2)
@@ -285,50 +211,6 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       expect(memoirStringReturned2).to.be.equal(MEMOIR2);
 
       expect(await mgdMemoir.userCounter(addr1.address)).to.be.equal(2);
-    });
-
-    it("Should allow a collector to create more than one memoir for itself and check if the userCounter for this address is the same of the memoirs added.", async () => {
-      console.log(
-        "--------------------------------------------------------------------------------------------"
-      );
-
-      const decoder = new TextDecoder();
-
-      // The user add your fist memoir
-      const MEMOIR1 =
-        "This is my first memoir in my art history! I think web3 will revolutionize the art world!";
-      await mgdMemoir.addMemoirForEOA(addr2.address, MEMOIR1);
-
-      let byteArray = ethers.utils.arrayify(
-        await mgdMemoir.userCounterMemoirs(addr2.address, 1)
-      );
-
-      let memoirStringReturned1 = decoder.decode(byteArray);
-
-      console.log(
-        `\n\t\THE FIRST MEMOIR FOR THIS USER (${addr2.address}):\n\t\t `,
-        memoirStringReturned1
-      );
-      expect(memoirStringReturned1).to.be.equal(MEMOIR1);
-
-      // artist add your second memoir
-      const MEMOIR2 =
-        "This is my second memoir in my art history! I think web3 is really revolutionizing the art world!";
-      await mgdMemoir.addMemoirForEOA(addr2.address, MEMOIR2);
-
-      byteArray = ethers.utils.arrayify(
-        await mgdMemoir.userCounterMemoirs(addr2.address, 2)
-      );
-
-      let memoirStringReturned2 = decoder.decode(byteArray);
-
-      console.log(
-        `\n\t\THE SECOND MEMOIR FOR THIS USER (${addr2.address}):\n\t\t `,
-        memoirStringReturned2
-      );
-      expect(memoirStringReturned2).to.be.equal(MEMOIR2);
-
-      expect(await mgdMemoir.userCounter(addr2.address)).to.be.equal(2);
     });
   });
 });

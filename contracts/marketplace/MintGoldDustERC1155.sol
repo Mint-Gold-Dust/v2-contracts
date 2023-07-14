@@ -25,11 +25,10 @@ contract MintGoldDustERC1155 is
      */
     function initializeChild(
         address _mintGoldDustCompany,
-        address _mintGoldDustMemoir,
         string calldata baseURI
     ) public initializer {
         __ERC1155_init(baseURI);
-        MintGoldDustNFT.initialize(_mintGoldDustCompany, _mintGoldDustMemoir);
+        MintGoldDustNFT.initialize(_mintGoldDustCompany);
     }
 
     using Counters for Counters.Counter;
@@ -79,7 +78,7 @@ contract MintGoldDustERC1155 is
         uint256 _amount,
         address _sender,
         uint256 _collectorMintId,
-        string calldata _memoir
+        bytes calldata _memoir
     ) internal override returns (uint256) {
         isApproved(_sender);
         _tokenIds.increment();
@@ -88,11 +87,7 @@ contract MintGoldDustERC1155 is
         tokenIdArtist[newTokenId] = _sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
 
-        mintGoldDustMemoir.addMemoirForContract(
-            address(this),
-            newTokenId,
-            _memoir
-        );
+        //mintGoldDustMemoir.addMemoirForContract(address(this), newTokenId, _memoir);
 
         emit MintGoldDustNFTMinted(
             newTokenId,
@@ -101,7 +96,8 @@ contract MintGoldDustERC1155 is
             _royaltyPercent,
             _amount,
             false,
-            _collectorMintId
+            _collectorMintId,
+            _memoir
         );
 
         return newTokenId;

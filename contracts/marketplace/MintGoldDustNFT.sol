@@ -19,18 +19,13 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
      * @notice that the MintGoldDustERC721 is composed by other contract.
      * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
-    function initialize(
-        address _mintGoldDustCompany,
-        address _mintGoldDustMemoir
-    ) public initializer {
+    function initialize(address _mintGoldDustCompany) public initializer {
         mintGoldDustCompany = MintGoldDustCompany(
             payable(_mintGoldDustCompany)
         );
-        mintGoldDustMemoir = MintGoldDustMemoir((_mintGoldDustMemoir));
     }
 
     MintGoldDustCompany internal mintGoldDustCompany;
-    MintGoldDustMemoir internal mintGoldDustMemoir;
 
     mapping(uint256 => address) public tokenIdArtist;
     mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
@@ -51,6 +46,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
      *    @dev for MingGoldDustERC721 this amount is always one.
      * @param isERC721 a boolean that indicates if this token is ERC721 or ERC1155.
      * @param collectorMintId a unique identifier for the collector mint.
+     * @param memoir the memoir for this token.
      */
     event MintGoldDustNFTMinted(
         uint256 indexed tokenId,
@@ -59,7 +55,8 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 royalty,
         uint256 amount,
         bool isERC721,
-        uint256 collectorMintId
+        uint256 collectorMintId,
+        bytes memoir
     );
 
     /**
@@ -88,7 +85,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 _amount,
         address _sender,
         uint256 _collectorMintId,
-        string calldata _memoir
+        bytes calldata _memoir
     ) internal virtual returns (uint256);
 
     /**
@@ -102,7 +99,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         string calldata _tokenURI,
         uint256 _royaltyPercent,
         uint256 _amount,
-        string calldata _memoir
+        bytes calldata _memoir
     )
         public
         payable
@@ -127,7 +124,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 _royaltyPercent,
         uint256 _amount,
         address _sender,
-        string calldata _memoir,
+        bytes calldata _memoir,
         uint256 _collectorMintId
     ) public validPercentage(_royaltyPercent) whenNotPaused returns (uint256) {
         uint256 newTokenId = executeMintFlow(
@@ -163,7 +160,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         address[] calldata _newOwners,
         uint256[] calldata _ownersPercentage,
         uint256 _amount,
-        string calldata _memoir
+        bytes calldata _memoir
     ) external whenNotPaused returns (uint256) {
         if (_ownersPercentage.length != _newOwners.length + 1) {
             revert NumberOfCollaboratorsAndPercentagesNotMatch();
@@ -180,7 +177,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256[] calldata _ownersPercentage,
         uint256 _amount,
         address _sender,
-        string calldata _memoir,
+        bytes calldata _memoir,
         uint256 _collectorMintId
     ) external whenNotPaused returns (uint256) {
         if (_ownersPercentage.length != _newOwners.length + 1) {

@@ -26,6 +26,7 @@ contract MintGoldDustCompany is Initializable, IERC165 {
     uint256 public auctionFinalMinutes;
     mapping(address => bool) public isArtistApproved;
     mapping(address => bool) public isAddressValidator;
+    mapping(address => bool) public isCollectorMint;
 
     bytes4 private constant ERC165_ID = 0x01ffc9a7; //ERC165
 
@@ -62,6 +63,8 @@ contract MintGoldDustCompany is Initializable, IERC165 {
     event ArtistWhitelisted(address indexed artistAddress, bool state);
 
     event ValidatorAdded(address indexed validatorAddress, bool state);
+
+    event CollectorMintAdded(address indexed validatorAddress, bool state);
 
     /**
      * Update platform primary fee percentage
@@ -142,6 +145,15 @@ contract MintGoldDustCompany is Initializable, IERC165 {
     function whitelist(address _address, bool _state) public isValidator {
         isArtistApproved[_address] = _state;
         emit ArtistWhitelisted(_address, _state);
+    }
+
+    /// @notice Whitelist/Blacklist collector mint
+    function setCollectorMint(
+        address _address,
+        bool _state
+    ) public isValidator {
+        isCollectorMint[_address] = _state;
+        emit CollectorMintAdded(_address, _state);
     }
 
     modifier isowner() {

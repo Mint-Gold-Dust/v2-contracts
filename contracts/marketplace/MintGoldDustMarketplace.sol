@@ -237,7 +237,7 @@ abstract contract MintGoldDustMarketplace is
         address contractAddress;
         string tokenURI;
         uint256 royalty;
-        string memoir;
+        bytes memoir;
         address[] collaborators;
         uint256[] ownersPercentage;
         uint256 amount;

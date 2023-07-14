@@ -19,17 +19,26 @@ contract MintGoldDustERC721 is
     ERC721URIStorageUpgradeable,
     MintGoldDustNFT
 {
+    function supportsInterface(
+        bytes4 interfaceId
+    )
+        public
+        view
+        virtual
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
+        returns (bool)
+    {
+        return ERC165Upgradeable.supportsInterface(interfaceId);
+    }
+
     /**
      *
      * @notice that the MintGoldDustERC721 is composed by other contract.
      * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
-    function initializeChild(
-        address _mintGoldDustCompany,
-        address _mintGoldDustMemoir
-    ) public initializer {
+    function initializeChild(address _mintGoldDustCompany) public initializer {
         __ERC721_init("Mint Gold Dust NFT", "MGDNFT");
-        super.initialize(_mintGoldDustCompany, _mintGoldDustMemoir);
+        super.initialize(_mintGoldDustCompany);
     }
 
     using Counters for Counters.Counter;
@@ -59,7 +68,7 @@ contract MintGoldDustERC721 is
         uint256 _amount,
         address _sender,
         uint256 _collectorMintId,
-        string calldata _memoir
+        bytes calldata _memoir
     ) internal override returns (uint256) {
         isApproved(_sender);
         _tokenIds.increment();
@@ -69,11 +78,7 @@ contract MintGoldDustERC721 is
         tokenIdArtist[newTokenId] = _sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
 
-        mintGoldDustMemoir.addMemoirForContract(
-            address(this),
-            newTokenId,
-            _memoir
-        );
+        //mintGoldDustMemoir.addMemoirForContract(address(this), newTokenId, _memoir);
 
         emit MintGoldDustNFTMinted(
             newTokenId,
@@ -82,7 +87,8 @@ contract MintGoldDustERC721 is
             _royaltyPercent,
             1,
             true,
-            _collectorMintId
+            _collectorMintId,
+            _memoir
         );
         return newTokenId;
     }

@@ -14,9 +14,6 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 
-  let MintGoldDustMemoir: ContractFactory;
-  let mintGoldDustMemoir: Contract;
-
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addrs: SignerWithAddress[];
@@ -43,11 +40,6 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
     );
     MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
 
-    MintGoldDustMemoir = await ethers.getContractFactory("MintGoldDustMemoir");
-
-    mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
-    await mintGoldDustMemoir.deployed();
-
     [deployer, addr1, ...addrs] = await ethers.getSigners();
 
     mgdCompany = await upgrades.deployProxy(
@@ -65,7 +57,7 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mgdCompany.address, mintGoldDustMemoir.address],
+      [mgdCompany.address],
       {
         initializer: "initialize",
       }
@@ -147,6 +139,51 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
     });
 
     it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to whitelist or blacklist an artist.", async () => {
+      // MGD owner whitelist the artist
+      await expect(
+        mgdCompany.connect(addr1).whitelist(addr1.address, true)
+      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+    });
+  });
+
+  describe("\n--------------- Tests related with whitelist/blacklist collector mint ---------------\n", function () {
+    it("Should whitelist an after blacklist a collector mint.", async () => {
+      let gasPrice = await mgdCompany.signer.getGasPrice();
+      let gasLimit = await mgdCompany.estimateGas.whitelist(
+        addr1.address,
+        true
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
+      // MGD owner whitelist the artist
+      await expect(
+        mgdCompany.connect(deployer).setCollectorMint(addr1.address, true)
+      )
+        .to.emit(mgdCompany, "CollectorMintAdded")
+        .withArgs(addr1.address, true);
+      await expect(
+        await mgdCompany.connect(deployer).isCollectorMint(addr1.address)
+      ).to.be.equal(true);
+
+      // MGD owner blacklist the artist
+      await expect(
+        mgdCompany.connect(deployer).setCollectorMint(addr1.address, false)
+      )
+        .to.emit(mgdCompany, "CollectorMintAdded")
+        .withArgs(addr1.address, false);
+      expect(
+        await mgdCompany.connect(deployer).isCollectorMint(addr1.address)
+      ).to.be.equal(false);
+    });
+
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not a validator try to whitelist or blacklist a collector mint.", async () => {
       // MGD owner whitelist the artist
       await expect(
         mgdCompany.connect(addr1).whitelist(addr1.address, true)
@@ -305,9 +342,12 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(valueNewFee), 1, MEMOIR);
+        .mintNft(URI, toWei(valueNewFee), 1, bytesMemoir);
     });
 
     it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than new max royalty that is ${valueNewFee}.`, async function () {
@@ -316,10 +356,13 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       await expect(
         mintGoldDustERC721
           .connect(addr1)
-          .mintNft(URI, toWei(valueNewFee + 1), 1, MEMOIR)
+          .mintNft(URI, toWei(valueNewFee + 1), 1, bytesMemoir)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC721,
         "MGDnftRoyaltyInvalidPercentage"
