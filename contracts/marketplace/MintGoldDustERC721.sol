@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
@@ -14,7 +15,11 @@ import "./MintGoldDustMarketplaceAuction.sol";
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
 
-contract MintGoldDustERC721 is ERC721URIStorageUpgradeable, MintGoldDustNFT {
+contract MintGoldDustERC721 is
+    ERC721URIStorageUpgradeable,
+    MintGoldDustNFT,
+    ReentrancyGuardUpgradeable
+{
     /**
      *
      * @notice that the MintGoldDustERC721 is composed by other contract.
@@ -42,7 +47,7 @@ contract MintGoldDustERC721 is ERC721URIStorageUpgradeable, MintGoldDustNFT {
         address _to,
         uint256 _tokenId,
         uint256 _amount
-    ) public override whenNotPaused {
+    ) public override whenNotPaused nonReentrant {
         _transfer(_from, _to, _tokenId);
     }
 

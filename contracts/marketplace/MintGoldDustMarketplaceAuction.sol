@@ -402,7 +402,9 @@ contract MintGoldDustMarketplaceAuction is
      *                  - contractAddress: is a MintGoldDustNFT address.
      *                  - seller: is the address of the seller of this tokenId.
      */
-    function placeBid(BidDTO memory _bidDTO) public payable whenNotPaused {
+    function placeBid(
+        BidDTO memory _bidDTO
+    ) public payable whenNotPaused nonReentrant {
         /// @dev verifications
         isNotCreator(_bidDTO);
         isNotLastBidder(_bidDTO);
@@ -429,7 +431,9 @@ contract MintGoldDustMarketplaceAuction is
      *                  - contractAddress: is a MintGoldDustNFT address.
      *                  - seller: is the address of the seller of this tokenId.
      */
-    function endAuction(BidDTO memory _bidDTO) public whenNotPaused {
+    function endAuction(
+        BidDTO memory _bidDTO
+    ) public whenNotPaused nonReentrant {
         isTokenIdListed(_bidDTO.tokenId, _bidDTO.contractAddress);
 
         if (
