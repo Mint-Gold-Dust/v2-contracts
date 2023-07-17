@@ -6132,7 +6132,7 @@
     },
     "5a982b73c3374efd3ca745d3fa4da4f9ba44379cd13ecab58219e5e9c311b881": {
       "address": "0x3155755b79aA083bd953911C92705B7aA82a18F9",
-      "txHash": "0x6f6f49bccf60a565a11dd1f7c2433fceff66e7a1927b4a43356f85c3f3561f92",
+      "txHash": "0xb3cc1354b5b5f383e5d0330d79125cd54cf2b2abdcd7e1c77b03208c3b6da1ed",
       "layout": {
         "solcVersion": "0.8.18",
         "storage": [
@@ -6213,7 +6213,7 @@
             "label": "idMarketItemsByContractByOwner",
             "offset": 0,
             "slot": "105",
-            "type": "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10349_storage)))",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10351_storage)))",
             "contract": "MintGoldDustMarketplace",
             "src": "contracts/marketplace/MintGoldDustMarketplace.sol:69"
           },
@@ -6239,7 +6239,7 @@
             "slot": "156",
             "type": "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_uint256)))",
             "contract": "MintGoldDustSetPrice",
-            "src": "contracts/marketplace/MintGoldDustSetPrice.sol:32"
+            "src": "contracts/marketplace/MintGoldDustSetPrice.sol:33"
           }
         ],
         "types": {
@@ -6267,7 +6267,7 @@
             "label": "contract MintGoldDustCompany",
             "numberOfBytes": "20"
           },
-          "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10349_storage)))": {
+          "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10351_storage)))": {
             "label": "mapping(address => mapping(uint256 => mapping(address => struct MintGoldDustMarketplace.MarketItem)))",
             "numberOfBytes": "32"
           },
@@ -6275,7 +6275,7 @@
             "label": "mapping(address => mapping(uint256 => mapping(address => uint256)))",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(MarketItem)10349_storage)": {
+          "t_mapping(t_address,t_struct(MarketItem)10351_storage)": {
             "label": "mapping(address => struct MintGoldDustMarketplace.MarketItem)",
             "numberOfBytes": "32"
           },
@@ -6283,7 +6283,7 @@
             "label": "mapping(address => uint256)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10349_storage))": {
+          "t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10351_storage))": {
             "label": "mapping(uint256 => mapping(address => struct MintGoldDustMarketplace.MarketItem))",
             "numberOfBytes": "32"
           },
@@ -6291,7 +6291,7 @@
             "label": "mapping(uint256 => mapping(address => uint256))",
             "numberOfBytes": "32"
           },
-          "t_struct(AuctionProps)10362_storage": {
+          "t_struct(AuctionProps)10364_storage": {
             "label": "struct MintGoldDustMarketplace.AuctionProps",
             "members": [
               {
@@ -6345,7 +6345,7 @@
             ],
             "numberOfBytes": "32"
           },
-          "t_struct(MarketItem)10349_storage": {
+          "t_struct(MarketItem)10351_storage": {
             "label": "struct MintGoldDustMarketplace.MarketItem",
             "members": [
               {
@@ -6398,7 +6398,7 @@
               },
               {
                 "label": "auctionProps",
-                "type": "t_struct(AuctionProps)10362_storage",
+                "type": "t_struct(AuctionProps)10364_storage",
                 "offset": 0,
                 "slot": "5"
               }
@@ -6418,7 +6418,7 @@
     },
     "e942df4819f402edf34930337e9be28a994114fcf63854e55757ec7874651e9c": {
       "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-      "txHash": "0x04091f1e95f9539acf7f8930b3b8e5a3b126ce4a5f985ee53eb30656c47d6d3e",
+      "txHash": "0xc0924658ee78d4551856c6b0390ec85c15e1e8bd5dab43ed1c21bcdbddde1098",
       "layout": {
         "solcVersion": "0.8.18",
         "storage": [
@@ -6629,7 +6629,7 @@
             "slot": "309",
             "type": "t_struct(Counter)7995_storage",
             "contract": "MintGoldDustERC721",
-            "src": "contracts/marketplace/MintGoldDustERC721.sol:34"
+            "src": "contracts/marketplace/MintGoldDustERC721.sol:35"
           }
         ],
         "types": {
@@ -6738,7 +6738,7 @@
     },
     "d06864682fbf108a0105b852de5a0c6f7e61c008f489f797e676afe83487a0f1": {
       "address": "0x172076E0166D1F9Cc711C77Adf8488051744980C",
-      "txHash": "0xb0132e621bee942eeead66932ed9d5c8d1cede277ff7d6c1950628389e9c4839",
+      "txHash": "0xb2541d417c1d552a134b432583f6de57945a32542f94f8d6239355156f2fec9b",
       "layout": {
         "solcVersion": "0.8.18",
         "storage": [
@@ -7050,7 +7050,7 @@
     },
     "c852922b90122bb7bc8023dad2533379f35ad138febf0f341d93970825d098c0": {
       "address": "0xffa7CA1AEEEbBc30C874d32C7e22F052BbEa0429",
-      "txHash": "0x70d6e6047882cecb0906b7f16992531f14d9a167dbd969ee72f1287b395ee233",
+      "txHash": "0xe63bf03e8c5ab806606faf995622e80b7670f1c04806a785ec8bb79c5cf5ade6",
       "layout": {
         "solcVersion": "0.8.18",
         "storage": [
@@ -7131,7 +7131,7 @@
             "label": "idMarketItemsByContractByOwner",
             "offset": 0,
             "slot": "105",
-            "type": "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10349_storage)))",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10351_storage)))",
             "contract": "MintGoldDustMarketplace",
             "src": "contracts/marketplace/MintGoldDustMarketplace.sol:69"
           },
@@ -7157,7 +7157,7 @@
             "slot": "156",
             "type": "t_struct(Counter)7995_storage",
             "contract": "MintGoldDustMarketplaceAuction",
-            "src": "contracts/marketplace/MintGoldDustMarketplaceAuction.sol:29"
+            "src": "contracts/marketplace/MintGoldDustMarketplaceAuction.sol:30"
           }
         ],
         "types": {
@@ -7185,19 +7185,19 @@
             "label": "contract MintGoldDustCompany",
             "numberOfBytes": "20"
           },
-          "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10349_storage)))": {
+          "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10351_storage)))": {
             "label": "mapping(address => mapping(uint256 => mapping(address => struct MintGoldDustMarketplace.MarketItem)))",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(MarketItem)10349_storage)": {
+          "t_mapping(t_address,t_struct(MarketItem)10351_storage)": {
             "label": "mapping(address => struct MintGoldDustMarketplace.MarketItem)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10349_storage))": {
+          "t_mapping(t_uint256,t_mapping(t_address,t_struct(MarketItem)10351_storage))": {
             "label": "mapping(uint256 => mapping(address => struct MintGoldDustMarketplace.MarketItem))",
             "numberOfBytes": "32"
           },
-          "t_struct(AuctionProps)10362_storage": {
+          "t_struct(AuctionProps)10364_storage": {
             "label": "struct MintGoldDustMarketplace.AuctionProps",
             "members": [
               {
@@ -7251,7 +7251,7 @@
             ],
             "numberOfBytes": "32"
           },
-          "t_struct(MarketItem)10349_storage": {
+          "t_struct(MarketItem)10351_storage": {
             "label": "struct MintGoldDustMarketplace.MarketItem",
             "members": [
               {
@@ -7304,7 +7304,7 @@
               },
               {
                 "label": "auctionProps",
-                "type": "t_struct(AuctionProps)10362_storage",
+                "type": "t_struct(AuctionProps)10364_storage",
                 "offset": 0,
                 "slot": "5"
               }

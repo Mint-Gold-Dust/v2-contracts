@@ -252,16 +252,17 @@ contract MintGoldDustMarketplaceAuction is
             revert BidTooLow();
         }
 
-        /// @dev in this case the item have already received bids and the bid is less or equal the latest highest bid
+        /// @dev in this case the item have already received bids and the bid is less or equal the latest highest bid + 3%
         if (
             idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                 _bidDTO.tokenId
             ][_bidDTO.seller].auctionProps.highestBid !=
             0 &&
             msg.value <=
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
+            (idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                 _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.highestBid
+            ][_bidDTO.seller].auctionProps.highestBid * 103) /
+                100
         ) {
             revert BidTooLow();
         }
