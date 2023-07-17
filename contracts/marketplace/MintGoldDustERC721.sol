@@ -16,6 +16,7 @@ import "./MintGoldDustMarketplaceAuction.sol";
 /// @custom:contact klvh@mintgolddust.io
 
 contract MintGoldDustERC721 is
+    Initializable,
     ERC721URIStorageUpgradeable,
     MintGoldDustNFT,
     ReentrancyGuardUpgradeable

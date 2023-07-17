@@ -19,6 +19,7 @@ error LastBidderCannotPlaceNextBid();
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
 contract MintGoldDustMarketplaceAuction is
+    Initializable,
     MintGoldDustMarketplace,
     ReentrancyGuardUpgradeable,
     IERC1155Receiver

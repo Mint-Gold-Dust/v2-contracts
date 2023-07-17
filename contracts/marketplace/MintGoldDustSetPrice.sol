@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 error YouCannotDelistMoreThanListed();
 
 contract MintGoldDustSetPrice is
+    Initializable,
     MintGoldDustMarketplace,
     ReentrancyGuardUpgradeable,
     IERC1155Receiver
