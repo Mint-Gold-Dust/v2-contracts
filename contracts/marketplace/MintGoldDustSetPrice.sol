@@ -177,7 +177,7 @@ contract MintGoldDustSetPrice is
         uint256 _price,
         address _contractAddress,
         address _seller
-    ) public whenNotPaused {
+    ) public {
         mustBeMintGoldDustERC721Or1155(_contractAddress);
         isTokenIdListed(_tokenId, _contractAddress);
         isSeller(_tokenId, _contractAddress, _seller);
@@ -225,9 +225,7 @@ contract MintGoldDustSetPrice is
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      */
-    function delistNft(
-        DelistDTO memory _delistDTO
-    ) public nonReentrant whenNotPaused {
+    function delistNft(DelistDTO memory _delistDTO) public nonReentrant {
         mustBeMintGoldDustERC721Or1155(_delistDTO.contractAddress);
         isTokenIdListed(_delistDTO.tokenId, _delistDTO.contractAddress);
         isSeller(_delistDTO.tokenId, _delistDTO.contractAddress, msg.sender);
@@ -235,9 +233,6 @@ contract MintGoldDustSetPrice is
             _delistDTO.contractAddress
         ][_delistDTO.tokenId][msg.sender];
 
-        // if (_marketItem.sold) {
-        //   revert MGDMarketplaceItemIsNotListed();
-        // }
         bool isERC721 = false;
         if (_delistDTO.contractAddress == mintGoldDustERC721Address) {
             isERC721 = true;

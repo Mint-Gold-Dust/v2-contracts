@@ -1086,9 +1086,7 @@ abstract contract MintGoldDustMarketplace is
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      */
-    function purchaseNft(
-        SaleDTO memory _saleDTO
-    ) external payable whenNotPaused {
+    function purchaseNft(SaleDTO memory _saleDTO) external payable {
         executePurchaseNftFlow(_saleDTO, msg.sender, msg.value);
     }
 
