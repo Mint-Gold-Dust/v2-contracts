@@ -156,13 +156,13 @@ contract MintGoldDustMarketplaceAuction is
      * @param _amount: The quantity of tokens to be listed for an MintGoldDustERC1155.
      *    @dev For MintGoldDustERC721 the amout must be always one.
      * @param _contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
-     * @param _price: The price or reserve price for the item.
+     * @param _pricePerToken: The price or reserve price for each token.
      */
     function list(
         uint256 _tokenId,
         uint256 _amount,
         address _contractAddress,
-        uint256 _price
+        uint256 _pricePerToken
     ) public override whenNotPaused {
         SaleDTO memory _saleDTO = SaleDTO(
             _tokenId,
@@ -171,13 +171,11 @@ contract MintGoldDustMarketplaceAuction is
             msg.sender
         );
 
-        uint256 _realPrice = _price;
+        uint256 _totalPrice = _pricePerToken * _amount;
 
-        if (_contractAddress == mintGoldDustERC1155Address) {
-            _realPrice = _price / _amount;
-        }
+        require(_totalPrice / _amount == _pricePerToken, "Mismatched prices");
 
-        ListDTO memory _listDTO = ListDTO(_saleDTO, _realPrice);
+        ListDTO memory _listDTO = ListDTO(_saleDTO, _pricePerToken);
 
         auctionIds.increment();
 
