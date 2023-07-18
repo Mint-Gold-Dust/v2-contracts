@@ -251,29 +251,17 @@ contract MintGoldDustSetPrice is
             _delistDTO.tokenId
         ][msg.sender].sold = true;
 
-        /**
-         * @dev Here we have an external call to the MGD ERC721 contract
-         * because of that we have the try catch.
-         */
-        try
-            _mintGoldDustNFT.transfer(
-                address(this),
-                msg.sender,
-                _delistDTO.tokenId,
-                _marketItem.tokenAmount
-            )
-        {
-            emit MintGoldDustNftRemovedFromMarketplace(
-                _delistDTO.tokenId,
-                msg.sender,
-                _delistDTO.contractAddress
-            );
-        } catch {
-            idMarketItemsByContractByOwner[_delistDTO.contractAddress][
-                _delistDTO.tokenId
-            ][msg.sender].sold = false;
-            revert MintGoldDustErrorToTransfer("At set price delist!");
-        }
+        _mintGoldDustNFT.transfer(
+            address(this),
+            msg.sender,
+            _delistDTO.tokenId,
+            _marketItem.tokenAmount
+        );
+        emit MintGoldDustNftRemovedFromMarketplace(
+            _delistDTO.tokenId,
+            msg.sender,
+            _delistDTO.contractAddress
+        );
     }
 
     /**

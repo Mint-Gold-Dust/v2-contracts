@@ -142,7 +142,10 @@ contract MintGoldDustCompany is Initializable, IERC165 {
     }
 
     /// @notice Whitelist/Blacklist artist
-    function whitelist(address _address, bool _state) public isValidator {
+    function whitelist(
+        address _address,
+        bool _state
+    ) public isValidatorOrOwner {
         isArtistApproved[_address] = _state;
         emit ArtistWhitelisted(_address, _state);
     }
@@ -151,7 +154,7 @@ contract MintGoldDustCompany is Initializable, IERC165 {
     function setCollectorMint(
         address _address,
         bool _state
-    ) public isValidator {
+    ) public isValidatorOrOwner {
         isCollectorMint[_address] = _state;
         emit CollectorMintAdded(_address, _state);
     }
@@ -163,8 +166,8 @@ contract MintGoldDustCompany is Initializable, IERC165 {
         _;
     }
 
-    modifier isValidator() {
-        if (isAddressValidator[msg.sender] == true) {
+    modifier isValidatorOrOwner() {
+        if (isAddressValidator[msg.sender] == true || msg.sender == owner) {
             _;
         } else {
             revert MGDCompanyUnauthorized();

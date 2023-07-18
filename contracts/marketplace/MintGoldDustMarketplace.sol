@@ -347,16 +347,12 @@ abstract contract MintGoldDustMarketplace is
             auctionProps
         );
 
-        try
-            _mintGoldDustNFT.transfer(
-                _listDTO.saleDTO.seller,
-                _marketAddress,
-                _listDTO.saleDTO.tokenId,
-                _realAmount
-            )
-        {} catch {
-            revert MintGoldDustErrorToTransfer("At listing!");
-        }
+        _mintGoldDustNFT.transfer(
+            _listDTO.saleDTO.seller,
+            _marketAddress,
+            _listDTO.saleDTO.tokenId,
+            _realAmount
+        );
     }
 
     /**
@@ -539,29 +535,25 @@ abstract contract MintGoldDustMarketplace is
         uint256 _value,
         address _sender
     ) private {
-        try
-            _mintGoldDustNFT.transfer(
-                address(this),
-                _sender,
-                _saleDTO.tokenId,
-                _saleDTO.amount
-            )
-        {
-            payable(_marketItem.seller).transfer(_balance);
-            updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
-            emitPrimarySaleEvent(
-                _marketItem,
-                _saleDTO,
-                _balance,
-                _collFee,
-                _fee,
-                false,
-                _value,
-                _sender
-            );
-        } catch {
-            revertInCaseOfErrorInTransfer(_saleDTO, true);
-        }
+        _mintGoldDustNFT.transfer(
+            address(this),
+            _sender,
+            _saleDTO.tokenId,
+            _saleDTO.amount
+        );
+
+        payable(_marketItem.seller).transfer(_balance);
+        updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
+        emitPrimarySaleEvent(
+            _marketItem,
+            _saleDTO,
+            _balance,
+            _collFee,
+            _fee,
+            false,
+            _value,
+            _sender
+        );
     }
 
     function updateIdMarketItemsByContractByOwnerMapping(
@@ -665,31 +657,27 @@ abstract contract MintGoldDustMarketplace is
         uint256 _value,
         address _sender
     ) private {
-        try
-            _mintGoldDustNFT.transfer(
-                address(this),
-                _sender,
-                _saleDTO.tokenId,
-                _saleDTO.amount
-            )
-        {
-            payable(_artist).transfer(_royalty);
-            updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
-            emitSecondarySaleEvent(
-                _marketItem,
-                _saleDTO,
-                _artist,
-                _balance,
-                _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId),
-                _royalty,
-                _fee,
-                false,
-                _value,
-                _sender
-            );
-        } catch {
-            revertInCaseOfErrorInTransfer(_saleDTO, true);
-        }
+        _mintGoldDustNFT.transfer(
+            address(this),
+            _sender,
+            _saleDTO.tokenId,
+            _saleDTO.amount
+        );
+
+        payable(_artist).transfer(_royalty);
+        updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
+        emitSecondarySaleEvent(
+            _marketItem,
+            _saleDTO,
+            _artist,
+            _balance,
+            _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId),
+            _royalty,
+            _fee,
+            false,
+            _value,
+            _sender
+        );
     }
 
     /**
@@ -934,28 +922,23 @@ abstract contract MintGoldDustMarketplace is
         uint256 _value,
         address _sender
     ) private {
-        try
-            _mintGoldDustNFT.transfer(
-                address(this),
-                _sender,
-                _saleDTO.tokenId,
-                _saleDTO.amount
-            )
-        {
-            splittedSale(
-                _balance,
-                _fee,
-                _collFeeOrRoyalty,
-                _artistOrSeller,
-                _mintGoldDustNFT,
-                _saleDTO,
-                _isPrimarySale,
-                _value,
-                _sender
-            );
-        } catch {
-            revertInCaseOfErrorInTransfer(_saleDTO, _isPrimarySale);
-        }
+        _mintGoldDustNFT.transfer(
+            address(this),
+            _sender,
+            _saleDTO.tokenId,
+            _saleDTO.amount
+        );
+        splittedSale(
+            _balance,
+            _fee,
+            _collFeeOrRoyalty,
+            _artistOrSeller,
+            _mintGoldDustNFT,
+            _saleDTO,
+            _isPrimarySale,
+            _value,
+            _sender
+        );
     }
 
     function revertInCaseOfErrorInTransfer(
