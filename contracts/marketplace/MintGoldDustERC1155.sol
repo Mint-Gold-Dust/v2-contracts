@@ -80,7 +80,6 @@ contract MintGoldDustERC1155 is
         uint256 _collectorMintId,
         bytes calldata _memoir
     ) internal override returns (uint256) {
-        isApproved(_sender);
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(_sender, newTokenId, _amount, "");
@@ -91,7 +90,7 @@ contract MintGoldDustERC1155 is
         emit MintGoldDustNFTMinted(
             newTokenId,
             _tokenURI,
-            msg.sender,
+            _sender,
             _royaltyPercent,
             _amount,
             false,

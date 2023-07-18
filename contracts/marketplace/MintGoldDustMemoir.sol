@@ -53,6 +53,8 @@ contract MintGoldDustMemoir is Initializable {
         uint256 next = userCounter[_eoa] + 1;
         userCounterMemoirs[_eoa][next] = _memoir;
         userCounter[_eoa] = next;
+
+        emit EOAMemoirCreated(_eoa, next, _memoir);
     }
 
     /**

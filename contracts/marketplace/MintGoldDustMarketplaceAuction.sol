@@ -38,17 +38,17 @@ contract MintGoldDustMarketplaceAuction is
      *
      * @notice MGDAuction is a children of MintGoldDustMarketplace and this one is
      * composed by other two contracts.
-     * @param _mgdCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustCompany The contract responsible to MGD management features.
      * @param _mintGoldDustERC721Address The MGD ERC721.
      * @param _mintGoldDustERC1155Address The MGD ERC721.
      */
     function initializeChild(
-        address _mgdCompany,
+        address _mintGoldDustCompany,
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
     ) public initializer {
         super.initialize(
-            _mgdCompany,
+            _mintGoldDustCompany,
             _mintGoldDustERC721Address,
             _mintGoldDustERC1155Address
         );
@@ -269,7 +269,7 @@ contract MintGoldDustMarketplaceAuction is
     /**
      * @dev the goal of this function start the time for the auction if it was not started yet.
      * @notice that it EMIT the AuctionTimeStarted event when the time is started.
-     * @notice that the end time is the start time plus the mgdCompany.auctionDuration(). This
+     * @notice that the end time is the start time plus the mintGoldDustCompany.auctionDuration(). This
      *         value is 24 hours at the moment of the deployment of the contracts.
      * @param _bidDTO BidDTO struct.
      */
@@ -281,7 +281,8 @@ contract MintGoldDustMarketplaceAuction is
             ][_bidDTO.seller].auctionProps.endTime == 0
         ) {
             uint256 _startTime = block.timestamp;
-            uint256 _endTime = _startTime + mgdCompany.auctionDuration();
+            uint256 _endTime = _startTime +
+                mintGoldDustCompany.auctionDuration();
 
             idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                 _bidDTO.tokenId
@@ -307,7 +308,7 @@ contract MintGoldDustMarketplaceAuction is
                 _bidDTO.tokenId
             ][_bidDTO.seller].auctionProps.endTime -
                 block.timestamp <
-            mgdCompany.auctionFinalMinutes()
+            mintGoldDustCompany.auctionFinalMinutes()
         ) {
             idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                 _bidDTO.tokenId
@@ -315,7 +316,7 @@ contract MintGoldDustMarketplaceAuction is
                 idMarketItemsByContractByOwner[_bidDTO.contractAddress][
                     _bidDTO.tokenId
                 ][_bidDTO.seller].auctionProps.endTime +
-                mgdCompany.auctionFinalMinutes();
+                mintGoldDustCompany.auctionFinalMinutes();
 
             emit AuctionExtended(
                 _bidDTO.tokenId,

@@ -54,7 +54,6 @@ contract MintGoldDustERC721 is ERC721URIStorageUpgradeable, MintGoldDustNFT {
         uint256 _collectorMintId,
         bytes calldata _memoir
     ) internal override returns (uint256) {
-        isApproved(_sender);
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _safeMint(_sender, newTokenId);

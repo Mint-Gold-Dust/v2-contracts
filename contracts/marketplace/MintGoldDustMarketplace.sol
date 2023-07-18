@@ -37,16 +37,18 @@ abstract contract MintGoldDustMarketplace is
     /**
      *
      * @notice MintGoldDustMarketplace is composed by other two contracts.
-     * @param _mgdCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustCompany The contract responsible to MGD management features.
      * @param _mintGoldDustERC721Address The MGD ERC721 address.
      * @param _mintGoldDustERC1155Address The MGD ERC1155 address.
      */
     function initialize(
-        address _mgdCompany,
+        address _mintGoldDustCompany,
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
     ) public initializer {
-        mgdCompany = MintGoldDustCompany(payable(_mgdCompany));
+        mintGoldDustCompany = MintGoldDustCompany(
+            payable(_mintGoldDustCompany)
+        );
         mintGoldDustERC721Address = _mintGoldDustERC721Address;
         mintGoldDustERC1155Address = _mintGoldDustERC1155Address;
     }
@@ -54,7 +56,7 @@ abstract contract MintGoldDustMarketplace is
     using Counters for Counters.Counter;
     Counters.Counter public itemsSold;
 
-    MintGoldDustCompany internal mgdCompany;
+    MintGoldDustCompany internal mintGoldDustCompany;
     address payable internal mintGoldDustERC721Address;
     address payable internal mintGoldDustERC1155Address;
 
@@ -415,8 +417,12 @@ abstract contract MintGoldDustMarketplace is
         uint256 collFee;
         uint256 balance;
 
-        fee = (_value * mgdCompany.primarySaleFeePercent()) / (100 * 10 ** 18);
-        collFee = (_value * mgdCompany.collectorFee()) / (100 * 10 ** 18);
+        fee =
+            (_value * mintGoldDustCompany.primarySaleFeePercent()) /
+            (100 * 10 ** 18);
+        collFee =
+            (_value * mintGoldDustCompany.collectorFee()) /
+            (100 * 10 ** 18);
         balance = _value - (fee + collFee);
 
         checkIfIsSplitPaymentAndCall(
@@ -431,7 +437,7 @@ abstract contract MintGoldDustMarketplace is
             _sender
         );
 
-        payable(mgdCompany.owner()).transfer(collFee + fee);
+        payable(mintGoldDustCompany.owner()).transfer(collFee + fee);
     }
 
     /**
@@ -1028,7 +1034,7 @@ abstract contract MintGoldDustMarketplace is
         uint256 balance;
 
         fee =
-            (_value * mgdCompany.secondarySaleFeePercent()) /
+            (_value * mintGoldDustCompany.secondarySaleFeePercent()) /
             (100 * 10 ** 18);
         royalty =
             (_value *
@@ -1049,7 +1055,7 @@ abstract contract MintGoldDustMarketplace is
             _sender
         );
 
-        payable(mgdCompany.owner()).transfer(fee);
+        payable(mintGoldDustCompany.owner()).transfer(fee);
         payable(_marketItem.seller).transfer(balance);
     }
 
@@ -1310,36 +1316,6 @@ abstract contract MintGoldDustMarketplace is
         }
     }
 
-    function generateHash(
-        CollectorMintDTO memory _collectorMintDTO
-    ) private pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    _collectorMintDTO.contractAddress,
-                    _collectorMintDTO.tokenURI,
-                    _collectorMintDTO.royalty,
-                    _collectorMintDTO.memoir,
-                    _collectorMintDTO.collaborators,
-                    _collectorMintDTO.ownersPercentage,
-                    _collectorMintDTO.amount,
-                    _collectorMintDTO.artistSigner,
-                    _collectorMintDTO.price,
-                    _collectorMintDTO.collectorMintId
-                )
-            );
-    }
-
-    function verifyHash(
-        CollectorMintDTO memory _collectorMintDTO,
-        bytes32 receivedHash
-    ) internal pure {
-        bytes32 generatedHash = generateHash(_collectorMintDTO);
-        if (generatedHash != receivedHash) {
-            revert MintGoldDustCollectorMintDataNotMatch();
-        }
-    }
-
     /**
      * @dev the main goal of this function is check if the address calling the function is the
      *      owner of the tokenId.
@@ -1499,7 +1475,7 @@ abstract contract MintGoldDustMarketplace is
     }
 
     modifier isowner() {
-        if (msg.sender != mgdCompany.owner()) {
+        if (msg.sender != mintGoldDustCompany.owner()) {
             revert MGDCompanyUnauthorized();
         }
         _;
@@ -1507,11 +1483,11 @@ abstract contract MintGoldDustMarketplace is
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
     fallback() external payable {
-        payable(mgdCompany.owner()).transfer(msg.value);
+        payable(mintGoldDustCompany.owner()).transfer(msg.value);
     }
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
     receive() external payable {
-        payable(mgdCompany.owner()).transfer(msg.value);
+        payable(mintGoldDustCompany.owner()).transfer(msg.value);
     }
 }
