@@ -160,13 +160,15 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         "\t ARTIST BALANCE BEFORE LIST: ",
         parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
       );
+      console.log(1);
       let artistBalanceBefore = await addr1.getBalance();
-
+      
       const tx = await mintGoldDustMarketplaceAuction
-        .connect(addr1)
-        .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
+      .connect(addr1)
+      .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
       const receipt = await tx.wait();
-
+      
+      console.log(1);
       // Check that the transaction emitted an event
       expect(receipt.events?.length).to.equal(2);
 
@@ -1517,11 +1519,11 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           seller: addr1.address,
         })
       )
-        .to.be.revertedWithCustomError(
-          mintGoldDustMarketplaceAuction,
-          "MintGoldDustItemIsNotListed"
-        )
-        .withArgs(mintGoldDustERC721.address);
+      .to.be.revertedWithCustomError(
+        mintGoldDustMarketplaceAuction,
+        "MintGoldDustItemIsNotListed"
+      )
+      .withArgs(mintGoldDustERC721.address);
     });
 
     it("Should revert with AuctionTimeNotStartedYet error if the end auction function is called and the auction have not received any bids yet.", async () => {

@@ -49,7 +49,7 @@ contract MintGoldDustERC721 is
         uint256 _tokenId,
         uint256 _amount
     ) public override whenNotPaused nonReentrant {
-        safeTransferFrom(_from, _to, _tokenId);
+        _transfer(_from, _to, _tokenId);
     }
 
     function executeMintFlow(
