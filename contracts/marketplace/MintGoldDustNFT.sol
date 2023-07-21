@@ -37,6 +37,8 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
     mapping(uint256 => bool) public hasTokenCollaborators;
     mapping(uint256 => uint256) public tokenIdCollaboratorsQuantity;
 
+    uint256[48] __gap;
+
     /**
      * @notice that this is an event that contains the info for a mint.
      * @dev it will be triggered after a successfully traditional minting or split minting.

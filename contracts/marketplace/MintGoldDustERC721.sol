@@ -94,7 +94,6 @@ contract MintGoldDustERC721 is
         public
         view
         override(ERC721URIStorageUpgradeable)
-        whenNotPaused
         returns (string memory)
     {
         return super.tokenURI(tokenId);

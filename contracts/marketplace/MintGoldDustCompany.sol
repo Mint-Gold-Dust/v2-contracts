@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
@@ -12,7 +13,7 @@ error MGDCompanyUnauthorized();
 /// @notice Contains functions for update the MGD fees and some access levels.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-contract MintGoldDustCompany is Initializable, IERC165 {
+contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     /**
      * @dev all attributes are public to be accessible by the other contracts
      * that are composed by this one
@@ -21,7 +22,6 @@ contract MintGoldDustCompany is Initializable, IERC165 {
     uint256 public secondarySaleFeePercent;
     uint256 public collectorFee;
     uint256 public maxRoyalty;
-    address public owner;
     uint256 public auctionDuration;
     uint256 public auctionFinalMinutes;
     mapping(address => bool) public isArtistApproved;
@@ -38,7 +38,6 @@ contract MintGoldDustCompany is Initializable, IERC165 {
 
     /**
      *
-     * @param _owner is the address that should be the owner of the contract.
      * @param _primarySaleFeePercent is the fee setted for primary sales (15% initially)
      * @param _secondarySaleFeePercent is the fee setted for secondary sales (5% initially)
      * @param _collectorFee is the fee paid by collectors setted for primary sales (3% initially)
@@ -51,7 +50,6 @@ contract MintGoldDustCompany is Initializable, IERC165 {
         uint256 _collectorFee,
         uint256 _maxRoyalty
     ) public initializer {
-        owner = _owner;
         primarySaleFeePercent = _primarySaleFeePercent;
         secondarySaleFeePercent = _secondarySaleFeePercent;
         collectorFee = _collectorFee;
@@ -72,7 +70,7 @@ contract MintGoldDustCompany is Initializable, IERC165 {
      * @notice Only contract deployer can call this function
      * @param _percentage The percentage in wei format
      */
-    function updatePrimarySaleFeePercent(uint256 _percentage) public isowner {
+    function updatePrimarySaleFeePercent(uint256 _percentage) public onlyOwner {
         primarySaleFeePercent = _percentage;
     }
 
@@ -82,7 +80,9 @@ contract MintGoldDustCompany is Initializable, IERC165 {
      * @notice Only contract deployer can call this function
      * @param _percentage The percentage in wei format
      */
-    function updateSecondarySaleFeePercent(uint256 _percentage) public isowner {
+    function updateSecondarySaleFeePercent(
+        uint256 _percentage
+    ) public onlyOwner {
         secondarySaleFeePercent = _percentage;
     }
 
@@ -92,7 +92,7 @@ contract MintGoldDustCompany is Initializable, IERC165 {
      * @notice Only contract deployer can call this function
      * @param _percentage The percentage in wei format
      */
-    function updateCollectorFee(uint256 _percentage) public isowner {
+    function updateCollectorFee(uint256 _percentage) public onlyOwner {
         collectorFee = _percentage;
     }
 
@@ -103,7 +103,7 @@ contract MintGoldDustCompany is Initializable, IERC165 {
      * @notice Only contract deployer can call this function
      * @param _percentage The percentage in wei format
      */
-    function updateMaxRoyalty(uint256 _percentage) public isowner {
+    function updateMaxRoyalty(uint256 _percentage) public onlyOwner {
         maxRoyalty = _percentage;
     }
 
@@ -117,7 +117,7 @@ contract MintGoldDustCompany is Initializable, IERC165 {
      */
     function updateAuctionTimeDuration(
         uint256 _auctionDuration
-    ) public isowner {
+    ) public onlyOwner {
         auctionDuration = _auctionDuration;
     }
 
@@ -131,12 +131,12 @@ contract MintGoldDustCompany is Initializable, IERC165 {
      */
     function updateAuctionFinalMinutes(
         uint256 _auctionFinalMinutes
-    ) public isowner {
+    ) public onlyOwner {
         auctionFinalMinutes = _auctionFinalMinutes;
     }
 
     /// @notice Add new validators to Mint Gold Dust Company
-    function setValidator(address _address, bool _state) public isowner {
+    function setValidator(address _address, bool _state) public onlyOwner {
         isAddressValidator[_address] = _state;
         emit ValidatorAdded(_address, _state);
     }
@@ -159,15 +159,8 @@ contract MintGoldDustCompany is Initializable, IERC165 {
         emit CollectorMintAdded(_address, _state);
     }
 
-    modifier isowner() {
-        if (msg.sender != owner) {
-            revert MGDCompanyUnauthorized();
-        }
-        _;
-    }
-
     modifier isValidatorOrOwner() {
-        if (isAddressValidator[msg.sender] == true || msg.sender == owner) {
+        if (isAddressValidator[msg.sender] == true || msg.sender == owner()) {
             _;
         } else {
             revert MGDCompanyUnauthorized();
@@ -176,11 +169,11 @@ contract MintGoldDustCompany is Initializable, IERC165 {
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
     fallback() external payable {
-        payable(owner).transfer(msg.value);
+        payable(owner()).transfer(msg.value);
     }
 
     /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
     receive() external payable {
-        payable(owner).transfer(msg.value);
+        payable(owner()).transfer(msg.value);
     }
 }
