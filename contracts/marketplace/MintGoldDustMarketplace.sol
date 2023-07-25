@@ -779,7 +779,7 @@ abstract contract MintGoldDustMarketplace is
                 _saleDTO.tokenId,
                 0
             )) / (100 * 10 ** 18);
-        // revert Teste123(_artist, balanceOrRoayalty);
+
         payable(_artist).transfer(balanceSplitPart);
         emit NftPurchasedCollaboratorAmount(
             itemsSold.current(),
@@ -1206,7 +1206,6 @@ abstract contract MintGoldDustMarketplace is
         if (!_marketItem.isERC721) {
             _realAmount = _saleDTO.amount;
             isBuyingAllListedTokens(_saleDTO);
-            //isMsgValueEnough(_marketItem.price, _realAmount, _value);
         }
 
         checkIfIsPrimaryOrSecondarySaleAndCall(

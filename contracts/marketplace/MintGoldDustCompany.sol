@@ -8,6 +8,12 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 error MGDCompanyUnauthorized();
+error SecondarySaleFeePercentageTooHigh();
+error PrimarySaleFeePercentageTooHigh();
+error CollectorFeePercentageTooHigh();
+error RoyaltyPercentageTooHigh();
+error AuctionDurationTimeTooHigh();
+error AuctionFinalTimeTooHigh();
 
 /// @title A contract responsible by Mint Gold Dust management.
 /// @notice Contains functions for update the MGD fees and some access levels.
@@ -71,6 +77,9 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
      * @param _percentage The percentage in wei format
      */
     function updatePrimarySaleFeePercent(uint256 _percentage) public onlyOwner {
+        if (_percentage > 15e18) {
+            revert PrimarySaleFeePercentageTooHigh();
+        }
         primarySaleFeePercent = _percentage;
     }
 
@@ -83,6 +92,9 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     function updateSecondarySaleFeePercent(
         uint256 _percentage
     ) public onlyOwner {
+        if (_percentage > 15e18) {
+            revert SecondarySaleFeePercentageTooHigh();
+        }
         secondarySaleFeePercent = _percentage;
     }
 
@@ -93,6 +105,9 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
      * @param _percentage The percentage in wei format
      */
     function updateCollectorFee(uint256 _percentage) public onlyOwner {
+        if (_percentage > 15e18) {
+            revert CollectorFeePercentageTooHigh();
+        }
         collectorFee = _percentage;
     }
 
@@ -104,6 +119,9 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
      * @param _percentage The percentage in wei format
      */
     function updateMaxRoyalty(uint256 _percentage) public onlyOwner {
+        if (_percentage > 10e18) {
+            revert RoyaltyPercentageTooHigh();
+        }
         maxRoyalty = _percentage;
     }
 
@@ -118,6 +136,9 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     function updateAuctionTimeDuration(
         uint256 _auctionDuration
     ) public onlyOwner {
+        if (_auctionDuration > 30 days) {
+            revert AuctionDurationTimeTooHigh();
+        }
         auctionDuration = _auctionDuration;
     }
 
@@ -132,6 +153,9 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     function updateAuctionFinalMinutes(
         uint256 _auctionFinalMinutes
     ) public onlyOwner {
+        if (_auctionFinalMinutes > 1 days) {
+            revert AuctionFinalTimeTooHigh();
+        }
         auctionFinalMinutes = _auctionFinalMinutes;
     }
 
