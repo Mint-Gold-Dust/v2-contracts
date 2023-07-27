@@ -62,6 +62,7 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
         maxRoyalty = _maxRoyalty;
         auctionDuration = 24 hours;
         auctionFinalMinutes = 5 minutes;
+        __Ownable_init();
     }
 
     event ArtistWhitelisted(address indexed artistAddress, bool state);
@@ -77,7 +78,7 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
      * @param _percentage The percentage in wei format
      */
     function updatePrimarySaleFeePercent(uint256 _percentage) public onlyOwner {
-        if (_percentage > 15e18) {
+        if (_percentage > 30e18) {
             revert PrimarySaleFeePercentageTooHigh();
         }
         primarySaleFeePercent = _percentage;
@@ -92,7 +93,7 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     function updateSecondarySaleFeePercent(
         uint256 _percentage
     ) public onlyOwner {
-        if (_percentage > 15e18) {
+        if (_percentage > 30e18) {
             revert SecondarySaleFeePercentageTooHigh();
         }
         secondarySaleFeePercent = _percentage;
@@ -105,7 +106,7 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
      * @param _percentage The percentage in wei format
      */
     function updateCollectorFee(uint256 _percentage) public onlyOwner {
-        if (_percentage > 15e18) {
+        if (_percentage > 30e18) {
             revert CollectorFeePercentageTooHigh();
         }
         collectorFee = _percentage;
@@ -119,7 +120,7 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
      * @param _percentage The percentage in wei format
      */
     function updateMaxRoyalty(uint256 _percentage) public onlyOwner {
-        if (_percentage > 10e18) {
+        if (_percentage > 30e18) {
             revert RoyaltyPercentageTooHigh();
         }
         maxRoyalty = _percentage;

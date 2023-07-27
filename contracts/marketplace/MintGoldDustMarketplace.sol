@@ -997,7 +997,6 @@ abstract contract MintGoldDustMarketplace is
         uint256 _value,
         address _sender
     ) private {
-        //revert Teste(_marketItem);
         MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(
             _marketItem.isERC721
         );
