@@ -7,7 +7,12 @@ import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import generateEIP712 from "./utils/generateEIP712";
 import generateNewEIP712 from "./utils/generateNewEIP712";
-import { encodeData, generateEIP712Hash, signData } from "./utils/eip712";
+import {
+  encodeData,
+  generateCollectorMintDTOHash,
+  generateEIP712Hash,
+  signData,
+} from "./utils/eip712";
 
 chai.use(chaiAsPromised);
 
@@ -65,6 +70,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   collFee = (price * collector_fee) / 100;
   primarySaleFee = fee + collFee;
   balance = price - primarySaleFee;
+
+  let domainSeparator: any;
+  let bytesMemoir: Uint8Array;
 
   beforeEach(async function () {
     MintGoldDustCompany = await ethers.getContractFactory(
@@ -144,18 +152,30 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
 
     await mintGoldDustERC1155
-      .connect(addr1)
+      .connect(deployer)
       .setMintGoldDustCollectorMintControl(
         mintGoldDustCollectorMintControl.address
       );
     await mintGoldDustERC721
-      .connect(addr1)
+      .connect(deployer)
       .setMintGoldDustCollectorMintControl(
         mintGoldDustCollectorMintControl.address
       );
     await mintGoldDustSetPrice
-      .connect(addr1)
-      .setMintGoldDustCompany(mintGoldDustCollectorMintControl.address);
+      .connect(deployer)
+      .setMintGoldDustCollectorMintControl(
+        mintGoldDustCollectorMintControl.address
+      );
+
+    domainSeparator = {
+      name: "MintGoldDustSetPrice",
+      version: "1.0.0",
+      chainId: 31337, // Replace with your desired chain ID
+      verifyingContract: mintGoldDustSetPrice.address, // Replace with your contract address
+    };
+
+    const encoder = new TextEncoder();
+    bytesMemoir = encoder.encode(MEMOIR);
   });
 
   describe("\n--------------- Tests related witn collector mint functionality after a MintGoldDustERC721 traditional purchase on set price ---------------\n", function () {
@@ -176,9 +196,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .setApprovalForAll(mintGoldDustSetPrice.address, true);
     });
 
-    const encoder = new TextEncoder();
-    const bytesMemoir = encoder.encode(MEMOIR);
-
     it("Should track a collector mint flow", async function () {
       let collectrDTO = {
         contractAddress: mintGoldDustERC721.address,
@@ -190,38 +207,22 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         amount: 1,
         artistSigner: addr1.address,
         price: toWei(price),
-        collectorMintId: 1,
       };
 
-      // const { signature, typedData, typedDataHash } = await generateEIP712(
-      //   {
-      //     contractName: "MintGoldDustSetPrice",
-      //     version: "1",
-      //     chainId: 31337,
-      //     verifyingContractAddress: mintGoldDustSetPrice.address,
-      //   },
-      //   collectrDTO,
-      //   ethers.provider.getSigner(1)
-      // );
-
-      const domainSeparator = {
-        name: "MintGoldDustSetPrice",
-        version: "1.0.0",
-        chainId: 31337, // Replace with your desired chain ID
-        verifyingContract: mintGoldDustSetPrice.address, // Replace with your contract address
-      };
-
-      console.log("ADDRESSSS CONTTRACT: ", mintGoldDustSetPrice.address);
+      let collectorMintId = 1;
 
       const signer = ethers.provider.getSigner(1);
 
       // Generate the encoded data
       const encodedData = encodeData(collectrDTO);
 
+      const collectorMintDTOHash = generateCollectorMintDTOHash(
+        collectrDTO,
+        collectorMintId
+      );
+
       // Generate the EIP712 hash
       const hash = generateEIP712Hash(encodedData, domainSeparator);
-
-      console.log("HASH: ", hash);
 
       // Sign the hash
       const signature = await signData(hash, signer);
@@ -235,80 +236,150 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         console.log("Signature is not from Hardhat address 1");
       }
 
-      const r = signature.slice(0, 66);
-      const s = "0x" + signature.slice(66, 130);
-      const v = parseInt(signature.slice(130, 132));
+      const tx = await mintGoldDustSetPrice
+        .connect(addr2)
+        .collectorMintPurchase(
+          collectrDTO,
+          hash,
+          signature,
+          collectorMintId,
+          collectorMintDTOHash,
+          {
+            value: toWei(price),
+          }
+        );
+
+      await expect(tx)
+        .to.emit(mintGoldDustERC721, "MintGoldDustNFTMinted")
+        .withArgs(
+          1,
+          URI,
+          addr1.address,
+          toWei(royalty),
+          1,
+          true,
+          1,
+          bytesMemoir
+        );
+      await expect(tx)
+        .to.emit(mintGoldDustSetPrice, "MintGoldDustNftListedToSetPrice")
+        .withArgs(
+          1,
+          addr1.address,
+          toWei(price),
+          1,
+          mintGoldDustERC721.address
+        );
+      await expect(tx)
+        .to.emit(mintGoldDustSetPrice, "MintGoldDustNftPurchasedPrimaryMarket")
+        .withArgs(
+          1,
+          1,
+          addr1.address,
+          addr2.address,
+          toWei(price),
+          toWei(balance),
+          toWei(fee),
+          toWei(collFee),
+          1,
+          false,
+          false,
+          true
+        );
+
+      let marketItem =
+        await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
+          mintGoldDustERC721.address,
+          1,
+          addr2.address
+        );
+
+      expect(marketItem).to.be.not.null;
+      expect(marketItem).to.be.not.undefined;
+      expect(marketItem).to.be.not.empty;
+      expect(marketItem).to.be.not.false;
+      expect(marketItem.tokenId).to.be.equal(1);
+      expect(marketItem.seller).to.be.equal(addr2.address);
+      expect(marketItem.price).to.be.equal(toWei(price));
+      expect(marketItem.sold).to.be.true;
+      expect(marketItem.isAuction).to.be.false;
+      expect(marketItem.isSecondarySale).to.be.true;
+      expect(marketItem.isERC721).to.be.true;
+      expect(marketItem.tokenAmount).to.be.equal(1);
+
+      expect(await mintGoldDustERC721.tokenURI(1)).to.equal(URI);
+      expect(await mintGoldDustERC721.tokenIdArtist(1)).to.equal(addr1.address);
+      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr2.address);
+    });
+  });
+
+  describe("Bad path tests", function () {
+    beforeEach(async () => {
+      // MGD owner whitelist the artist
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+
+      await mgdCompany.connect(deployer).setCollectorMint(addr2.address, true);
+
+      // Artist approve gdMarketPlace marketplace to exchange its NFT
+      await mintGoldDustERC721
+        .connect(addr1)
+        .setApprovalForAll(mintGoldDustSetPrice.address, true);
+    });
+    it("Call the function passing everything correct. The attacker can generate the object, the EIP712 and everything using an address that is not a whitelisted artist. It MUST revert with an 'Invalid Signature' error.", async () => {
+      let collectrDTO = {
+        contractAddress: mintGoldDustERC721.address,
+        tokenURI: URI,
+        royalty: toWei(royalty),
+        memoir: bytesMemoir,
+        collaborators: [],
+        ownersPercentage: [],
+        amount: 1,
+        artistSigner: addr2.address,
+        price: toWei(price),
+      };
+
+      let collectorMintId = 1;
+
+      const signer = ethers.provider.getSigner(2);
+
+      // Generate the encoded data
+      const encodedData = encodeData(collectrDTO);
+
+      const collectorMintDTOHash = generateCollectorMintDTOHash(
+        collectrDTO,
+        collectorMintId
+      );
+
+      // Generate the EIP712 hash
+      const hash = generateEIP712Hash(encodedData, domainSeparator);
+
+      // Sign the hash
+      const signature = await signData(hash, signer);
+
+      const signerAfter = ethers.utils.verifyMessage(hash, signature);
+
+      // Check if the signer address matches Hardhat address 1
+      if (signerAfter === addr1.address) {
+        console.log("Signature is from Hardhat address 1");
+      } else {
+        console.log("Signature is not from Hardhat address 1");
+      }
 
       console.log("Address 2: ", addr2.address);
       const tx = await mintGoldDustSetPrice
         .connect(addr2)
-        .collectorMintPurchase(collectrDTO, hash, signature, {
-          value: toWei(price),
-        });
-
-      // await expect(tx)
-      //   .to.emit(mintGoldDustERC721, "MintGoldDustNFTMinted")
-      //   .withArgs(1, URI, addr1.address, toWei(royalty), 1, true, 1);
-      // await expect(tx)
-      //   .to.emit(mintGoldDustSetPrice, "MintGoldDustNftListedToSetPrice")
-      //   .withArgs(
-      //     1,
-      //     addr1.address,
-      //     toWei(price),
-      //     1,
-      //     mintGoldDustERC721.address
-      //   );
-      // await expect(tx)
-      //   .to.emit(mintGoldDustSetPrice, "MintGoldDustNftPurchasedPrimaryMarket")
-      //   .withArgs(
-      //     1,
-      //     1,
-      //     addr1.address,
-      //     addr2.address,
-      //     toWei(price),
-      //     toWei(balance),
-      //     toWei(fee),
-      //     toWei(collFee),
-      //     1,
-      //     false,
-      //     false,
-      //     true
-      //   );
-
-      // let marketItem =
-      //   await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
-      //     mintGoldDustERC721.address,
-      //     1,
-      //     addr2.address
-      //   );
-
-      // expect(marketItem).to.be.not.null;
-      // expect(marketItem).to.be.not.undefined;
-      // expect(marketItem).to.be.not.empty;
-      // expect(marketItem).to.be.not.false;
-      // expect(marketItem.tokenId).to.be.equal(1);
-      // expect(marketItem.seller).to.be.equal(addr2.address);
-      // expect(marketItem.price).to.be.equal(toWei(price));
-      // expect(marketItem.sold).to.be.true;
-      // expect(marketItem.isAuction).to.be.false;
-      // expect(marketItem.isSecondarySale).to.be.true;
-      // expect(marketItem.isERC721).to.be.true;
-      // expect(marketItem.tokenAmount).to.be.equal(1);
-
-      // expect(await mintGoldDustERC721.tokenURI(1)).to.equal(URI);
-      // expect(await mintGoldDustERC721.tokenIdArtist(1)).to.equal(addr1.address);
-      // expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr2.address);
-
-      // const decoder = new TextDecoder();
-      // const byteArray = ethers.utils.arrayify(
-      //   await mintGoldDustMemoir.contractTokenIdMemoirs(
-      //     mintGoldDustERC721.address,
-      //     1
-      //   )
-      // );
-      // const memoirStringReturned = decoder.decode(byteArray);
-
-      // expect(memoirStringReturned).to.be.equal(MEMOIR);
+        .collectorMintPurchase(
+          collectrDTO,
+          hash,
+          signature,
+          collectorMintId,
+          collectorMintDTOHash,
+          {
+            value: toWei(price),
+          }
+        );
+      await expect(tx).to.include("reverted with custom error 'UnauthorizedOnNFT("COLLECTOR_MINT")')
+        
     });
   });
 
@@ -397,7 +468,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   //       })
   //   ).to.be.revertedWithCustomError(
   //     mintGoldDustSetPrice,
-  //     "MintGoldDustCollectorMintDataNotMatch"
+  //     "CollectorMintDataNotMatch"
   //   );
   // });
 

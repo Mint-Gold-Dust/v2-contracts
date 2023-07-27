@@ -257,7 +257,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       )
         .to.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
-          "MintGoldDustAddressUnauthorized"
+          "AddressUnauthorized"
         )
         .withArgs("Not owner!");
     });
@@ -1598,7 +1598,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
         .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
     });
 
-    it("Should revert with MintGoldDustItemIsNotListed error if the end auction function is called and the tokenId was not listed on MintGoldDustMarketplaceAuction.", async () => {
+    it("Should revert with ItemIsNotListed error if the end auction function is called and the tokenId was not listed on MintGoldDustMarketplaceAuction.", async () => {
       await mintGoldDustERC721
         .connect(addr1)
         .setApprovalForAll(mintGoldDustSetPrice.address, true);
@@ -1621,7 +1621,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       )
         .to.be.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
-          "MintGoldDustItemIsNotListed"
+          "ItemIsNotListed"
         )
         .withArgs(mintGoldDustERC721.address);
     });

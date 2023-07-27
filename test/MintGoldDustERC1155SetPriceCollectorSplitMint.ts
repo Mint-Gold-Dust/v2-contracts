@@ -549,7 +549,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     //       })
     //   ).to.be.revertedWithCustomError(
     //     mintGoldDustSetPrice,
-    //     "MintGoldDustCollectorMintDataNotMatch"
+    //     "CollectorMintDataNotMatch"
     //   );
   });
 

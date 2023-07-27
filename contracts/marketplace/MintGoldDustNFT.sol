@@ -8,7 +8,7 @@ import "./MintGoldDustCompany.sol";
 import "./MintGoldDustCollectorMintControl.sol";
 
 error RoyaltyInvalidPercentage();
-error Unauthorized(string message);
+error UnauthorizedOnNFT(string message);
 error NumberOfCollaboratorsAndPercentagesNotMatch();
 error TheTotalPercentageCantBeGreaterThan100();
 
@@ -44,7 +44,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
     function setMintGoldDustCollectorMintControl(
         address _mintGoldDustCollectorMintControl
     ) external {
-        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
+        require(msg.sender == mintGoldDustCompany.owner(), "UnauthorizedOnNFT");
         require(
             address(mintGoldDustCollectorMintControl) == address(0),
             "Already setted!"
@@ -170,7 +170,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         return _tokenId;
     }
 
-    error Teste(bool aadd);
+    error Teste(address aadd);
 
     function collectorMint(
         string calldata _tokenURI,
@@ -182,13 +182,12 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         address _sender
     )
         external
-        isTransactionClosed
-        isCollectorMintTransacting(_sender, _artistAddress, _royaltyPercent)
+        isTransactionOpened(_sender)
+        checkParameters(_sender, _artistAddress, _royaltyPercent)
         whenNotPaused
         returns (uint256)
     {
-        // revert Teste(collectorMintWithOpenedTransaction[_sender]);
-        // collectorMintCloseTransaction(_sender);
+        mintGoldDustCollectorMintControl.closeCollectorMintTransaction(_sender);
 
         uint256 newTokenId = executeMintFlow(
             _tokenURI,
@@ -214,8 +213,8 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         address _sender
     )
         external
-        isTransactionClosed
-        isCollectorMintTransacting(_sender, _artistAddress, _royalty)
+        isTransactionOpened(_sender)
+        checkParameters(_sender, _artistAddress, _royalty)
         whenNotPaused
         returns (uint256)
     {
@@ -223,7 +222,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
             revert NumberOfCollaboratorsAndPercentagesNotMatch();
         }
 
-        //collectorMintCloseTransaction(_sender);
+        mintGoldDustCollectorMintControl.closeCollectorMintTransaction(_sender);
 
         uint256 _tokenId = executeMintFlow(
             _tokenURI,
@@ -302,7 +301,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
 
     modifier isowner() {
         if (msg.sender != mintGoldDustCompany.owner()) {
-            revert MGDCompanyUnauthorized();
+            revert UnauthorizedOnNFT("OWNER");
         }
         _;
     }
@@ -316,31 +315,40 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
 
     modifier isArtistWhitelisted(address _artistAddress) {
         if (mintGoldDustCompany.isArtistApproved(_artistAddress) == false) {
-            revert Unauthorized("ARTIST");
+            revert UnauthorizedOnNFT("ARTIST");
         }
         _;
     }
 
-    modifier isTransactionClosed() {
+    modifier isTransactionOpened(address _sender) {
         require(
             mintGoldDustCollectorMintControl.collectorMintWithOpenedTransaction(
-                msg.sender
-            ) == false,
-            "Transaction is opened!"
+                _sender
+            ) == true,
+            "Collector Mint tx is closed!"
         );
         _;
     }
 
-    modifier isCollectorMintTransacting(
+    modifier checkParameters(
         address _sender,
         address _artistAddress,
         uint256 percentage
     ) {
-        if (mintGoldDustCompany.isCollectorMint(_sender) == false) {
-            revert Unauthorized("COLLECTOR_MINT");
+        if (
+            mintGoldDustCompany.isCollectorMint(_sender) == false ||
+            _sender != address(0)
+        ) {
+            revert UnauthorizedOnNFT("COLLECTOR_MINT");
         }
-        if (mintGoldDustCompany.isArtistApproved(_artistAddress) == false) {
-            revert Unauthorized("ARTIST");
+        if (
+            mintGoldDustCompany.isArtistApproved(_artistAddress) == false ||
+            _artistAddress != address(0)
+        ) {
+            revert UnauthorizedOnNFT("ARTIST");
+        }
+        if (msg.sender == address(0)) {
+            revert UnauthorizedOnNFT("CONTRACT");
         }
         if (percentage > mintGoldDustCompany.maxRoyalty()) {
             revert RoyaltyInvalidPercentage();

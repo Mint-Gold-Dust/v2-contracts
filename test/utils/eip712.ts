@@ -1,4 +1,16 @@
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
+
+interface CollectorMintDTO {
+  contractAddress: string;
+  tokenURI: string;
+  royalty: BigNumber;
+  memoir: Uint8Array;
+  collaborators: string[];
+  ownersPercentage: number[];
+  amount: number;
+  artistSigner: string;
+  price: BigNumber;
+}
 
 const collectorMintDTOType: any = [
   { name: "contractAddress", type: "address" },
@@ -10,26 +22,59 @@ const collectorMintDTOType: any = [
   { name: "amount", type: "uint256" },
   { name: "artistSigner", type: "address" },
   { name: "price", type: "uint256" },
-  { name: "collectorMintId", type: "uint256" },
 ];
 
-function encodeData(data: any): string {
+function encodeData(collectorMintDTO: CollectorMintDTO): string {
   const encoder = new ethers.utils.AbiCoder();
   const encodedData = encoder.encode(collectorMintDTOType, [
-    data.contractAddress,
-    data.tokenURI,
-    data.royalty,
-    data.memoir,
-    data.collaborators,
-    data.ownersPercentage,
-    data.amount,
-    data.artistSigner,
-    data.price,
-    data.collectorMintId,
+    collectorMintDTO.contractAddress,
+    collectorMintDTO.tokenURI,
+    collectorMintDTO.royalty,
+    collectorMintDTO.memoir,
+    collectorMintDTO.collaborators,
+    collectorMintDTO.ownersPercentage,
+    collectorMintDTO.amount,
+    collectorMintDTO.artistSigner,
+    collectorMintDTO.price,
   ]);
 
-  console.log("ESSE DANADO AGORA: ", encodedData);
   return encodedData;
+}
+
+function generateCollectorMintDTOHash(
+  collectorMintDTO: CollectorMintDTO,
+  collectorMintId: number
+): string {
+  let encodedDataHash = ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(
+      [
+        "address",
+        "string",
+        "uint256",
+        "bytes",
+        "address[]",
+        "uint256[]",
+        "uint256",
+        "address",
+        "uint256",
+        "uint256",
+      ],
+      [
+        collectorMintDTO.contractAddress,
+        collectorMintDTO.tokenURI,
+        collectorMintDTO.royalty,
+        collectorMintDTO.memoir,
+        collectorMintDTO.collaborators,
+        collectorMintDTO.ownersPercentage,
+        collectorMintDTO.amount,
+        collectorMintDTO.artistSigner,
+        collectorMintDTO.price,
+        collectorMintId,
+      ]
+    )
+  );
+
+  return encodedDataHash;
 }
 
 function generateEIP712Hash(
@@ -51,8 +96,6 @@ function generateEIP712Hash(
     )
   );
 
-  console.log("SO ISSO IMPORTA AGORA: ", domainSeparatorHex);
-
   /**
    * TODO Tomorrow do this step on chain
    */
@@ -63,8 +106,6 @@ function generateEIP712Hash(
       ["0x19", "0x01", domainSeparatorHex, encodedData]
     )
   );
-
-  console.log("encodedDataHash", encodedDataHash);
 
   const hashBytes32 = ethers.utils.arrayify(encodedDataHash);
 
@@ -79,4 +120,9 @@ async function signData(
   return signature;
 }
 
-export { encodeData, generateEIP712Hash, signData };
+export {
+  encodeData,
+  generateEIP712Hash,
+  signData,
+  generateCollectorMintDTOHash,
+};
