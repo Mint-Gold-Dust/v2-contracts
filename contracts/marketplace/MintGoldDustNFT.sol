@@ -19,7 +19,9 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
      * @notice that the MintGoldDustERC721 is composed by other contract.
      * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
-    function initialize(address _mintGoldDustCompany) public initializer {
+    function initialize(
+        address _mintGoldDustCompany
+    ) internal onlyInitializing {
         mintGoldDustCompany = MintGoldDustCompany(
             payable(_mintGoldDustCompany)
         );

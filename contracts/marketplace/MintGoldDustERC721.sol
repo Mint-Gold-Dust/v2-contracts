@@ -28,7 +28,7 @@ contract MintGoldDustERC721 is
      */
     function initializeChild(address _mintGoldDustCompany) public initializer {
         __ERC721_init("Mint Gold Dust NFT", "MGDNFT");
-        super.initialize(_mintGoldDustCompany);
+        MintGoldDustNFT.initialize(_mintGoldDustCompany);
     }
 
     using Counters for Counters.Counter;

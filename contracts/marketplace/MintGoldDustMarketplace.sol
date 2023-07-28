@@ -45,7 +45,7 @@ abstract contract MintGoldDustMarketplace is
         address _mgdCompany,
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
-    ) public initializer {
+    ) internal onlyInitializing {
         mgdCompany = MintGoldDustCompany(payable(_mgdCompany));
         mintGoldDustERC721Address = _mintGoldDustERC721Address;
         mintGoldDustERC1155Address = _mintGoldDustERC1155Address;

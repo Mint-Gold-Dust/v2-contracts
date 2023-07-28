@@ -62,7 +62,7 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       MintGoldDustERC721,
       [mgdCompany.address],
       {
-        initializer: "initialize",
+        initializer: "initializeChild",
       }
     );
     await mintGoldDustERC721.deployed();

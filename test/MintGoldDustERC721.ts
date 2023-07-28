@@ -63,7 +63,7 @@ describe("MintGoldDustERC721.sol Smart Contract \n______________________________
       MintGoldDustERC721,
       [mgdCompany.address],
       {
-        initializer: "initialize",
+        initializer: "initializeChild",
       }
     );
     await mintGoldDustERC721.deployed();

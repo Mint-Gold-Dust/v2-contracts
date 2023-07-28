@@ -160,15 +160,13 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         "\t ARTIST BALANCE BEFORE LIST: ",
         parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
       );
-      console.log(1);
       let artistBalanceBefore = await addr1.getBalance();
       
       const tx = await mintGoldDustMarketplaceAuction
       .connect(addr1)
       .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
       const receipt = await tx.wait();
-      
-      console.log(1);
+
       // Check that the transaction emitted an event
       expect(receipt.events?.length).to.equal(2);
 

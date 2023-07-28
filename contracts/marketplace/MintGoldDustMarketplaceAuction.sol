@@ -48,7 +48,7 @@ contract MintGoldDustMarketplaceAuction is
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
     ) public initializer {
-        super.initialize(
+        MintGoldDustMarketplace.initialize(
             _mgdCompany,
             _mintGoldDustERC721Address,
             _mintGoldDustERC1155Address
