@@ -21,8 +21,7 @@ error LastBidderCannotPlaceNextBid();
 contract MintGoldDustMarketplaceAuction is
     Initializable,
     MintGoldDustMarketplace,
-    ReentrancyGuardUpgradeable,
-    IERC1155Receiver
+    ReentrancyGuardUpgradeable
 {
     bytes4 private constant ERC165_ID = 0x01ffc9a7; //ERC165
 
@@ -53,26 +52,6 @@ contract MintGoldDustMarketplaceAuction is
             _mintGoldDustERC721Address,
             _mintGoldDustERC1155Address
         );
-    }
-
-    function onERC1155Received(
-        address operator,
-        address from,
-        uint256 id,
-        uint256 value,
-        bytes calldata data
-    ) external pure override returns (bytes4) {
-        return this.onERC1155Received.selector;
-    }
-
-    function onERC1155BatchReceived(
-        address operator,
-        address from,
-        uint256[] calldata ids,
-        uint256[] calldata values,
-        bytes calldata data
-    ) external pure override returns (bytes4) {
-        return this.onERC1155BatchReceived.selector;
     }
 
     /**
@@ -198,15 +177,12 @@ contract MintGoldDustMarketplaceAuction is
      * @param _bidDTO BidDTO struct.
      */
     function isAuctionTimeEnded(BidDTO memory _bidDTO) private view {
+        MarketItem storage item = idMarketItemsByContractByOwner[
+            _bidDTO.contractAddress
+        ][_bidDTO.tokenId][_bidDTO.seller];
         if (
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.endTime !=
-            0 &&
-            block.timestamp >=
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.endTime
+            item.auctionProps.endTime != 0 &&
+            block.timestamp >= item.auctionProps.endTime
         ) {
             revert AuctionMustBeEnded(_bidDTO.tokenId);
         }
@@ -291,12 +267,7 @@ contract MintGoldDustMarketplaceAuction is
             item.auctionProps.endTime =
                 item.auctionProps.endTime +
                 mgdCompany.auctionFinalMinutes();
-            emit AuctionExtended(
-                _bidDTO.tokenId,
-                idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                    _bidDTO.tokenId
-                ][_bidDTO.seller].auctionProps.endTime
-            );
+            emit AuctionExtended(_bidDTO.tokenId, item.auctionProps.endTime);
         }
     }
 

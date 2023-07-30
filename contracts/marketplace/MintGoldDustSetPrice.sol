@@ -13,8 +13,7 @@ error YouCannotDelistMoreThanListed();
 contract MintGoldDustSetPrice is
     Initializable,
     MintGoldDustMarketplace,
-    ReentrancyGuardUpgradeable,
-    IERC1155Receiver
+    ReentrancyGuardUpgradeable
 {
     bytes4 private constant ERC165_ID = 0x01ffc9a7; //ERC165
 
@@ -51,26 +50,6 @@ contract MintGoldDustSetPrice is
             _mintGoldDustERC721Address,
             _mintGoldDustERC1155Address
         );
-    }
-
-    function onERC1155Received(
-        address operator,
-        address from,
-        uint256 id,
-        uint256 value,
-        bytes calldata data
-    ) external override returns (bytes4) {
-        return this.onERC1155Received.selector;
-    }
-
-    function onERC1155BatchReceived(
-        address operator,
-        address from,
-        uint256[] calldata ids,
-        uint256[] calldata values,
-        bytes calldata data
-    ) external override returns (bytes4) {
-        return this.onERC1155BatchReceived.selector;
     }
 
     /**

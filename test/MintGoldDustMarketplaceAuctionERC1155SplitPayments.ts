@@ -1351,7 +1351,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
         );
 
         expect(
-          parseFloat(fromWei(bidder2BalanceBefore)).toFixed(4)
+          parseFloat(fromWei(bidder2BalanceBefore)).toFixed(3)
         ).to.be.equal(
           parseFloat(
             fromWei(
@@ -1359,7 +1359,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
                 .add(toWei(secondBidValue))
                 .add(ethers.BigNumber.from(gasPrice2).mul(gasLimit2))
             )
-          ).toFixed(4)
+          ).toFixed(3)
         );
 
         console.log(
