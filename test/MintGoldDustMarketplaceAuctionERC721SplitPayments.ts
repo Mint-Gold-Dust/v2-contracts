@@ -262,6 +262,40 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
         .withArgs("Not owner!");
     });
 
+    it("Should revert if null address is passed as a collaborator", async function () {
+        const encode = new TextEncoder();
+        const bytesMemoir = encode.encode(MEMOIR);
+        expect(
+          mintGoldDustERC721
+            .connect(addr1)
+            .splitMint(
+              URI,
+              toWei(5),
+              [addr5.address, addr6.address, addr7.address, "0x0000000000000000000000000000000000000000"], // A null address is included
+              [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
+              quantityToMint,
+              bytesMemoir
+            )
+        ).to.be.revertedWith("Owner address cannot be null!");  // Checks the expected error message
+      });
+      
+      it("Should revert if total percentage is not 100", async function () {
+        const encode = new TextEncoder();
+        const bytesMemoir = encode.encode(MEMOIR);
+        expect(
+          mintGoldDustERC721
+            .connect(addr1)
+            .splitMint(
+              URI,
+              toWei(5),
+              [addr5.address, addr6.address, addr7.address, addr8.address],
+              [toWei(20), toWei(20), toWei(20), toWei(20), toWei(21)], // The total percentage is 101, not 100
+              quantityToMint,
+              bytesMemoir
+            )
+        ).to.be.revertedWithCustomError(mintGoldDustERC721,"TheTotalPercentageCantBeGreaterThan100");  // Checks the expected error message
+      });
+
     it("Should track a creation of an auction without a reserve price that expect the following conditions: \n \t - Expect emit the MintGoldDustNftListedToAuction event; \n \t - Expect auction structure attributes match with all passed to create auction function; \n \t - Auction end time should not be started yet to 24 hours and should be zero. \n \t - The auction price (initial price) should be zero. This way after any bid greater than zero the time of 24 hours should starts.", async () => {
       const tx = await mintGoldDustMarketplaceAuction
         .connect(addr1)

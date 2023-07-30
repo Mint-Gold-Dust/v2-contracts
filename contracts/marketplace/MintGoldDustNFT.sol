@@ -215,10 +215,19 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 totalPercentage = 0;
 
         for (uint256 i = 0; i < _newOwners.length; i++) {
-            if (_newOwners[i] != address(0)) {
-                ownersCount++;
-                totalPercentage += _ownersPercentage[i]; /// @dev Accumulate the percentage for each valid collaborator
-            }
+            require(
+                _newOwners[i] != address(0),
+                "Owner address cannot be null!"
+            );
+            require(
+                _ownersPercentage[i] > 0,
+                "Owner percentage must be greater than zero!"
+            );
+
+            ownersCount++;
+            totalPercentage += _ownersPercentage[i]; /// @dev Accumulate the percentage for each valid collaborator
+            tokenCollaborators[_tokenId][i] = _newOwners[i];
+            tokenIdCollaboratorsPercentage[_tokenId][i] = _ownersPercentage[i];
         }
 
         require(ownersCount > 1, "Add more than 1 owner!");
@@ -234,17 +243,6 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         }
 
         tokenIdCollaboratorsQuantity[_tokenId] = ownersCount + 1;
-
-        /// @dev it assign new owners to the token
-        for (uint256 i = 0; i < ownersCount; i++) {
-            if (_newOwners[i] != address(0)) {
-                tokenCollaborators[_tokenId][i] = _newOwners[i];
-                tokenIdCollaboratorsPercentage[_tokenId][i] = _ownersPercentage[
-                    i
-                ];
-            }
-        }
-
         tokenIdCollaboratorsPercentage[_tokenId][
             ownersCount
         ] = _ownersPercentage[ownersCount];
