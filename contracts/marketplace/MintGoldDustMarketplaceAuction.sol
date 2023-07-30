@@ -223,44 +223,26 @@ contract MintGoldDustMarketplaceAuction is
      * @param _bidDTO BidDTO struct.
      */
     function isBidTooLow(BidDTO memory _bidDTO) private {
-        if (
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].price ==
-            0 &&
-            msg.value <= 0
-        ) {
+        MarketItem storage item = idMarketItemsByContractByOwner[
+            _bidDTO.contractAddress
+        ][_bidDTO.tokenId][_bidDTO.seller];
+
+        if (item.price == 0 && msg.value <= 0) {
             revert BidTooLow();
         }
 
         /// @dev in this case the item did not received any bids yet and the bid is less than the reserve price
         if (
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.highestBid ==
-            0 &&
-            msg.value <
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].price *
-                idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                    _bidDTO.tokenId
-                ][_bidDTO.seller].tokenAmount
+            item.auctionProps.highestBid == 0 &&
+            msg.value < item.price * item.tokenAmount
         ) {
             revert BidTooLow();
         }
 
         /// @dev in this case the item have already received bids and the bid is less or equal the latest highest bid + 3%
         if (
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.highestBid !=
-            0 &&
-            msg.value <=
-            (idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.highestBid * 103) /
-                100
+            item.auctionProps.highestBid != 0 &&
+            msg.value <= (item.auctionProps.highestBid * 103) / 100
         ) {
             revert BidTooLow();
         }
@@ -275,17 +257,14 @@ contract MintGoldDustMarketplaceAuction is
      */
     function isAuctionTimeStarted(BidDTO memory _bidDTO) private {
         /// @dev The time starts to count for the auction.
-        if (
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.endTime == 0
-        ) {
+        MarketItem storage item = idMarketItemsByContractByOwner[
+            _bidDTO.contractAddress
+        ][_bidDTO.tokenId][_bidDTO.seller];
+        if (item.auctionProps.endTime == 0) {
             uint256 _startTime = block.timestamp;
             uint256 _endTime = _startTime + mgdCompany.auctionDuration();
 
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.endTime = _endTime;
+            item.auctionProps.endTime = _endTime;
 
             emit AuctionTimeStarted(_bidDTO.tokenId, _startTime, _endTime);
         }
@@ -302,21 +281,16 @@ contract MintGoldDustMarketplaceAuction is
          * @dev If a higher bid happens in the last 5 minutes we should add more 5 minutes
          * to the end time auction.
          */
+        MarketItem storage item = idMarketItemsByContractByOwner[
+            _bidDTO.contractAddress
+        ][_bidDTO.tokenId][_bidDTO.seller];
         if (
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.endTime -
-                block.timestamp <
+            item.auctionProps.endTime - block.timestamp <
             mgdCompany.auctionFinalMinutes()
         ) {
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.endTime =
-                idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                    _bidDTO.tokenId
-                ][_bidDTO.seller].auctionProps.endTime +
+            item.auctionProps.endTime =
+                item.auctionProps.endTime +
                 mgdCompany.auctionFinalMinutes();
-
             emit AuctionExtended(
                 _bidDTO.tokenId,
                 idMarketItemsByContractByOwner[_bidDTO.contractAddress][
@@ -335,15 +309,12 @@ contract MintGoldDustMarketplaceAuction is
         /**
          * @dev Here we refund the last bidder.
          */
-        payable(
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.highestBidder
-        ).transfer(
-                idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                    _bidDTO.tokenId
-                ][_bidDTO.seller].auctionProps.highestBid
-            );
+        MarketItem storage item = idMarketItemsByContractByOwner[
+            _bidDTO.contractAddress
+        ][_bidDTO.tokenId][_bidDTO.seller];
+        payable(item.auctionProps.highestBidder).transfer(
+            item.auctionProps.highestBid
+        );
     }
 
     /**
@@ -354,24 +325,19 @@ contract MintGoldDustMarketplaceAuction is
      */
     function manageNewBid(BidDTO memory _bidDTO) private {
         /// @dev save the previous bidder to show in the event.
-        address previousBidder = idMarketItemsByContractByOwner[
+
+        MarketItem storage item = idMarketItemsByContractByOwner[
             _bidDTO.contractAddress
-        ][_bidDTO.tokenId][_bidDTO.seller].auctionProps.highestBidder;
+        ][_bidDTO.tokenId][_bidDTO.seller];
+
+        address previousBidder = item.auctionProps.highestBidder;
         /// @dev here we change the states.
-        idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-            _bidDTO.tokenId
-        ][_bidDTO.seller].price = msg.value;
-        idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-            _bidDTO.tokenId
-        ][_bidDTO.seller].auctionProps.highestBid = msg.value;
-        idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-            _bidDTO.tokenId
-        ][_bidDTO.seller].auctionProps.highestBidder = msg.sender;
+        item.price = msg.value;
+        item.auctionProps.highestBid = msg.value;
+        item.auctionProps.highestBidder = msg.sender;
 
         emit AuctionNewBid(
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.auctionId,
+            item.auctionProps.auctionId,
             previousBidder,
             msg.sender,
             msg.value,
@@ -435,51 +401,33 @@ contract MintGoldDustMarketplaceAuction is
         BidDTO memory _bidDTO
     ) public whenNotPaused nonReentrant {
         isTokenIdListed(_bidDTO.tokenId, _bidDTO.contractAddress);
+        MarketItem storage item = idMarketItemsByContractByOwner[
+            _bidDTO.contractAddress
+        ][_bidDTO.tokenId][_bidDTO.seller];
 
-        if (
-            block.timestamp <
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.endTime
-        ) {
+        if (block.timestamp < item.auctionProps.endTime) {
             revert AuctionCannotBeEndedYet();
         }
 
-        if (
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.ended
-        ) {
+        if (item.auctionProps.ended) {
             revert AuctionEndedAlready();
         }
 
-        if (
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.endTime == 0
-        ) {
+        if (item.auctionProps.endTime == 0) {
             revert AuctionTimeNotStartedYet();
         }
 
-        idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-            _bidDTO.tokenId
-        ][_bidDTO.seller].auctionProps.ended = true;
+        item.auctionProps.ended = true;
 
         purchaseAuctionNft(
             SaleDTO(
                 _bidDTO.tokenId,
-                idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                    _bidDTO.tokenId
-                ][_bidDTO.seller].tokenAmount,
+                item.tokenAmount,
                 _bidDTO.contractAddress,
                 _bidDTO.seller
             ),
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.highestBid,
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.highestBidder
+            item.auctionProps.highestBid,
+            item.auctionProps.highestBidder
         );
     }
 

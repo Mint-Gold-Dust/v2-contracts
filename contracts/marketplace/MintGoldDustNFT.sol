@@ -167,10 +167,12 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256[] calldata _ownersPercentage,
         uint256 _amount,
         bytes calldata _memoir
-    ) external whenNotPaused returns (uint256) {
-        if (_ownersPercentage.length != _newOwners.length + 1) {
-            revert NumberOfCollaboratorsAndPercentagesNotMatch();
-        }
+    )
+        external
+        whenNotPaused
+        arrayLengthCheck(_newOwners, _ownersPercentage)
+        returns (uint256)
+    {
         uint256 _tokenId = mintNft(_tokenURI, _royalty, _amount, _memoir);
         executeSplitMintFlow(_tokenId, _newOwners, _ownersPercentage);
         return _tokenId;
@@ -185,10 +187,12 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         address _sender,
         bytes calldata _memoir,
         uint256 _collectorMintId
-    ) external whenNotPaused returns (uint256) {
-        if (_ownersPercentage.length != _newOwners.length + 1) {
-            revert NumberOfCollaboratorsAndPercentagesNotMatch();
-        }
+    )
+        external
+        whenNotPaused
+        arrayLengthCheck(_newOwners, _ownersPercentage)
+        returns (uint256)
+    {
         uint256 _tokenId = collectorMint(
             _tokenURI,
             _royalty,
@@ -261,6 +265,16 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
     /// @notice Unpause the contract
     function unpauseContract() public isowner {
         _unpause();
+    }
+
+    modifier arrayLengthCheck(
+        address[] calldata _newOwners,
+        uint256[] calldata _ownersPercentage
+    ) {
+        if (_ownersPercentage.length != _newOwners.length + 1) {
+            revert NumberOfCollaboratorsAndPercentagesNotMatch();
+        }
+        _;
     }
 
     modifier isowner() {

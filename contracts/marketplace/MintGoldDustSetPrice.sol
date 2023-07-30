@@ -229,7 +229,7 @@ contract MintGoldDustSetPrice is
         mustBeMintGoldDustERC721Or1155(_delistDTO.contractAddress);
         isTokenIdListed(_delistDTO.tokenId, _delistDTO.contractAddress);
         isSeller(_delistDTO.tokenId, _delistDTO.contractAddress, msg.sender);
-        MarketItem memory _marketItem = idMarketItemsByContractByOwner[
+        MarketItem storage _marketItem = idMarketItemsByContractByOwner[
             _delistDTO.contractAddress
         ][_delistDTO.tokenId][msg.sender];
 
@@ -242,9 +242,7 @@ contract MintGoldDustSetPrice is
             _marketItem.isERC721
         );
 
-        idMarketItemsByContractByOwner[_delistDTO.contractAddress][
-            _delistDTO.tokenId
-        ][msg.sender].sold = true;
+        _marketItem.sold = true;
 
         _mintGoldDustNFT.transfer(
             address(this),

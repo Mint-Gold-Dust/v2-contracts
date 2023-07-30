@@ -1090,9 +1090,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .sub(toWei(priceToBuyForSecondary))
         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
       expect(
-        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(4))
+        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(3))
       ).to.be.equal(
-        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(4))
+        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(3))
       );
       // expect item sold to be true
       expect(

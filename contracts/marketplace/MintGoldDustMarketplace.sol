@@ -298,11 +298,10 @@ abstract contract MintGoldDustMarketplace is
     ) internal {
         mustBeMintGoldDustERC721Or1155(_listDTO.saleDTO.contractAddress);
 
-        if (_isAuction && _listDTO.price < 0) {
-            revert MintGoldDustListPriceMustBeGreaterThanZero();
-        }
-
-        if (!_isAuction && _listDTO.price <= 0) {
+        if (
+            (_isAuction && _listDTO.price < 0) ||
+            (!_isAuction && _listDTO.price <= 0)
+        ) {
             revert MintGoldDustListPriceMustBeGreaterThanZero();
         }
 
@@ -399,12 +398,12 @@ abstract contract MintGoldDustMarketplace is
             _marketItem.isERC721
         );
 
-        idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-            _saleDTO.tokenId
-        ][_saleDTO.seller].sold = true;
-        idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-            _saleDTO.tokenId
-        ][_saleDTO.seller].isSecondarySale = true;
+        MarketItem storage item = idMarketItemsByContractByOwner[
+            _saleDTO.contractAddress
+        ][_saleDTO.tokenId][_saleDTO.seller];
+
+        item.sold = true;
+        item.isSecondarySale = true;
 
         itemsSold.increment();
 
@@ -545,15 +544,19 @@ abstract contract MintGoldDustMarketplace is
 
         payable(_marketItem.seller).transfer(_balance);
         updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
-        emitPrimarySaleEvent(
-            _marketItem,
-            _saleDTO,
-            _balance,
-            _collFee,
-            _fee,
-            false,
+        emit MintGoldDustNftPurchasedPrimaryMarket(
+            itemsSold.current(),
+            _saleDTO.tokenId,
+            _saleDTO.seller,
+            _sender,
             _value,
-            _sender
+            _balance,
+            _fee,
+            _collFee,
+            _saleDTO.amount,
+            false,
+            _marketItem.isAuction,
+            _marketItem.isERC721
         );
     }
 
@@ -561,13 +564,13 @@ abstract contract MintGoldDustMarketplace is
         SaleDTO memory _saleDTO,
         address _sender
     ) private {
-        idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-            _saleDTO.tokenId
-        ][_saleDTO.seller].seller = _sender;
-
-        MarketItem memory newMarketItem = idMarketItemsByContractByOwner[
+        MarketItem storage item = idMarketItemsByContractByOwner[
             _saleDTO.contractAddress
         ][_saleDTO.tokenId][_saleDTO.seller];
+
+        item.seller = _sender;
+
+        MarketItem memory newMarketItem = item;
 
         AuctionProps memory auctionProps = AuctionProps(
             0,
@@ -587,48 +590,6 @@ abstract contract MintGoldDustMarketplace is
         delete idMarketItemsByContractByOwner[_saleDTO.contractAddress][
             _saleDTO.tokenId
         ][_saleDTO.seller];
-    }
-
-    /**
-     * @dev this function is called when a primary sale was successfully finalized.
-     * @param _marketItem explained in checkIfIsSplitPaymentAndCall function.
-     * @param _saleDTO explained in checkIfIsSplitPaymentAndCall function.
-     * @param _balance represents the total amount to be received by the seller after fee calculations.
-     * @param _fee the secondary fee to be paid for the MintGoldDustMarketplace.
-     * @param _collFee represent the collector fee.
-     * @param _hasCollaborators indicates if the market item has or not collaborators.
-     *    @dev FYI if it is true. So another event will be fired after the sale finalization.
-     *         It is the NftPurchasedCollaboratorAmount event. It will be triggered for each one of the collaborators.
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
-     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
-     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
-     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
-     */
-    function emitPrimarySaleEvent(
-        MarketItem memory _marketItem,
-        SaleDTO memory _saleDTO,
-        uint256 _balance,
-        uint256 _collFee,
-        uint256 _fee,
-        bool _hasCollaborators,
-        uint256 _value,
-        address _sender
-    ) private {
-        emit MintGoldDustNftPurchasedPrimaryMarket(
-            itemsSold.current(),
-            _saleDTO.tokenId,
-            _saleDTO.seller,
-            _sender,
-            _value,
-            _balance,
-            _fee,
-            _collFee,
-            _saleDTO.amount,
-            _hasCollaborators,
-            _marketItem.isAuction,
-            _marketItem.isERC721
-        );
     }
 
     /**
@@ -667,50 +628,7 @@ abstract contract MintGoldDustMarketplace is
 
         payable(_artist).transfer(_royalty);
         updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
-        emitSecondarySaleEvent(
-            _marketItem,
-            _saleDTO,
-            _artist,
-            _balance,
-            _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId),
-            _royalty,
-            _fee,
-            false,
-            _value,
-            _sender
-        );
-    }
 
-    /**
-     * @dev this function is called when a secondary sale was successfully finalized.
-     * @param _marketItem explained in checkIfIsSplitPaymentAndCall function.
-     * @param _saleDTO explained in checkIfIsSplitPaymentAndCall function.
-     * @param _artist the creator of the artwork to receive the royalties.
-     * @param _balance represents the total amount to be received by the seller after fee calculations.
-     * @param _royaltyPercent represent the royalty percetnage setted by the artist.
-     * @param _royalty represent the royalty to be paid for the artist.
-     * @param _fee the secondary fee to be paid for the MintGoldDustMarketplace.
-     * @param _hasCollaborators indicates if the market item has or not collaborators.
-     *    @dev FYI if it is true. So another event will be fired after the sale finalization.
-     *         It is the NftPurchasedCollaboratorAmount event. It will be triggered for each one of the collaborators.
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
-     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
-     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
-     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
-     */
-    function emitSecondarySaleEvent(
-        MarketItem memory _marketItem,
-        SaleDTO memory _saleDTO,
-        address _artist,
-        uint256 _balance,
-        uint256 _royaltyPercent,
-        uint256 _royalty,
-        uint256 _fee,
-        bool _hasCollaborators,
-        uint256 _value,
-        address _sender
-    ) private {
         emit MintGoldDustNftPurchasedSecondaryMarket(
             itemsSold.current(),
             _saleDTO.tokenId,
@@ -718,12 +636,12 @@ abstract contract MintGoldDustMarketplace is
             _sender,
             _value,
             _balance,
-            _royaltyPercent,
+            _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId),
             _royalty,
             _artist,
             _fee,
             _saleDTO.amount,
-            _hasCollaborators,
+            false,
             _marketItem.isAuction,
             _marketItem.isERC721
         );
@@ -848,30 +766,38 @@ abstract contract MintGoldDustMarketplace is
         address _sender
     ) private {
         if (_isPrimarySale) {
-            emitPrimarySaleEvent(
-                _marketItem,
-                _saleDTO,
-                _balance,
-                _collFeeOrRoyalty,
-                _fee,
-                true,
+            emit MintGoldDustNftPurchasedPrimaryMarket(
+                itemsSold.current(),
+                _saleDTO.tokenId,
+                _saleDTO.seller,
+                _sender,
                 _value,
-                _sender
+                _balance,
+                _fee,
+                _collFeeOrRoyalty,
+                _saleDTO.amount,
+                true,
+                _marketItem.isAuction,
+                _marketItem.isERC721
             );
             return;
         }
 
-        emitSecondarySaleEvent(
-            _marketItem,
-            _saleDTO,
-            _artist,
+        emit MintGoldDustNftPurchasedSecondaryMarket(
+            itemsSold.current(),
+            _saleDTO.tokenId,
+            _saleDTO.seller,
+            _sender,
+            _value,
             _balance,
             _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId),
             _collFeeOrRoyalty,
+            _artist,
             _fee,
+            _saleDTO.amount,
             true,
-            _value,
-            _sender
+            _marketItem.isAuction,
+            _marketItem.isERC721
         );
     }
 
@@ -946,13 +872,13 @@ abstract contract MintGoldDustMarketplace is
         SaleDTO memory _saleDTO,
         bool _isPrimarySale
     ) private {
-        idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-            _saleDTO.tokenId
-        ][_saleDTO.seller].sold = false;
+        MarketItem storage item = idMarketItemsByContractByOwner[
+            _saleDTO.contractAddress
+        ][_saleDTO.tokenId][_saleDTO.seller];
+
+        item.sold = false;
         if (_isPrimarySale) {
-            idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-                _saleDTO.tokenId
-            ][_saleDTO.seller].isSecondarySale = false;
+            item.isSecondarySale = false;
         }
         itemsSold.decrement();
         revert MintGoldDustErrorToTransfer("At purchase!");
