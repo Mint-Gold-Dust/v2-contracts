@@ -60,7 +60,6 @@ contract MintGoldDustERC721 is
         uint256 _collectorMintId,
         bytes calldata _memoir
     ) internal override returns (uint256) {
-        isApproved(_sender);
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _safeMint(_sender, newTokenId);
@@ -97,15 +96,5 @@ contract MintGoldDustERC721 is
         returns (string memory)
     {
         return super.tokenURI(tokenId);
-    }
-
-    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
-    fallback() external payable {
-        payable(mintGoldDustCompany.owner()).transfer(msg.value);
-    }
-
-    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
-    receive() external payable {
-        payable(mintGoldDustCompany.owner()).transfer(msg.value);
     }
 }

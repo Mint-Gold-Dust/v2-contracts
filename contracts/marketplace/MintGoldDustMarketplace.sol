@@ -7,23 +7,31 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 import "./MintGoldDustERC721.sol";
 import "./MintGoldDustNFT.sol";
 import "./MintGoldDustERC1155.sol";
 
-error MintGoldDustItemIsNotListed(address _contractAddress);
-error MintGoldDustItemIsAlreadyListed(address _contractAddress);
-error MintGoldDustAddressUnauthorized(string _reason);
-error MintGoldDustListPriceMustBeGreaterThanZero();
-error MintGoldDustErrorToTransfer(string _reason);
-error MintGoldDustFunctionForSetPriceListedNFT();
-error MintGoldDustFunctionForAuctionListedNFT();
-error MintGoldDustMustBeERC721OrERC1155();
-error MintGoldDustLessItemsListedThanThePurchaseAmount();
-error MintGoldDustInvalidAmountForThisPurchase();
-error MintGoldDustPurchaseOfERC1155InAuctionThatCoverAllListedItems();
-error MintGoldDustCollectorMintDataNotMatch();
+error ItemIsNotListed(address _contractAddress);
+error ItemIsNotListedBySeller(
+    uint256 tokenId,
+    address market,
+    address contractAddress,
+    address seller,
+    address msgSender
+);
+error ItemIsAlreadyListed(address _contractAddress);
+error AddressUnauthorized(string _reason);
+error ErrorToTransfer(string _reason);
+error FunctionForSetPriceListedNFT();
+error FunctionForAuctionListedNFT();
+error MustBeERC721OrERC1155();
+error LessItemsListedThanThePurchaseAmount();
+error InvalidAmountForThisPurchase();
+error PurchaseOfERC1155InAuctionThatCoverAllListedItems();
+error CollectorMintDataNotMatch();
+error InvalidAmount();
 
 /// @title An abstract contract responsible to define some general responsibilites related with
 /// a marketplace for its childrens.
@@ -35,21 +43,22 @@ abstract contract MintGoldDustMarketplace is
     Initializable,
     PausableUpgradeable,
     IERC1155Receiver,
-    IERC721Receiver
+    IERC721Receiver,
+    ReentrancyGuardUpgradeable
 {
     /**
      *
      * @notice MintGoldDustMarketplace is composed by other two contracts.
-     * @param _mgdCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustCompany The contract responsible to MGD management features.
      * @param _mintGoldDustERC721Address The MGD ERC721 address.
      * @param _mintGoldDustERC1155Address The MGD ERC1155 address.
      */
     function initialize(
-        address _mgdCompany,
+        address _mintGoldDustCompany,
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
     ) internal onlyInitializing {
-        mgdCompany = MintGoldDustCompany(payable(_mgdCompany));
+        mintGoldDustCompany = MintGoldDustCompany(_mintGoldDustCompany);
         mintGoldDustERC721Address = _mintGoldDustERC721Address;
         mintGoldDustERC1155Address = _mintGoldDustERC1155Address;
     }
@@ -57,7 +66,7 @@ abstract contract MintGoldDustMarketplace is
     using Counters for Counters.Counter;
     Counters.Counter public itemsSold;
 
-    MintGoldDustCompany internal mgdCompany;
+    MintGoldDustCompany internal mintGoldDustCompany;
     address payable internal mintGoldDustERC721Address;
     address payable internal mintGoldDustERC1155Address;
     uint256[48] __gap;
@@ -90,7 +99,6 @@ abstract contract MintGoldDustMarketplace is
         uint256 tokenId;
         address seller;
         uint256 price;
-        bool sold;
         bool isAuction;
         bool isSecondarySale;
         bool isERC721;
@@ -110,7 +118,6 @@ abstract contract MintGoldDustMarketplace is
         uint256 endTime;
         address highestBidder;
         uint256 highestBid;
-        bool cancelled;
         bool ended;
     }
 
@@ -247,7 +254,6 @@ abstract contract MintGoldDustMarketplace is
         uint256 amount;
         address artistSigner;
         uint256 price;
-        uint256 collectorMintId;
     }
 
     /**
@@ -299,15 +305,6 @@ abstract contract MintGoldDustMarketplace is
         address _marketAddress,
         uint256 _auctionId
     ) internal {
-        mustBeMintGoldDustERC721Or1155(_listDTO.saleDTO.contractAddress);
-
-        if (
-            (_isAuction && _listDTO.price < 0) ||
-            (!_isAuction && _listDTO.price <= 0)
-        ) {
-            revert MintGoldDustListPriceMustBeGreaterThanZero();
-        }
-
         MintGoldDustNFT _mintGoldDustNFT;
         bool _isERC721 = false;
         uint256 _realAmount = 1;
@@ -330,7 +327,6 @@ abstract contract MintGoldDustMarketplace is
             0,
             payable(address(0)),
             0,
-            false,
             false
         );
 
@@ -340,7 +336,6 @@ abstract contract MintGoldDustMarketplace is
             _listDTO.saleDTO.tokenId,
             _listDTO.saleDTO.seller,
             _listDTO.price,
-            false,
             _isAuction,
             idMarketItemsByContractByOwner[_listDTO.saleDTO.contractAddress][
                 _listDTO.saleDTO.tokenId
@@ -414,8 +409,12 @@ abstract contract MintGoldDustMarketplace is
         uint256 collFee;
         uint256 balance;
 
-        fee = (_value * mgdCompany.primarySaleFeePercent()) / (100 * 10 ** 18);
-        collFee = (_value * mgdCompany.collectorFee()) / (100 * 10 ** 18);
+        fee =
+            (_value * mintGoldDustCompany.primarySaleFeePercent()) /
+            (100 * 10 ** 18);
+        collFee =
+            (_value * mintGoldDustCompany.collectorFee()) /
+            (100 * 10 ** 18);
         balance = _value - (fee + collFee);
 
         checkIfIsSplitPaymentAndCall(
@@ -430,7 +429,7 @@ abstract contract MintGoldDustMarketplace is
             _sender
         );
 
-        payable(mgdCompany.owner()).transfer(collFee + fee);
+        payable(mintGoldDustCompany.owner()).transfer(collFee + fee);
     }
 
     /**
@@ -546,7 +545,7 @@ abstract contract MintGoldDustMarketplace is
         );
 
         payable(_marketItem.seller).transfer(_balance);
-        updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
+        updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
         emit MintGoldDustNftPurchasedPrimaryMarket(
             itemsSold.current(),
             _saleDTO.tokenId,
@@ -564,25 +563,13 @@ abstract contract MintGoldDustMarketplace is
     }
 
     function updateIdMarketItemsByContractByOwnerMapping(
-        SaleDTO memory _saleDTO,
-        address _sender
+        SaleDTO memory _saleDTO
     ) private {
         MarketItem storage item = idMarketItemsByContractByOwner[
             _saleDTO.contractAddress
         ][_saleDTO.tokenId][_saleDTO.seller];
 
-        item.seller = _sender;
-
-        MarketItem memory newMarketItem = item;
-
-        AuctionProps memory auctionProps = AuctionProps(
-            0,
-            0,
-            payable(address(0)),
-            0,
-            false,
-            false
-        );
+        item.tokenAmount = item.tokenAmount - _saleDTO.amount;
 
         newMarketItem.auctionProps = auctionProps;
 
@@ -590,9 +577,11 @@ abstract contract MintGoldDustMarketplace is
             _saleDTO.tokenId
         ][_sender] = newMarketItem;
 
-        delete idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-            _saleDTO.tokenId
-        ][_saleDTO.seller];
+        if (item.tokenAmount == 0) {
+            delete idMarketItemsByContractByOwner[_saleDTO.contractAddress][
+                _saleDTO.tokenId
+            ][_saleDTO.seller];
+        }
     }
 
     /**
@@ -630,7 +619,7 @@ abstract contract MintGoldDustMarketplace is
         );
 
         payable(_artist).transfer(_royalty);
-        updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
+        updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
 
         emit MintGoldDustNftPurchasedSecondaryMarket(
             itemsSold.current(),
@@ -724,7 +713,7 @@ abstract contract MintGoldDustMarketplace is
                 balanceSplitPart
             );
         }
-        updateIdMarketItemsByContractByOwnerMapping(_saleDTO, _sender);
+        updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
         emitEventForSplitPayment(
             _saleDTO,
             _marketItem,
@@ -871,22 +860,6 @@ abstract contract MintGoldDustMarketplace is
         );
     }
 
-    function revertInCaseOfErrorInTransfer(
-        SaleDTO memory _saleDTO,
-        bool _isPrimarySale
-    ) private {
-        MarketItem storage item = idMarketItemsByContractByOwner[
-            _saleDTO.contractAddress
-        ][_saleDTO.tokenId][_saleDTO.seller];
-
-        item.sold = false;
-        if (_isPrimarySale) {
-            item.isSecondarySale = false;
-        }
-        itemsSold.decrement();
-        revert MintGoldDustErrorToTransfer("At purchase!");
-    }
-
     /**
      * @notice that this function is responsible to start the secondary sale flow.
      * @dev here we apply the fees related with the secondary market that are:
@@ -930,9 +903,6 @@ abstract contract MintGoldDustMarketplace is
             _marketItem.isERC721
         );
 
-        idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-            _saleDTO.tokenId
-        ][_saleDTO.seller].sold = true;
         itemsSold.increment();
 
         uint256 fee;
@@ -940,7 +910,7 @@ abstract contract MintGoldDustMarketplace is
         uint256 balance;
 
         fee =
-            (_value * mgdCompany.secondarySaleFeePercent()) /
+            (_value * mintGoldDustCompany.secondarySaleFeePercent()) /
             (100 * 10 ** 18);
         royalty =
             (_value *
@@ -961,7 +931,7 @@ abstract contract MintGoldDustMarketplace is
             _sender
         );
 
-        payable(mgdCompany.owner()).transfer(fee);
+        payable(mintGoldDustCompany.owner()).transfer(fee);
         payable(_marketItem.seller).transfer(balance);
     }
 
@@ -1034,15 +1004,20 @@ abstract contract MintGoldDustMarketplace is
     ) private {
         isSetPrice(_saleDTO.tokenId, _saleDTO.contractAddress, _saleDTO.seller);
 
-        isTokenIdListed(_saleDTO.tokenId, _saleDTO.contractAddress);
+        isTokenIdListed(
+            _saleDTO.tokenId,
+            _saleDTO.contractAddress,
+            _saleDTO.seller
+        );
 
         mustBeMintGoldDustERC721Or1155(_saleDTO.contractAddress);
 
-        hasEenoughAmountListed(
+        hasEnoughAmountListed(
             _saleDTO.tokenId,
             _saleDTO.contractAddress,
             address(this),
-            _saleDTO.amount
+            _saleDTO.amount,
+            _saleDTO.seller
         );
 
         MarketItem memory _marketItem = getMarketItem(_saleDTO);
@@ -1122,9 +1097,21 @@ abstract contract MintGoldDustMarketplace is
     ) internal {
         isAuction(_saleDTO.tokenId, _saleDTO.contractAddress, _saleDTO.seller);
 
-        isTokenIdListed(_saleDTO.tokenId, _saleDTO.contractAddress);
+        isTokenIdListed(
+            _saleDTO.tokenId,
+            _saleDTO.contractAddress,
+            _saleDTO.seller
+        );
 
         mustBeMintGoldDustERC721Or1155(_saleDTO.contractAddress);
+
+        hasEnoughAmountListed(
+            _saleDTO.tokenId,
+            _saleDTO.contractAddress,
+            address(this),
+            _saleDTO.amount,
+            _saleDTO.seller
+        );
 
         MarketItem memory _marketItem = getMarketItem(_saleDTO);
 
@@ -1135,6 +1122,8 @@ abstract contract MintGoldDustMarketplace is
             _realAmount = _saleDTO.amount;
             isBuyingAllListedTokens(_saleDTO);
         }
+
+        isMsgValueEnough(_marketItem.price, _realAmount, _value);
 
         checkIfIsPrimaryOrSecondarySaleAndCall(
             _marketItem,
@@ -1160,7 +1149,7 @@ abstract contract MintGoldDustMarketplace is
                 _saleDTO.tokenId
             ][_saleDTO.seller].tokenAmount
         ) {
-            revert MintGoldDustPurchaseOfERC1155InAuctionThatCoverAllListedItems();
+            revert PurchaseOfERC1155InAuctionThatCoverAllListedItems();
         }
     }
 
@@ -1168,21 +1157,21 @@ abstract contract MintGoldDustMarketplace is
     ///      price of the token and the quantity desired.
     /// @param _price the price of one market item.
     /// @param _amount the quantity desired for this purchase.
-    /// @notice that it REVERTS with a MintGoldDustInvalidAmountForThisPurchase() error if the condition is not met.
+    /// @notice that it REVERTS with a InvalidAmountForThisPurchase() error if the condition is not met.
     function isMsgValueEnough(
         uint256 _price,
         uint256 _amount,
         uint256 _value
     ) private pure {
         if (_value != (_price * (_amount * (10 ** 18))) / (10 ** 18)) {
-            revert MintGoldDustInvalidAmountForThisPurchase();
+            revert InvalidAmountForThisPurchase();
         }
     }
 
     /**
      * @dev this function check if the an address represents a MintGoldDustNFT contract.
      *      It MUST be a MintGoldDustERC721 address or a MintGoldDustERC1155 address.
-     * @notice that the function REVERTS with a MintGoldDustMustBeERC721OrERC1155() error if the conditon is not met.
+     * @notice that the function REVERTS with a MustBeERC721OrERC1155() error if the conditon is not met.
      */
     function mustBeMintGoldDustERC721Or1155(
         address _contractAddress
@@ -1194,14 +1183,14 @@ abstract contract MintGoldDustMarketplace is
 
         // Ensure that the contract is either an ERC721 or ERC1155
         if (!_isERC1155 && !_isERC721) {
-            revert MintGoldDustMustBeERC721OrERC1155();
+            revert MustBeERC721OrERC1155();
         }
     }
 
     /**
      * @dev the main goal of this function is check if the address calling the function is the
      *      owner of the tokenId. For ERC1155 it means if the address has some balance for this token.
-     * @notice that it REVERTS with a MintGoldDustAddressUnauthorized error if the condition is not met.
+     * @notice that it REVERTS with a AddressUnauthorized error if the condition is not met.
      */
     function checkBalanceForERC1155(
         uint256 _tokenId,
@@ -1213,46 +1202,16 @@ abstract contract MintGoldDustMarketplace is
                 _tokenId
             ) < _tokenAmount
         ) {
-            revert MintGoldDustAddressUnauthorized(
-                "Not owner or not has enouth token quantity!"
+            revert AddressUnauthorized(
+                "Not owner or not has enough token quantity!"
             );
-        }
-    }
-
-    function generateHash(
-        CollectorMintDTO memory _collectorMintDTO
-    ) private pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    _collectorMintDTO.contractAddress,
-                    _collectorMintDTO.tokenURI,
-                    _collectorMintDTO.royalty,
-                    _collectorMintDTO.memoir,
-                    _collectorMintDTO.collaborators,
-                    _collectorMintDTO.ownersPercentage,
-                    _collectorMintDTO.amount,
-                    _collectorMintDTO.artistSigner,
-                    _collectorMintDTO.price,
-                    _collectorMintDTO.collectorMintId
-                )
-            );
-    }
-
-    function verifyHash(
-        CollectorMintDTO memory _collectorMintDTO,
-        bytes32 receivedHash
-    ) internal pure {
-        bytes32 generatedHash = generateHash(_collectorMintDTO);
-        if (generatedHash != receivedHash) {
-            revert MintGoldDustCollectorMintDataNotMatch();
         }
     }
 
     /**
      * @dev the main goal of this function is check if the address calling the function is the
      *      owner of the tokenId.
-     * @notice that it REVERTS with a MintGoldDustAddressUnauthorized error if the condition is not met.
+     * @notice that it REVERTS with a AddressUnauthorized error if the condition is not met.
      * @param _tokenId is the id that represent the token.
      */
     function isNFTowner(uint256 _tokenId, address _sender) internal view {
@@ -1260,13 +1219,13 @@ abstract contract MintGoldDustMarketplace is
             (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(_tokenId) !=
             _sender
         ) {
-            revert MintGoldDustAddressUnauthorized("Not owner!");
+            revert AddressUnauthorized("Not owner!");
         }
     }
 
     /**
      * @dev This function check if the item was listed for auction.
-     * @notice that if yes it REVERTS with a MintGoldDustFunctionForSetPriceListedNFT() error.
+     * @notice that if yes it REVERTS with a FunctionForSetPriceListedNFT() error.
      * @param _tokenId is the id that represent the token.
      * @param _contractAddress is a MintGoldDustNFT address.
      * @param _seller is the address of the seller of this tokenId.
@@ -1280,13 +1239,13 @@ abstract contract MintGoldDustMarketplace is
             idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
                 .isAuction
         ) {
-            revert MintGoldDustFunctionForSetPriceListedNFT();
+            revert FunctionForSetPriceListedNFT();
         }
     }
 
     /**
      * @dev This function check if the item was listed for auction.
-     * @notice that if not it REVERTS with a MintGoldDustFunctionForAuctionListedNFT() error.
+     * @notice that if not it REVERTS with a FunctionForAuctionListedNFT() error.
      * @param _tokenId is the id that represent the token.
      * @param _contractAddress is a MintGoldDustNFT address.
      * @param _seller is the address of the seller of this tokenId.
@@ -1300,27 +1259,40 @@ abstract contract MintGoldDustMarketplace is
             !idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
                 .isAuction
         ) {
-            revert MintGoldDustFunctionForAuctionListedNFT();
+            revert FunctionForAuctionListedNFT();
         }
     }
 
     /**
      * @dev the goal here is, depending of the contract address (MintGoldDustERC721 or MintGoldDustERC1155)
      *      verify if the tokenId is really listed.
-     * @notice that if not it REVERTS with a MintGoldDustItemIsNotListed() error.
+     * @notice that if not it REVERTS with a ItemIsNotListed() error.
      * @param _tokenId is the id that represent the token.
      * @param _contractAddress is a MintGoldDustNFT address.
      */
     function isTokenIdListed(
         uint256 _tokenId,
-        address _contractAddress
+        address _contractAddress,
+        address _seller
     ) internal view {
+        if (
+            idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
+                .tokenAmount == 0
+        ) {
+            revert ItemIsNotListedBySeller(
+                _tokenId,
+                address(this),
+                _contractAddress,
+                _seller,
+                msg.sender
+            );
+        }
         if (
             _contractAddress == mintGoldDustERC721Address &&
             (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(_tokenId) !=
             address(this)
         ) {
-            revert MintGoldDustItemIsNotListed(_contractAddress);
+            revert ItemIsNotListed(_contractAddress);
         }
 
         if (
@@ -1331,24 +1303,25 @@ abstract contract MintGoldDustMarketplace is
             ) ==
             0
         ) {
-            revert MintGoldDustItemIsNotListed(_contractAddress);
+            revert ItemIsNotListed(_contractAddress);
         }
     }
 
     /**
      * @dev the goal here is verify if the MintGoldDustMarketplace contract has the quantity of
      *      MintGoldDustERC1155 tokens that the collector is trying to buy.
-     * @notice that if not it REVERTS with a MintGoldDustLessItemsListedThanThePurchaseAmount() error.
+     * @notice that if not it REVERTS with a LessItemsListedThanThePurchaseAmount() error.
      * @param _tokenId is the id that represent the token.
      * @param _contractAddress is a MintGoldDustNFT address.
      * @param _marketPlaceAddress it can be a MintGoldDustMarketplaceAuction or a MintGoldDustSetPrice address.
      * @param _tokenQuantity the quantity of tokens desired by the buyer.
      */
-    function hasEenoughAmountListed(
+    function hasEnoughAmountListed(
         uint256 _tokenId,
         address _contractAddress,
         address _marketPlaceAddress,
-        uint256 _tokenQuantity
+        uint256 _tokenQuantity,
+        address _seller
     ) private view {
         if (
             _contractAddress == mintGoldDustERC1155Address &&
@@ -1358,13 +1331,19 @@ abstract contract MintGoldDustMarketplace is
             ) <
             _tokenQuantity
         ) {
-            revert MintGoldDustLessItemsListedThanThePurchaseAmount();
+            revert LessItemsListedThanThePurchaseAmount();
+        }
+        if (
+            idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
+                .tokenAmount < _tokenQuantity
+        ) {
+            revert LessItemsListedThanThePurchaseAmount();
         }
     }
 
     /**
      * @dev the goal here is verify if the address is the seller of the respective tokenId for a contract address.
-     * @notice that if not it REVERTS with a MintGoldDustAddressUnauthorized() error.
+     * @notice that if not it REVERTS with a AddressUnauthorized() error.
      * @param _tokenId is the id that represent the token.
      * @param _contractAddress is a MintGoldDustNFT address.
      * @param _seller is the address of the seller of this tokenId.
@@ -1379,7 +1358,7 @@ abstract contract MintGoldDustMarketplace is
             idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
                 .seller
         ) {
-            revert MintGoldDustAddressUnauthorized("Not seller!");
+            revert AddressUnauthorized("Not seller!");
         }
     }
 
@@ -1412,18 +1391,23 @@ abstract contract MintGoldDustMarketplace is
         return this.onERC721Received.selector;
     }
 
-    modifier isNotListed(
+    function isNotListed(
         uint256 _tokenId,
         address _contractAddress,
         address _seller
-    ) {
+    ) internal view {
         if (
-            !idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
-                .sold
+            idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
+                .tokenAmount > 0
         ) {
-            revert MintGoldDustItemIsAlreadyListed(_contractAddress);
+            revert ItemIsAlreadyListed(_contractAddress);
         }
-        _;
+    }
+
+    function checkAmount(uint256 _amount) internal pure {
+        if (_amount <= 0) {
+            revert InvalidAmount();
+        }
     }
 
     /// @notice Pause the contract
@@ -1437,19 +1421,9 @@ abstract contract MintGoldDustMarketplace is
     }
 
     modifier isowner() {
-        if (msg.sender != mgdCompany.owner()) {
-            revert MGDCompanyUnauthorized();
+        if (msg.sender != mintGoldDustCompany.owner()) {
+            revert UnauthorizedOnNFT("OWNER");
         }
         _;
-    }
-
-    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
-    fallback() external payable {
-        payable(mgdCompany.owner()).transfer(msg.value);
-    }
-
-    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
-    receive() external payable {
-        payable(mgdCompany.owner()).transfer(msg.value);
     }
 }

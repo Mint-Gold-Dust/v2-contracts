@@ -33,6 +33,8 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
   const secondary_sale_fee_percent_initial = 5000000000000000000n;
   const collector_fee_initial = 3000000000000000000n;
   const max_royalty_initial = 20000000000000000000n;
+  const auction_duration = 5;
+  const auction_extension_duration = 1;
 
   beforeEach(async function () {
     MintGoldDustCompany = await ethers.getContractFactory(
@@ -56,6 +58,8 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
         secondary_sale_fee_percent_initial,
         collector_fee_initial,
         max_royalty_initial,
+        auction_duration,
+        auction_extension_duration,
       ],
       { initializer: "initialize" }
     );

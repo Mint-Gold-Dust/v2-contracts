@@ -49,6 +49,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
   const secondary_sale_fee_percent_initial = 5000000000000000000n;
   const collector_fee_initial = 3000000000000000000n;
   const max_royalty_initial = 20000000000000000000n;
+  const auction_duration = 5;
+  const auction_extension_duration = 1;
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
   let primary_sale_fee_percent = 15;
@@ -100,6 +102,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
         secondary_sale_fee_percent_initial,
         collector_fee_initial,
         max_royalty_initial,
+        auction_duration,
+        auction_extension_duration,
       ],
       { initializer: "initialize" }
     );
@@ -257,7 +261,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       )
         .to.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
-          "MintGoldDustAddressUnauthorized"
+          "AddressUnauthorized"
         )
         .withArgs("Not owner!");
     });
@@ -1632,7 +1636,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
         .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
     });
 
-    it("Should revert with MintGoldDustItemIsNotListed error if the end auction function is called and the tokenId was not listed on MintGoldDustMarketplaceAuction.", async () => {
+    it("Should revert with ItemIsNotListed error if the end auction function is called and the tokenId was not listed on MintGoldDustMarketplaceAuction.", async () => {
       await mintGoldDustERC721
         .connect(addr1)
         .setApprovalForAll(mintGoldDustSetPrice.address, true);
@@ -1655,7 +1659,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       )
         .to.be.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
-          "MintGoldDustItemIsNotListed"
+          "ItemIsNotListed"
         )
         .withArgs(mintGoldDustERC721.address);
     });

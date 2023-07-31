@@ -44,6 +44,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   const secondary_sale_fee_percent_initial = 5000000000000000000n;
   const collector_fee_initial = 3000000000000000000n;
   const max_royalty_initial = 20000000000000000000n;
+  const auction_duration = 5;
+  const auction_extension_duration = 1;
 
   let primary_sale_fee_percent = 15;
   let secondary_sale_fee_percent = 5;
@@ -77,6 +79,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         secondary_sale_fee_percent_initial,
         collector_fee_initial,
         max_royalty_initial,
+        auction_duration,
+        auction_extension_duration,
       ],
       { initializer: "initialize" }
     );
@@ -137,14 +141,14 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .setApprovalForAll(mintGoldDustSetPrice.address, true);
     });
 
-    it("Should revert with a MintGoldDustMustBeERC721OrERC1155 error if the contract address trying to list is neither a ERC721 nor a ERC1155.", async function () {
+    it("Should revert with a MustBeERC721OrERC1155 error if the contract address trying to list is neither a ERC721 nor a ERC1155.", async function () {
       await expect(
         mintGoldDustSetPrice
           .connect(addr1)
           .list(1, 1, mgdCompany.address, toWei(price))
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "MintGoldDustMustBeERC721OrERC1155"
+        "MustBeERC721OrERC1155"
       );
 
       await expect(
@@ -153,7 +157,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           .list(1, 1, addr1.address, toWei(price))
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "MintGoldDustMustBeERC721OrERC1155"
+        "MustBeERC721OrERC1155"
       );
     });
 
@@ -241,7 +245,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           .list(1, quantityToList, mintGoldDustERC1155.address, toWei(0))
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "MintGoldDustListPriceMustBeGreaterThanZero"
+        "ListPriceMustBeGreaterThanZero"
       );
     });
 
@@ -251,11 +255,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           .connect(addr2)
           .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price))
       )
-        .to.revertedWithCustomError(
-          mintGoldDustSetPrice,
-          "MintGoldDustAddressUnauthorized"
-        )
-        .withArgs("Not owner or not has enouth token quantity!");
+        .to.revertedWithCustomError(mintGoldDustSetPrice, "AddressUnauthorized")
+        .withArgs("Not owner or not has enough token quantity!");
     });
   });
 
@@ -291,7 +292,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         );
     });
 
-    it("Should revert with a MintGoldDustMustBeERC721OrERC1155 error if the contract address trying to list is neither a ERC721 nor a ERC1155.", async function () {
+    it("Should revert with a MustBeERC721OrERC1155 error if the contract address trying to list is neither a ERC721 nor a ERC1155.", async function () {
       await expect(
         mintGoldDustSetPrice
           .connect(addr1)
@@ -303,7 +304,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           )
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "MintGoldDustMustBeERC721OrERC1155"
+        "MustBeERC721OrERC1155"
       );
 
       await expect(
@@ -312,7 +313,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           .updateListedNft(1, toWei(newPrice), addr1.address, addr1.address)
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "MintGoldDustMustBeERC721OrERC1155"
+        "MustBeERC721OrERC1155"
       );
     });
 
@@ -396,7 +397,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           )
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "MintGoldDustListPriceMustBeGreaterThanZero"
+        "ListPriceMustBeGreaterThanZero"
       );
     });
 
@@ -414,7 +415,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       )
         .to.be.revertedWithCustomError(
           mintGoldDustSetPrice,
-          "MintGoldDustAddressUnauthorized"
+          "AddressUnauthorized"
         )
         .withArgs("Not seller!");
     });
@@ -441,10 +442,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             addr2.address
           )
       )
-        .to.be.revertedWithCustomError(
-          mintGoldDustSetPrice,
-          "MintGoldDustItemIsNotListed"
-        )
+        .to.be.revertedWithCustomError(mintGoldDustSetPrice, "ItemIsNotListed")
         .withArgs(mintGoldDustERC1155.address);
     });
   });
@@ -558,7 +556,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         })
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "MintGoldDustAddressUnauthorized"
+        "AddressUnauthorized"
       );
       // the market item should still be not sold
       expect(
@@ -613,7 +611,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       balance = priceToBuy - primarySaleFee;
     });
 
-    it("Shoud revert with a MintGoldDustLessItemsListedThanThePurchaseAmount error if some collector tries to buy an amount greater than the number of tokens listed for an ERC1155.", async () => {
+    it("Shoud revert with a LessItemsListedThanThePurchaseAmount error if some collector tries to buy an amount greater than the number of tokens listed for an ERC1155.", async () => {
       await expect(
         mintGoldDustSetPrice.connect(addr2).purchaseNft(
           {
@@ -628,7 +626,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         )
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "MintGoldDustLessItemsListedThanThePurchaseAmount"
+        "LessItemsListedThanThePurchaseAmount"
       );
     });
 
@@ -797,7 +795,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
     });
 
-    it("Should revert with MintGoldDustItemIsNotListed error if the user tries to buy a MintGoldDustERC1155 that was already sold.", async () => {
+    it("Should revert with ItemIsNotListed error if the user tries to buy a MintGoldDustERC1155 that was already sold.", async () => {
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -821,13 +819,10 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             value: toWei(priceToBuy),
           }
         )
-      ).to.be.revertedWithCustomError(
-        mintGoldDustSetPrice,
-        "MintGoldDustItemIsNotListed"
-      );
+      ).to.be.revertedWithCustomError(mintGoldDustSetPrice, "ItemIsNotListed");
     });
 
-    it("Should revert with MintGoldDustInvalidAmountForThisPurchase if the user tries to buy an itemId with an amount greater than the item's price.", async () => {
+    it("Should revert with InvalidAmountForThisPurchase if the user tries to buy an itemId with an amount greater than the item's price.", async () => {
       await expect(
         mintGoldDustSetPrice.connect(addr3).purchaseNft(
           {
@@ -842,11 +837,11 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         )
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "MintGoldDustInvalidAmountForThisPurchase"
+        "InvalidAmountForThisPurchase"
       );
     });
 
-    it("Should revert with MintGoldDustInvalidAmountForThisPurchase if the user tries to buy an itemId with an amount less than the item's price.", async () => {
+    it("Should revert with InvalidAmountForThisPurchase if the user tries to buy an itemId with an amount less than the item's price.", async () => {
       await expect(
         mintGoldDustSetPrice.connect(addr3).purchaseNft(
           {
@@ -861,7 +856,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         )
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "MintGoldDustInvalidAmountForThisPurchase"
+        "InvalidAmountForThisPurchase"
       );
     });
   });

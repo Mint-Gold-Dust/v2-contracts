@@ -11,52 +11,53 @@ chai.use(chaiAsPromised);
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMGDSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the MintGoldDustSetPrice market and the MintGoldDustERC1155 tokens. \n\n", function () {
-  let MintGoldDustERC721: ContractFactory;
-  let mintGoldDustERC721: Contract;
+describe("\nMGDSetPrice.sol Smart Contract \n**********\*\*\*\***********\_\_\_**********\*\*\*\***********\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the MintGoldDustSetPrice market and the MintGoldDustERC1155 tokens. \n\n", function () {
+let MintGoldDustERC721: ContractFactory;
+let mintGoldDustERC721: Contract;
 
-  let MintGoldDustERC1155: ContractFactory;
-  let mintGoldDustERC1155: Contract;
+let MintGoldDustERC1155: ContractFactory;
+let mintGoldDustERC1155: Contract;
 
-  let MintGoldDustCompany: ContractFactory;
-  let mgdCompany: Contract;
+let MintGoldDustCompany: ContractFactory;
+let mgdCompany: Contract;
 
-  let MintGoldDustSetPrice: ContractFactory;
-  let mgdSetPrice: Contract;
+let MintGoldDustSetPrice: ContractFactory;
+let mgdSetPrice: Contract;
 
-  let deployer: SignerWithAddress;
-  let addr1: SignerWithAddress;
-  let addr2: SignerWithAddress;
-  let addr3: SignerWithAddress;
-  let addrs: SignerWithAddress[];
+let deployer: SignerWithAddress;
+let addr1: SignerWithAddress;
+let addr2: SignerWithAddress;
+let addr3: SignerWithAddress;
+let addrs: SignerWithAddress[];
 
-  let URI = "sample URI";
-  let baseURI = "https://example.com/{id}.json";
+let URI = "sample URI";
+let baseURI = "https://example.com/{id}.json";
 
-  //const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
-  const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-  const primary_sale_fee_percent_initial = 15000000000000000000n;
-  const secondary_sale_fee_percent_initial = 5000000000000000000n;
-  const collector_fee_initial = 3000000000000000000n;
-  const max_royalty_initial = 20000000000000000000n;
+//const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+const primary_sale_fee_percent_initial = 15000000000000000000n;
+const secondary_sale_fee_percent_initial = 5000000000000000000n;
+const collector_fee_initial = 3000000000000000000n;
+const max_royalty_initial = 20000000000000000000n; const auction_duration = 5;
+const auction_extension_duration = 1;
 
-  let primary_sale_fee_percent = 15;
-  let secondary_sale_fee_percent = 5;
-  let collector_fee = 3;
-  let max_royalty = 20;
-  let royalty = 5;
+let primary_sale_fee_percent = 15;
+let secondary_sale_fee_percent = 5;
+let collector_fee = 3;
+let max_royalty = 20;
+let royalty = 5;
 
-  beforeEach(async function () {
-    MintGoldDustCompany = await ethers.getContractFactory(
-      "MintGoldDustCompany"
-    );
-    MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
-    MintGoldDustSetPrice = await ethers.getContractFactory(
-      "MintGoldDustSetPrice"
-    );
-    MintGoldDustERC1155 = await ethers.getContractFactory(
-      "MintGoldDustERC1155"
-    );
+beforeEach(async function () {
+MintGoldDustCompany = await ethers.getContractFactory(
+"MintGoldDustCompany"
+);
+MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
+MintGoldDustSetPrice = await ethers.getContractFactory(
+"MintGoldDustSetPrice"
+);
+MintGoldDustERC1155 = await ethers.getContractFactory(
+"MintGoldDustERC1155"
+);
 
     [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
 
@@ -67,7 +68,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         primary_sale_fee_percent_initial,
         secondary_sale_fee_percent_initial,
         collector_fee_initial,
-        max_royalty_initial,
+        max_royalty_initial, auction_duration, auction_extension_duration
       ],
       { initializer: "initialize" }
     );
@@ -102,19 +103,20 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     await mgdSetPrice.deployed();
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
-  });
 
-  describe("\n--------------- Purchase NFT on primary market ---------------\n", function () {
-    // Calculate the fee and balance values based on the price
-    let fee: number;
-    let balance: number;
-    let collFee: number;
-    let primarySaleFee: number;
-    let amountToMint = 10;
-    let amountToList = 5;
-    let amountToBuy = 3;
-    let priceToList = 20;
-    let priceToBuy = priceToList * amountToBuy;
+});
+
+describe("\n--------------- Purchase NFT on primary market ---------------\n", function () {
+// Calculate the fee and balance values based on the price
+let fee: number;
+let balance: number;
+let collFee: number;
+let primarySaleFee: number;
+let amountToMint = 10;
+let amountToList = 5;
+let amountToBuy = 3;
+let priceToList = 20;
+let priceToBuy = priceToList \* amountToBuy;
 
     beforeEach(async () => {
       // MGD owner whitelist the artist
@@ -338,11 +340,12 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         "InvalidAmountForThisPurchase"
       );
     });
-  });
 
-  describe("\n--------------- Purchase NFT on secondary market ---------------\n", function () {
-    let royaltyFee: number;
-    let secondarySaleFee: number;
+});
+
+describe("\n--------------- Purchase NFT on secondary market ---------------\n", function () {
+let royaltyFee: number;
+let secondarySaleFee: number;
 
     // Calculate the fee and balance values based on the price
     let fee: number;
@@ -561,5 +564,6 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         )
       );
     });
-  });
+
+});
 });
