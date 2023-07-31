@@ -7,7 +7,7 @@ import { ethers } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Contracts \n************___************\n \nHere we'll have the tests related of an auction cancellation flow. \n", function () {
+describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Contracts \n************___************\n \nHere we'll have the tests related of an auction cancellation flow. \n", function () {
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 
@@ -40,6 +40,8 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
   const secondary_sale_fee_percent_initial = 5000000000000000000n;
   const collector_fee_initial = 3000000000000000000n;
   const max_royalty_initial = 20000000000000000000n;
+  const auction_duration = 5;
+  const auction_extension_duration = 1;
 
   const MEMOIR = "This is a great moment of my life!";
 
@@ -73,6 +75,8 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
         secondary_sale_fee_percent_initial,
         collector_fee_initial,
         max_royalty_initial,
+        auction_duration,
+        auction_extension_duration,
       ],
       { initializer: "initialize" }
     );
@@ -123,10 +127,10 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       .setValidator(deployer.address, true);
   });
 
-  describe("\n****************_**************** Tests related with cancelling auction flow for MintGoldDustERC1155 ****************_****************\n", function () {
+  describe("\n****************_**************** Tests related with cancelling auction flow for MintGoldDustERC721 ****************_****************\n", function () {
     let price = 1;
-    let quantityToMint = 10;
-    let quantityToList = 5;
+    let quantityToMint = 1;
+    let quantityToList = 1;
 
     beforeEach(async () => {
       // MGD owner whitelist the artist
@@ -138,62 +142,66 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       const encoder = new TextEncoder();
       const bytesMemoir = encoder.encode(MEMOIR);
 
-      await mintGoldDustERC1155
+      await mintGoldDustERC721
         .connect(addr1)
         .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its MintGoldDustER721
-      await mintGoldDustERC1155
+      await mintGoldDustERC721
         .connect(addr1)
         .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
 
       await mintGoldDustMarketplaceAuction
         .connect(addr1)
-        .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price));
+        .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
     });
 
-    it("Should revert with an Unauthorized error when an address that is not the seller tries to cancel an auction passing its address in the parameter.", async function () {
+    it("Should revert with an ItemIsNotListedBySeller error when an address that is not the seller tries to cancel an auction.", async function () {
       await expect(
-        mintGoldDustMarketplaceAuction.connect(addr2).cancelAuction({
-          tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
-          seller: addr2.address,
-        })
-      ).to.be.revertedWith("Unauthorized");
+        mintGoldDustMarketplaceAuction
+          .connect(addr2)
+          .cancelAuction(1, mintGoldDustERC721.address)
+      )
+        .to.be.revertedWithCustomError(
+          mintGoldDustMarketplaceAuction,
+          "ItemIsNotListedBySeller"
+        )
+        .withArgs(
+          1,
+          mintGoldDustMarketplaceAuction.address,
+          mintGoldDustERC721.address,
+          addr2.address,
+          addr2.address
+        );
     });
 
-    it("Should revert with an Unauthorized error when an address that is not the seller tries to cancel an auction.", async function () {
-      await expect(
-        mintGoldDustMarketplaceAuction.connect(addr2).cancelAuction({
-          tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
-          seller: addr1.address,
-        })
-      ).to.be.revertedWith("Unauthorized");
-    });
+    it("Should revert with an ItemIsNotListedBySeller if the seller tries to cancel an auction that was already ended or cancelled.", async function () {
+      await mintGoldDustMarketplaceAuction
+        .connect(addr1)
+        .cancelAuction(1, mintGoldDustERC721.address);
 
-    it("Should revert with an ItemIsNotListed if the seller tries to cancel an auction that was already ended or cancelled.", async function () {
-      await mintGoldDustMarketplaceAuction.connect(addr1).cancelAuction({
-        tokenId: 1,
-        contractAddress: mintGoldDustERC1155.address,
-        seller: addr1.address,
-      });
       await expect(
-        mintGoldDustMarketplaceAuction.connect(addr1).cancelAuction({
-          tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
-          seller: addr1.address,
-        })
-      ).to.be.revertedWithCustomError(
-        mintGoldDustMarketplaceAuction,
-        "ItemIsNotListed"
-      );
+        mintGoldDustMarketplaceAuction
+          .connect(addr1)
+          .cancelAuction(1, mintGoldDustERC721.address)
+      )
+        .to.be.revertedWithCustomError(
+          mintGoldDustMarketplaceAuction,
+          "ItemIsNotListedBySeller"
+        )
+        .withArgs(
+          1,
+          mintGoldDustMarketplaceAuction.address,
+          mintGoldDustERC721.address,
+          addr1.address,
+          addr1.address
+        );
     });
 
     it("Should revert with an AuctionAlreadyStarted() error when the seller tries to cancel an auction that have already started.", async function () {
       await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
         {
           tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
+          contractAddress: mintGoldDustERC721.address,
           seller: addr1.address,
         },
         {
@@ -202,11 +210,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       );
 
       await expect(
-        mintGoldDustMarketplaceAuction.connect(addr1).cancelAuction({
-          tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
-          seller: addr1.address,
-        })
+        mintGoldDustMarketplaceAuction
+          .connect(addr1)
+          .cancelAuction(1, mintGoldDustERC721.address)
       ).to.be.revertedWithCustomError(
         mintGoldDustMarketplaceAuction,
         "AuctionAlreadyStarted"
@@ -215,28 +221,22 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
 
     it("Should simulate a cancel auction flow without errors.", async function () {
       /**
-       * @notice that Here I check if the balance of erc1155 for the addr1 is 0 and if the balance of the contract is quantityToList
+       * @notice that Here I check if the balance of erc721 for the addr1 is 0 and if the balance of the contract is 1
        */
-      const addr1BalanceBefore = await mintGoldDustERC1155.balanceOf(
-        addr1.address,
-        1
+      const addr1BalanceBefore = await mintGoldDustERC721.balanceOf(
+        addr1.address
       );
-      expect(addr1BalanceBefore).to.be.equal(quantityToMint - quantityToList);
+      expect(addr1BalanceBefore).to.be.equal(0);
 
-      const auctionContractBalanceBefore = await mintGoldDustERC1155.balanceOf(
-        mintGoldDustMarketplaceAuction.address,
-        1
+      const auctionContractBalanceBefore = await mintGoldDustERC721.balanceOf(
+        mintGoldDustMarketplaceAuction.address
       );
-      expect(auctionContractBalanceBefore).to.be.equal(quantityToList);
+      expect(auctionContractBalanceBefore).to.be.equal(1);
 
       // Cancel auction
       const tx = await mintGoldDustMarketplaceAuction
         .connect(addr1)
-        .cancelAuction({
-          tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
-          seller: addr1.address,
-        });
+        .cancelAuction(1, mintGoldDustERC721.address);
 
       const receipt = await tx.wait();
 
@@ -252,7 +252,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       );
       expect(receipt.events[1].args.tokenId).to.be.equal(1);
       expect(receipt.events[1].args.contractAddress).to.be.equal(
-        mintGoldDustERC1155.address
+        mintGoldDustERC721.address
       );
       expect(receipt.events[1].args.seller).to.be.equal(addr1.address);
       expect(receipt.events[1].args.cancelTime).to.be.equal(
@@ -263,24 +263,22 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       // Check if the item was deleted from the mapping
       const marketItem =
         await mintGoldDustMarketplaceAuction.idMarketItemsByContractByOwner(
-          mintGoldDustERC1155.address,
+          mintGoldDustERC721.address,
           1,
           addr1.address
         );
       expect(marketItem.tokenId).to.be.equal(0);
 
       /**
-       * @notice that now I need to check if the balance of erc1155 for the addr1 is the same as before and if the balance of the contract is 0
+       * @notice that now I need to check if the balance of erc721 for the addr1 is the same as before and if the balance of the contract is 0
        */
-      const addr1BalanceAfter = await mintGoldDustERC1155.balanceOf(
-        addr1.address,
-        1
+      const addr1BalanceAfter = await mintGoldDustERC721.balanceOf(
+        addr1.address
       );
       expect(addr1BalanceAfter).to.be.equal(quantityToMint);
 
-      const auctionContractBalanceAfter = await mintGoldDustERC1155.balanceOf(
-        mintGoldDustMarketplaceAuction.address,
-        1
+      const auctionContractBalanceAfter = await mintGoldDustERC721.balanceOf(
+        mintGoldDustMarketplaceAuction.address
       );
       expect(auctionContractBalanceAfter).to.be.equal(0);
     });

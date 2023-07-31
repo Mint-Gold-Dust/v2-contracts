@@ -2,8 +2,8 @@
 pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
@@ -13,7 +13,7 @@ error Unauthorized();
 /// @notice Contains functions for update the MGD fees and some access levels.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
-contract MintGoldDustCompany is Initializable, IERC165, Ownable {
+contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     /**
      * @dev all attributes are public to be accessible by the other contracts
      * that are composed by this one
@@ -55,13 +55,14 @@ contract MintGoldDustCompany is Initializable, IERC165, Ownable {
         uint256 _auctionDurationInMinutes,
         uint256 _auctionFinalMinutes
     ) public initializer {
-        Ownable._transferOwnership(_owner);
+        __Ownable_init();
+        _transferOwnership(_owner);
         primarySaleFeePercent = _primarySaleFeePercent;
         secondarySaleFeePercent = _secondarySaleFeePercent;
         collectorFee = _collectorFee;
         maxRoyalty = _maxRoyalty;
-        auctionDuration = _auctionDurationInMinutes * 1 minutes;
-        auctionFinalMinutes = _auctionFinalMinutes * 1 minutes;
+        auctionDuration = _auctionDurationInMinutes * 1 seconds;
+        auctionFinalMinutes = _auctionFinalMinutes * 1 seconds;
     }
 
     event ArtistWhitelisted(address indexed artistAddress, bool state);
@@ -104,15 +105,5 @@ contract MintGoldDustCompany is Initializable, IERC165, Ownable {
         } else {
             revert Unauthorized();
         }
-    }
-
-    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
-    fallback() external payable {
-        payable(owner()).transfer(msg.value);
-    }
-
-    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
-    receive() external payable {
-        payable(owner()).transfer(msg.value);
     }
 }

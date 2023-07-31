@@ -2,7 +2,6 @@
 pragma solidity 0.8.18;
 
 import "./MintGoldDustMarketplace.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
@@ -12,12 +11,9 @@ import "./MintGoldDustCollectorMintControl.sol";
 error YouCannotDelistMoreThanListed();
 error ErrorToCollectorMint();
 error Log(bytes32 domain, bytes encoded, bytes32 _eip712Hash);
+error ListPriceMustBeGreaterThanZero();
 
-contract MintGoldDustSetPrice is
-    MintGoldDustMarketplace,
-    ReentrancyGuardUpgradeable,
-    IERC1155Receiver
-{
+contract MintGoldDustSetPrice is MintGoldDustMarketplace, IERC1155Receiver {
     bytes4 private constant ERC165_ID = 0x01ffc9a7; //ERC165
     using ECDSA for bytes32;
 
@@ -159,6 +155,13 @@ contract MintGoldDustSetPrice is
         address _contractAddress,
         uint256 _price
     ) public override whenNotPaused {
+        mustBeMintGoldDustERC721Or1155(_contractAddress);
+
+        isNotListed(_tokenId, _contractAddress, msg.sender);
+        if (_price <= 0) {
+            revert ListPriceMustBeGreaterThanZero();
+        }
+
         SaleDTO memory _saleDTO = SaleDTO(
             _tokenId,
             _amount,
@@ -197,7 +200,7 @@ contract MintGoldDustSetPrice is
         address _seller
     ) public whenNotPaused {
         mustBeMintGoldDustERC721Or1155(_contractAddress);
-        isTokenIdListed(_tokenId, _contractAddress);
+        isTokenIdListed(_tokenId, _contractAddress, _seller);
         isSeller(_tokenId, _contractAddress, _seller);
 
         if (_price <= 0) {
@@ -214,7 +217,6 @@ contract MintGoldDustSetPrice is
             _marketItem.tokenId,
             _marketItem.seller,
             _price,
-            _marketItem.sold,
             _marketItem.isAuction,
             _marketItem.isSecondarySale,
             _marketItem.isERC721,
@@ -247,51 +249,32 @@ contract MintGoldDustSetPrice is
         DelistDTO memory _delistDTO
     ) public nonReentrant whenNotPaused {
         mustBeMintGoldDustERC721Or1155(_delistDTO.contractAddress);
-        isTokenIdListed(_delistDTO.tokenId, _delistDTO.contractAddress);
+        isTokenIdListed(
+            _delistDTO.tokenId,
+            _delistDTO.contractAddress,
+            msg.sender
+        );
         isSeller(_delistDTO.tokenId, _delistDTO.contractAddress, msg.sender);
         MarketItem memory _marketItem = idMarketItemsByContractByOwner[
             _delistDTO.contractAddress
         ][_delistDTO.tokenId][msg.sender];
 
-        // if (_marketItem.sold) {
-        //   revert MGDMarketplaceItemIsNotListed();
-        // }
-        bool isERC721 = false;
-        if (_delistDTO.contractAddress == mintGoldDustERC721Address) {
-            isERC721 = true;
-        }
-
         MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(
             _marketItem.isERC721
         );
 
-        idMarketItemsByContractByOwner[_delistDTO.contractAddress][
-            _delistDTO.tokenId
-        ][msg.sender].sold = true;
+        _mintGoldDustNFT.transfer(
+            address(this),
+            msg.sender,
+            _delistDTO.tokenId,
+            _marketItem.tokenAmount
+        );
 
-        /**
-         * @dev Here we have an external call to the MGD ERC721 contract
-         * because of that we have the try catch.
-         */
-        try
-            _mintGoldDustNFT.transfer(
-                address(this),
-                msg.sender,
-                _delistDTO.tokenId,
-                _marketItem.tokenAmount
-            )
-        {
-            emit MintGoldDustNftRemovedFromMarketplace(
-                _delistDTO.tokenId,
-                msg.sender,
-                _delistDTO.contractAddress
-            );
-        } catch {
-            idMarketItemsByContractByOwner[_delistDTO.contractAddress][
-                _delistDTO.tokenId
-            ][msg.sender].sold = false;
-            revert ErrorToTransfer("At set price delist!");
-        }
+        emit MintGoldDustNftRemovedFromMarketplace(
+            _delistDTO.tokenId,
+            msg.sender,
+            _delistDTO.contractAddress
+        );
     }
 
     /**
@@ -324,10 +307,12 @@ contract MintGoldDustSetPrice is
         bytes32 _eip712HashOffChain,
         bytes memory signature,
         uint256 _collectorMintId,
-        bytes32 _collectorMintDTOHash
+        bytes32 _collectorMintDTOHash,
+        uint256 _amountToBuy
     )
         public
         payable
+        nonReentrant
         isTransactionClosed
         checkParameters(
             _collectorMintDTO.artistSigner,
@@ -336,6 +321,11 @@ contract MintGoldDustSetPrice is
         whenNotPaused
     {
         mustBeMintGoldDustERC721Or1155(_collectorMintDTO.contractAddress);
+
+        require(
+            _amountToBuy > _collectorMintDTO.amount,
+            "Invalid amount to buy"
+        );
 
         MintGoldDustNFT _mintGoldDustNFT;
 
@@ -420,7 +410,7 @@ contract MintGoldDustSetPrice is
 
         callPurchase(
             _tokenId,
-            _collectorMintDTO.amount,
+            _amountToBuy,
             _collectorMintDTO.contractAddress,
             _collectorMintDTO.artistSigner,
             msg.value

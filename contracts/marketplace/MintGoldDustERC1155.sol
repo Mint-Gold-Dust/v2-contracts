@@ -100,14 +100,4 @@ contract MintGoldDustERC1155 is
 
         return newTokenId;
     }
-
-    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
-    fallback() external payable {
-        payable(mintGoldDustCompany.owner()).transfer(msg.value);
-    }
-
-    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
-    receive() external payable {
-        payable(mintGoldDustCompany.owner()).transfer(msg.value);
-    }
 }

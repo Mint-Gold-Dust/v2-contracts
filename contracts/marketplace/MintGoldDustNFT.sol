@@ -175,7 +175,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
     function collectorMint(
         string calldata _tokenURI,
         uint256 _royaltyPercent,
-        uint256 _amount,
+        uint256 _amountToMint,
         address _artistAddress,
         bytes calldata _memoir,
         uint256 _collectorMintId,
@@ -192,7 +192,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 newTokenId = executeMintFlow(
             _tokenURI,
             _royaltyPercent,
-            _amount,
+            _amountToMint,
             _artistAddress,
             _collectorMintId,
             _memoir
@@ -206,7 +206,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 _royalty,
         address[] calldata _newOwners,
         uint256[] calldata _ownersPercentage,
-        uint256 _amount,
+        uint256 _amountToMint,
         address _artistAddress,
         bytes calldata _memoir,
         uint256 _collectorMintId,
@@ -227,7 +227,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 _tokenId = executeMintFlow(
             _tokenURI,
             _royalty,
-            _amount,
+            _amountToMint,
             _artistAddress,
             _collectorMintId,
             _memoir

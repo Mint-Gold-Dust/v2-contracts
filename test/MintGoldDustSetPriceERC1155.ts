@@ -44,6 +44,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   const secondary_sale_fee_percent_initial = 5000000000000000000n;
   const collector_fee_initial = 3000000000000000000n;
   const max_royalty_initial = 20000000000000000000n;
+  const auction_duration = 5;
+  const auction_extension_duration = 1;
 
   let primary_sale_fee_percent = 15;
   let secondary_sale_fee_percent = 5;
@@ -77,6 +79,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         secondary_sale_fee_percent_initial,
         collector_fee_initial,
         max_royalty_initial,
+        auction_duration,
+        auction_extension_duration,
       ],
       { initializer: "initialize" }
     );
@@ -252,7 +256,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price))
       )
         .to.revertedWithCustomError(mintGoldDustSetPrice, "AddressUnauthorized")
-        .withArgs("Not owner or not has enouth token quantity!");
+        .withArgs("Not owner or not has enough token quantity!");
     });
   });
 
