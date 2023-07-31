@@ -5,10 +5,10 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
-import "./MintGoldDustMemoir.sol";
+import "./MintGoldDustCollectorMintControl.sol";
 
-error MGDnftRoyaltyInvalidPercentage();
-error MGDnftUnauthorized();
+error RoyaltyInvalidPercentage();
+error UnauthorizedOnNFT(string message);
 error NumberOfCollaboratorsAndPercentagesNotMatch();
 error TheTotalPercentageCantBeGreaterThan100();
 
@@ -20,25 +20,43 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
      * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
     function initialize(
-        address _mintGoldDustCompany,
-        address _mintGoldDustMemoir
-    ) public initializer {
+        address _mintGoldDustCompany
+    ) internal onlyInitializing {
         mintGoldDustCompany = MintGoldDustCompany(
             payable(_mintGoldDustCompany)
         );
-        mintGoldDustMemoir = MintGoldDustMemoir((_mintGoldDustMemoir));
     }
 
     MintGoldDustCompany internal mintGoldDustCompany;
-    MintGoldDustMemoir internal mintGoldDustMemoir;
+    address private mintGoldDustSetPrice;
 
     mapping(uint256 => address) public tokenIdArtist;
     mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
 
+    mapping(uint256 => bytes) public tokenIdMemoir;
+
     mapping(uint256 => address[4]) public tokenCollaborators;
     mapping(uint256 => uint256[5]) public tokenIdCollaboratorsPercentage;
+
     mapping(uint256 => bool) public hasTokenCollaborators;
     mapping(uint256 => uint256) public tokenIdCollaboratorsQuantity;
+
+    uint256[48] __gap;
+
+    MintGoldDustCollectorMintControl private mintGoldDustCollectorMintControl;
+
+    function setMintGoldDustCollectorMintControl(
+        address _mintGoldDustCollectorMintControl
+    ) external {
+        require(msg.sender == mintGoldDustCompany.owner(), "UnauthorizedOnNFT");
+        require(
+            address(mintGoldDustCollectorMintControl) == address(0),
+            "Already setted!"
+        );
+        mintGoldDustCollectorMintControl = MintGoldDustCollectorMintControl(
+            _mintGoldDustCollectorMintControl
+        );
+    }
 
     /**
      * @notice that this is an event that contains the info for a mint.
@@ -51,6 +69,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
      *    @dev for MingGoldDustERC721 this amount is always one.
      * @param isERC721 a boolean that indicates if this token is ERC721 or ERC1155.
      * @param collectorMintId a unique identifier for the collector mint.
+     * @param memoir the memoir for this token.
      */
     event MintGoldDustNFTMinted(
         uint256 indexed tokenId,
@@ -59,7 +78,8 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 royalty,
         uint256 amount,
         bool isERC721,
-        uint256 collectorMintId
+        uint256 collectorMintId,
+        bytes memoir
     );
 
     /**
@@ -86,9 +106,9 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         string calldata _tokenURI,
         uint256 _royaltyPercent,
         uint256 _amount,
-        address _sender,
+        address _artistAddress,
         uint256 _collectorMintId,
-        string calldata _memoir
+        bytes calldata _memoir
     ) internal virtual returns (uint256);
 
     /**
@@ -102,10 +122,11 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         string calldata _tokenURI,
         uint256 _royaltyPercent,
         uint256 _amount,
-        string calldata _memoir
+        bytes calldata _memoir
     )
         public
         payable
+        isArtistWhitelisted(msg.sender)
         validPercentage(_royaltyPercent)
         whenNotPaused
         returns (uint256)
@@ -116,26 +137,6 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
             _amount,
             msg.sender,
             0,
-            _memoir
-        );
-
-        return newTokenId;
-    }
-
-    function collectorMint(
-        string calldata _tokenURI,
-        uint256 _royaltyPercent,
-        uint256 _amount,
-        address _sender,
-        string calldata _memoir,
-        uint256 _collectorMintId
-    ) public validPercentage(_royaltyPercent) whenNotPaused returns (uint256) {
-        uint256 newTokenId = executeMintFlow(
-            _tokenURI,
-            _royaltyPercent,
-            _amount,
-            _sender,
-            _collectorMintId,
             _memoir
         );
 
@@ -163,14 +164,47 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         address[] calldata _newOwners,
         uint256[] calldata _ownersPercentage,
         uint256 _amount,
-        string calldata _memoir
-    ) external whenNotPaused returns (uint256) {
-        if (_ownersPercentage.length != _newOwners.length + 1) {
-            revert NumberOfCollaboratorsAndPercentagesNotMatch();
-        }
+        bytes calldata _memoir
+    )
+        external
+        whenNotPaused
+        arrayLengthCheck(_newOwners, _ownersPercentage)
+        returns (uint256)
+    {
         uint256 _tokenId = mintNft(_tokenURI, _royalty, _amount, _memoir);
         executeSplitMintFlow(_tokenId, _newOwners, _ownersPercentage);
         return _tokenId;
+    }
+
+    error Teste(address aadd);
+
+    function collectorMint(
+        string calldata _tokenURI,
+        uint256 _royaltyPercent,
+        uint256 _amountToMint,
+        address _artistAddress,
+        bytes calldata _memoir,
+        uint256 _collectorMintId,
+        address _sender
+    )
+        external
+        isTransactionOpened(_sender)
+        checkParameters(_sender, _artistAddress, _royaltyPercent)
+        whenNotPaused
+        returns (uint256)
+    {
+        mintGoldDustCollectorMintControl.closeCollectorMintTransaction(_sender);
+
+        uint256 newTokenId = executeMintFlow(
+            _tokenURI,
+            _royaltyPercent,
+            _amountToMint,
+            _artistAddress,
+            _collectorMintId,
+            _memoir
+        );
+
+        return newTokenId;
     }
 
     function collectorSplitMint(
@@ -178,22 +212,30 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 _royalty,
         address[] calldata _newOwners,
         uint256[] calldata _ownersPercentage,
-        uint256 _amount,
-        address _sender,
-        string calldata _memoir,
-        uint256 _collectorMintId
-    ) external whenNotPaused returns (uint256) {
-        if (_ownersPercentage.length != _newOwners.length + 1) {
-            revert NumberOfCollaboratorsAndPercentagesNotMatch();
-        }
-        uint256 _tokenId = collectorMint(
+        uint256 _amountToMint,
+        address _artistAddress,
+        bytes calldata _memoir,
+        uint256 _collectorMintId,
+        address _sender
+    )
+        external
+        isTransactionOpened(_sender)
+        checkParameters(_sender, _artistAddress, _royalty)
+        whenNotPaused
+        arrayLengthCheck(_newOwners, _ownersPercentage)
+        returns (uint256)
+    {
+        mintGoldDustCollectorMintControl.closeCollectorMintTransaction(_sender);
+
+        uint256 _tokenId = executeMintFlow(
             _tokenURI,
             _royalty,
-            _amount,
-            _sender,
-            _memoir,
-            _collectorMintId
+            _amountToMint,
+            _artistAddress,
+            _collectorMintId,
+            _memoir
         );
+
         executeSplitMintFlow(_tokenId, _newOwners, _ownersPercentage);
         return _tokenId;
     }
@@ -208,15 +250,24 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 totalPercentage = 0;
 
         for (uint256 i = 0; i < _newOwners.length; i++) {
-            if (_newOwners[i] != address(0)) {
-                ownersCount++;
-                totalPercentage += _ownersPercentage[i]; /// @dev Accumulate the percentage for each valid collaborator
-            }
+            require(
+                _newOwners[i] != address(0),
+                "Owner address cannot be null!"
+            );
+            require(
+                _ownersPercentage[i] > 0,
+                "Owner percentage must be greater than zero!"
+            );
+
+            ownersCount++;
+            totalPercentage += _ownersPercentage[i]; /// @dev Accumulate the percentage for each valid collaborator
+            tokenCollaborators[_tokenId][i] = _newOwners[i];
+            tokenIdCollaboratorsPercentage[_tokenId][i] = _ownersPercentage[i];
         }
 
         require(ownersCount > 1, "Add more than 1 owner!");
 
-        require(ownersCount < 5, "Add max 5!");
+        require(ownersCount < 5, "Add max 4!");
 
         /// @dev the array of percentages is always one number greater than the collaborators length.
         /// So is necessary do one more addition here.
@@ -227,17 +278,6 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         }
 
         tokenIdCollaboratorsQuantity[_tokenId] = ownersCount + 1;
-
-        /// @dev it assign new owners to the token
-        for (uint256 i = 0; i < ownersCount; i++) {
-            if (_newOwners[i] != address(0)) {
-                tokenCollaborators[_tokenId][i] = _newOwners[i];
-                tokenIdCollaboratorsPercentage[_tokenId][i] = _ownersPercentage[
-                    i
-                ];
-            }
-        }
-
         tokenIdCollaboratorsPercentage[_tokenId][
             ownersCount
         ] = _ownersPercentage[ownersCount];
@@ -260,23 +300,70 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         _unpause();
     }
 
+    modifier arrayLengthCheck(
+        address[] calldata _newOwners,
+        uint256[] calldata _ownersPercentage
+    ) {
+        if (_ownersPercentage.length != _newOwners.length + 1) {
+            revert NumberOfCollaboratorsAndPercentagesNotMatch();
+        }
+        _;
+    }
+
     modifier isowner() {
         if (msg.sender != mintGoldDustCompany.owner()) {
-            revert MGDCompanyUnauthorized();
+            revert UnauthorizedOnNFT("OWNER");
         }
         _;
     }
 
     modifier validPercentage(uint256 percentage) {
         if (percentage > mintGoldDustCompany.maxRoyalty()) {
-            revert MGDnftRoyaltyInvalidPercentage();
+            revert RoyaltyInvalidPercentage();
         }
         _;
     }
 
-    function isApproved(address _msgSender) internal view {
-        if (mintGoldDustCompany.isArtistApproved(_msgSender) == false) {
-            revert MGDnftUnauthorized();
+    modifier isArtistWhitelisted(address _artistAddress) {
+        if (mintGoldDustCompany.isArtistApproved(_artistAddress) == false) {
+            revert UnauthorizedOnNFT("ARTIST");
         }
+        _;
+    }
+
+    modifier isTransactionOpened(address _sender) {
+        require(
+            mintGoldDustCollectorMintControl.collectorMintWithOpenedTransaction(
+                _sender
+            ) == true,
+            "Collector Mint tx is closed!"
+        );
+        _;
+    }
+
+    modifier checkParameters(
+        address _sender,
+        address _artistAddress,
+        uint256 percentage
+    ) {
+        if (
+            mintGoldDustCompany.isCollectorMint(_sender) == false ||
+            _sender != address(0)
+        ) {
+            revert UnauthorizedOnNFT("COLLECTOR_MINT");
+        }
+        if (
+            mintGoldDustCompany.isArtistApproved(_artistAddress) == false ||
+            _artistAddress != address(0)
+        ) {
+            revert UnauthorizedOnNFT("ARTIST");
+        }
+        if (msg.sender == address(0)) {
+            revert UnauthorizedOnNFT("CONTRACT");
+        }
+        if (percentage > mintGoldDustCompany.maxRoyalty()) {
+            revert RoyaltyInvalidPercentage();
+        }
+        _;
     }
 }

@@ -14,7 +14,6 @@ error YouCannotUpdateThisMemoir();
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
 contract MintGoldDustMemoir is Initializable {
-    mapping(address => mapping(uint256 => bytes)) public contractTokenIdMemoirs;
     mapping(address => mapping(uint256 => bytes)) public userCounterMemoirs;
     mapping(address => uint256) public userCounter;
 
@@ -22,57 +21,11 @@ contract MintGoldDustMemoir is Initializable {
         // Empty initializer function for the upgrade proxy pattern
     }
 
-    event ArtworkMemoirCreated(
-        address smartContract,
-        uint256 indexed tokenId,
-        bytes memoir
-    );
-
     event EOAMemoirCreated(
         address indexed externallyOwnedAccount,
         uint256 counter,
         bytes memoir
     );
-
-    /**
-     *
-     * @notice that function creates a new memoir for some token id related with some contract address.
-     *
-     * @param _contract is the address of the contract that contains the token id that
-     * the memoir will be related with.
-     * @param _tokenId is the token id that will be linked with the memoir.
-     * @param _memoir is the string that represents the memoir.
-     * @notice that this string is calldata type because we don't have a limit of
-     * length for this memoir. So we handle this string inside our function.
-     *
-     * @dev This function must be used only for Contract address.
-     *    - Verification:
-     *        - Verify if the address is really a Contract. If not reverts with
-     *          the UseThisFunctionForContract error.
-     *
-     *    - Important:
-     *        - Here is not verified if who is trying to create the memoir is
-     *        the owner of the token.
-     *        Take care of do it in your business logic.
-     */
-    function addMemoirForContract(
-        address _contract,
-        uint256 _tokenId,
-        string calldata _memoir
-    ) public memoirNotExists(_tokenId, _contract) {
-        if (!isContract(_contract)) {
-            revert UseThisFunctionForContract();
-        }
-
-        bytes memory _memoirBytes = bytes(_memoir);
-        bytes memory _memoirBuffer = new bytes(_memoirBytes.length);
-
-        for (uint i = 0; i < _memoirBytes.length; i++) {
-            _memoirBuffer[i] = _memoirBytes[i];
-        }
-
-        contractTokenIdMemoirs[_contract][_tokenId] = _memoirBuffer;
-    }
 
     /**
      *
@@ -93,21 +46,15 @@ contract MintGoldDustMemoir is Initializable {
      *        to verify the last state of the counter and add more one
      *        before update the mapping for this user.
      */
-    function addMemoirForEOA(address _eoa, string calldata _memoir) public {
+    function addMemoirForEOA(address _eoa, bytes calldata _memoir) public {
         if (isContract(_eoa)) {
             revert UseThisFunctionForEOA();
         }
-
-        bytes memory _memoirBytes = bytes(_memoir);
-        bytes memory _memoirBuffer = new bytes(_memoirBytes.length);
-
-        for (uint i = 0; i < _memoirBytes.length; i++) {
-            _memoirBuffer[i] = _memoirBytes[i];
-        }
-
         uint256 next = userCounter[_eoa] + 1;
-        userCounterMemoirs[_eoa][next] = _memoirBuffer;
+        userCounterMemoirs[_eoa][next] = _memoir;
         userCounter[_eoa] = next;
+
+        emit EOAMemoirCreated(_eoa, next, _memoir);
     }
 
     /**
@@ -121,20 +68,5 @@ contract MintGoldDustMemoir is Initializable {
             size := extcodesize(addr)
         }
         return size > 0;
-    }
-
-    /**
-     * @notice that this modifier check if there is not yet a memoir for
-     * a given id token existing in a given NFT contract (ERC721 or ERC1155).
-     * If it already exists it reverts with a YouCannotUpdateThisMemoir error.
-     *
-     * @param _tokenId the token id for the NFT.
-     * @param _contract the contract address where this token id exists.
-     */
-    modifier memoirNotExists(uint256 _tokenId, address _contract) {
-        if (contractTokenIdMemoirs[_contract][_tokenId].length != 0) {
-            revert YouCannotUpdateThisMemoir();
-        }
-        _;
     }
 }

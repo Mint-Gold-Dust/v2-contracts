@@ -43,6 +43,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
   const secondary_sale_fee_percent_initial = 5000000000000000000n;
   const collector_fee_initial = 3000000000000000000n;
   const max_royalty_initial = 20000000000000000000n;
+  const auction_duration = 3;
+  const auction_extension_duration = 1;
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
   let primary_sale_fee_percent = 15;
@@ -82,6 +84,8 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
         secondary_sale_fee_percent_initial,
         collector_fee_initial,
         max_royalty_initial,
+        auction_duration,
+        auction_extension_duration,
       ],
       { initializer: "initialize" }
     );
@@ -89,7 +93,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mintGoldDustCompany.address, mintGoldDustMemoir.address],
+      [mintGoldDustCompany.address],
       {
         initializer: "initializeChild",
       }
@@ -97,7 +101,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
 
     mintGoldDustERC1155 = await upgrades.deployProxy(
       MintGoldDustERC1155,
-      [mintGoldDustCompany.address, mintGoldDustMemoir.address, baseURI],
+      [mintGoldDustCompany.address, baseURI],
       {
         initializer: "initializeChild",
       }
@@ -142,10 +146,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       let transaction = await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Wait for the transaction to be finalized
       const receipt = await transaction.wait();
       tokenId = receipt.events[0].args[3];
@@ -169,7 +177,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           tokenId,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
       const receipt = await tx.wait();
 
@@ -231,12 +239,12 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
             1,
             quantityToList,
             mintGoldDustERC1155.address,
-            toWei(priceToPurchase)
+            toWei(price)
           )
       )
         .to.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
-          "MintGoldDustAddressUnauthorized"
+          "AddressUnauthorized"
         )
         .withArgs("Not owner!");
     });
@@ -294,7 +302,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
       const receipt = await tx.wait();
 
@@ -341,24 +349,24 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
 
   describe("\n \n **************__************** PLACE A BID GENERAL UNHAPPY PATHS **************__**************", function () {
     let price = 4;
-    const _duration = 3; // seconds
-    const _finalTime = 1; // seconds
     const _timeout = 4 * 1000; // seconds
     let quantityToMint = 10;
     let quantityToList = 5;
     let priceToPurchase = price * quantityToList;
 
     beforeEach(async () => {
-      await mintGoldDustCompany.updateAuctionTimeDuration(_duration);
-      await mintGoldDustCompany.updateAuctionFinalMinutes(_finalTime);
       // MGD owner whitelist the artist
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -372,7 +380,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
 
       // The first bid greater than zero, starts the time. In our test 3 seconds
@@ -417,7 +425,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
       await expect(
         mintGoldDustMarketplaceAuction.connect(addr1).placeBid(
@@ -427,7 +435,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
             seller: addr1.address,
           },
           {
-            value: toWei(priceToPurchase),
+            value: toWei(price),
           }
         )
       ).to.be.revertedWithCustomError(
@@ -443,7 +451,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
 
       await expect(
@@ -483,7 +491,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
       await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
         {
@@ -520,7 +528,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
 
       await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
@@ -558,7 +566,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
       await expect(
         mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
@@ -616,10 +624,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -634,7 +646,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
             1,
             quantityToList,
             mintGoldDustERC1155.address,
-            toWei(priceToPurchase)
+            toWei(price)
           );
       });
       it("Should place a first bid and: \n\t - Verify if the highest bid was updated. \n\t - Verify if the endAuction time was updated. \n\t - Verify if the bidder balance was decreased the gas fee plus the auction price. \n\t - Verify if the auction contract balance was added by the bid value.", async function () {
@@ -758,7 +770,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           parseFloat(
             fromWei(
               ethers.BigNumber.from(bidderBalanceAfter)
-                .add(toWei(priceToPurchase))
+                .add(toWei(price))
                 .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
             )
           )
@@ -882,7 +894,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
               seller: addr1.address,
             },
             {
-              value: toWei(priceToPurchase),
+              value: toWei(price),
             }
           );
 
@@ -924,7 +936,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
               seller: addr1.address,
             },
             {
-              value: toWei(priceToPurchase),
+              value: toWei(price),
             }
           )
         ).to.emit(mintGoldDustMarketplaceAuction, "AuctionNewBid");
@@ -957,7 +969,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           parseFloat(
             fromWei(
               ethers.BigNumber.from(bidderBalanceAfter)
-                .add(toWei(priceToPurchase))
+                .add(toWei(price))
                 .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
             )
           )
@@ -967,7 +979,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           parseFloat(
             fromWei(
               ethers.BigNumber.from(bidderBalanceAfter)
-                .add(toWei(priceToPurchase))
+                .add(toWei(price))
                 .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
             )
           ).toFixed(4)
@@ -1025,12 +1037,12 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
                 addr1.address
               )
           ).auctionProps.highestBid
-        ).to.be.equal(toWei(priceToPurchase));
+        ).to.be.equal(toWei(price));
       });
     });
 
     describe("\n\t------------------ SECOND BID BUT BEFORE THE LAST 5 MINUTES ------------------\n", () => {
-      const secondBidValue = priceToPurchase + 2;
+      const secondBidValue = price + 2;
       beforeEach(async () => {
         await mintGoldDustMarketplaceAuction
           .connect(addr1)
@@ -1082,7 +1094,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
               seller: addr1.address,
             },
             {
-              value: toWei(priceToPurchase),
+              value: toWei(price),
             }
           );
 
@@ -1117,7 +1129,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
               seller: addr1.address,
             },
             {
-              value: toWei(priceToPurchase),
+              value: toWei(price),
             }
           )
         ).to.emit(mintGoldDustMarketplaceAuction, "AuctionNewBid");
@@ -1207,7 +1219,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
                 addr1.address
               )
           ).auctionProps.highestBid
-        ).to.be.equal(toWei(priceToPurchase));
+        ).to.be.equal(toWei(price));
 
         // ******************** SECOND BID ***********************
         await expect(
@@ -1268,7 +1280,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           parseFloat(
             fromWei(
               ethers.BigNumber.from(bidder1BalanceAfter)
-                .add(toWei(priceToPurchase))
+                .add(toWei(price))
                 .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
             )
           )
@@ -1288,16 +1300,17 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           parseFloat(
             fromWei(
               ethers.BigNumber.from(bidder1BalanceAfter)
-                .add(toWei(priceToPurchase))
+                .add(toWei(price))
                 .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
             )
           ).toFixed(4)
         );
 
         // **** EXPECT THE BIDDER 1 TO BE REFUNDED AFTER SECOND BID ****
-        expect(bidder1BalanceAfterSecondBid).to.be.equal(
-          ethers.BigNumber.from(bidder1BalanceAfter).add(toWei(priceToPurchase))
-        );
+        // expect(bidder1BalanceAfterSecondBid).to.be.equal(
+        //   ethers.BigNumber.from(bidder1BalanceAfter).add(toWei(priceToPurchase))
+        // );
+        // IMPORTANT: This test is done in the CancelMarketPlaceAuctionWithERC*.ts files
 
         expect(
           parseFloat(fromWei(bidder2BalanceBefore)).toFixed(4)
@@ -1389,7 +1402,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
     });
 
     describe("\n\t------------------ SECOND BID NOW IN THE LAST 5 MINUTES ------------------\n", () => {
-      const secondBidValue = priceToPurchase + 2;
+      const secondBidValue = price + 2;
       beforeEach(async () => {
         await mintGoldDustMarketplaceAuction
           .connect(addr1)
@@ -1436,7 +1449,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
               seller: addr1.address,
             },
             {
-              value: toWei(priceToPurchase),
+              value: toWei(price),
             }
           )
         ).to.emit(mintGoldDustMarketplaceAuction, "AuctionNewBid");
@@ -1542,17 +1555,21 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
         .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
     });
 
-    it("Should revert with MintGoldDustItemIsNotListed error if the end auction function is called and the tokenId was not listed on MintGoldDustMarketplaceAuction.", async () => {
+    it("Should revert with ItemIsNotListed error if the end auction function is called and the tokenId was not listed on MintGoldDustMarketplaceAuction.", async () => {
       await mintGoldDustERC1155
         .connect(addr1)
         .setApprovalForAll(mintGoldDustSetPrice.address, true);
@@ -1563,7 +1580,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
 
       await expect(
@@ -1575,7 +1592,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       )
         .to.be.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
-          "MintGoldDustItemIsNotListed"
+          "ItemIsNotListed"
         )
         .withArgs(mintGoldDustERC1155.address);
     });
@@ -1587,7 +1604,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
       await expect(
         mintGoldDustMarketplaceAuction.endAuction({
@@ -1608,7 +1625,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
       await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
         {
@@ -1639,7 +1656,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
       await expect(
         mintGoldDustMarketplaceAuction.connect(addr2).purchaseNft(
@@ -1682,10 +1699,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(5), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -1697,7 +1718,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
 
       fee = (priceToPurchase * primary_sale_fee_percent) / 100;
@@ -1935,10 +1956,14 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       // addr1 mints a nft
       await mintGoldDustERC1155
         .connect(addr1)
-        .mintNft(URI, toWei(royalty), quantityToMint, MEMOIR);
+        .mintNft(URI, toWei(royalty), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC1155
         .connect(addr1)
@@ -1981,7 +2006,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
           1,
           quantityToList,
           mintGoldDustERC1155.address,
-          toWei(priceToPurchase)
+          toWei(price)
         );
       // verify if the isSecondarySale sale attribute is true
       expect(
@@ -2076,7 +2101,7 @@ describe("\nMGDAuction.sol Smart Contract \n************___************\n \nThis
         quantityToList
       );
 
-      console.log("\n\t\t ITEM PRICE: ", priceToPurchase);
+      console.log("\n\t\t ITEM PRICE: ", price);
       console.log("\t\t Secondary Market fee: ", secondarySaleFee);
       console.log("\t\t Royalty fee: ", royaltyFee);
       console.log("\t\t Balance to seller: ", balance);

@@ -4,6 +4,7 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
@@ -15,7 +16,8 @@ contract MintGoldDustERC1155 is
     Initializable,
     ERC1155Upgradeable,
     ERC1155URIStorageUpgradeable,
-    MintGoldDustNFT
+    MintGoldDustNFT,
+    ReentrancyGuardUpgradeable
 {
     // Add your custom code and functions here
     /**
@@ -25,11 +27,10 @@ contract MintGoldDustERC1155 is
      */
     function initializeChild(
         address _mintGoldDustCompany,
-        address _mintGoldDustMemoir,
         string calldata baseURI
     ) public initializer {
         __ERC1155_init(baseURI);
-        MintGoldDustNFT.initialize(_mintGoldDustCompany, _mintGoldDustMemoir);
+        MintGoldDustNFT.initialize(_mintGoldDustCompany);
     }
 
     using Counters for Counters.Counter;
@@ -59,7 +60,7 @@ contract MintGoldDustERC1155 is
         address to,
         uint256 tokenId,
         uint256 amount
-    ) public override whenNotPaused {
+    ) public override nonReentrant {
         safeTransferFrom(from, to, tokenId, amount, "");
     }
 
@@ -79,41 +80,26 @@ contract MintGoldDustERC1155 is
         uint256 _amount,
         address _sender,
         uint256 _collectorMintId,
-        string calldata _memoir
+        bytes calldata _memoir
     ) internal override returns (uint256) {
-        isApproved(_sender);
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(_sender, newTokenId, _amount, "");
         tokenIdArtist[newTokenId] = _sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
-
-        mintGoldDustMemoir.addMemoirForContract(
-            address(this),
-            newTokenId,
-            _memoir
-        );
+        tokenIdMemoir[newTokenId] = _memoir;
 
         emit MintGoldDustNFTMinted(
             newTokenId,
             _tokenURI,
-            msg.sender,
+            _sender,
             _royaltyPercent,
             _amount,
             false,
-            _collectorMintId
+            _collectorMintId,
+            _memoir
         );
 
         return newTokenId;
-    }
-
-    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
-    fallback() external payable {
-        payable(mintGoldDustCompany.owner()).transfer(msg.value);
-    }
-
-    /// @notice Fallbacks will forward funds to Mint Gold Dust LLC
-    receive() external payable {
-        payable(mintGoldDustCompany.owner()).transfer(msg.value);
     }
 }

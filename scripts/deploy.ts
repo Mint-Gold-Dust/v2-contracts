@@ -6,7 +6,8 @@
 //   const primary_sale_fee_percent_initial = 15000000000000000000n;
 //   const secondary_sale_fee_percent_initial = 5000000000000000000n;
 //   const collector_fee_initial = 3000000000000000000n;
-//   const max_royalty_initial = 20000000000000000000n;
+//   const max_royalty_initial = 20000000000000000000n; const auction_duration = 5;
+const auction_extension_duration = 1;
 
 //   console.log("Deploying contracts with the account:", deployer.address);
 

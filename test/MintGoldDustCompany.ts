@@ -14,9 +14,6 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 
-  let MintGoldDustMemoir: ContractFactory;
-  let mintGoldDustMemoir: Contract;
-
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addrs: SignerWithAddress[];
@@ -29,6 +26,8 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
   const secondary_sale_fee_percent_initial = 5000000000000000000n;
   const collector_fee_initial = 3000000000000000000n;
   const max_royalty_initial = 20000000000000000000n;
+  const auction_duration = 5;
+  const auction_extension_duration = 1;
 
   let primarySaleFeePercent = 15;
   let secondarySaleFeePercent = 5;
@@ -43,11 +42,6 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
     );
     MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
 
-    MintGoldDustMemoir = await ethers.getContractFactory("MintGoldDustMemoir");
-
-    mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
-    await mintGoldDustMemoir.deployed();
-
     [deployer, addr1, ...addrs] = await ethers.getSigners();
 
     mgdCompany = await upgrades.deployProxy(
@@ -58,6 +52,8 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
         secondary_sale_fee_percent_initial,
         collector_fee_initial,
         max_royalty_initial,
+        auction_duration,
+        auction_extension_duration,
       ],
       { initializer: "initialize" }
     );
@@ -65,9 +61,9 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
     mintGoldDustERC721 = await upgrades.deployProxy(
       MintGoldDustERC721,
-      [mgdCompany.address, mintGoldDustMemoir.address],
+      [mgdCompany.address],
       {
-        initializer: "initialize",
+        initializer: "initializeChild",
       }
     );
     await mintGoldDustERC721.deployed();
@@ -106,10 +102,10 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
         .withArgs(addr1.address, true);
     });
 
-    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to set a new validator.", async () => {
+    it("Should revert with an Ownable error if an address that is not the owner try to set a new validator.", async () => {
       await expect(
         mgdCompany.connect(addr1).setValidator(addr1.address, true)
-      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
@@ -154,6 +150,51 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
     });
   });
 
+  describe("\n--------------- Tests related with whitelist/blacklist collector mint ---------------\n", function () {
+    it("Should whitelist an after blacklist a collector mint.", async () => {
+      let gasPrice = await mgdCompany.signer.getGasPrice();
+      let gasLimit = await mgdCompany.estimateGas.whitelist(
+        addr1.address,
+        true
+      );
+
+      console.log("\t GAS PRICE: ", gasPrice);
+      console.log("\t GAS LIMIT: ", gasLimit);
+
+      console.log(
+        "\t\t TOTAL GAS ESTIMATION (USD): ",
+        (+ethers.BigNumber.from(gasPrice).mul(gasLimit) / (100 * 10 ** 18)) *
+          2500
+      );
+      // MGD owner whitelist the artist
+      await expect(
+        mgdCompany.connect(deployer).setCollectorMint(addr1.address, true)
+      )
+        .to.emit(mgdCompany, "CollectorMintAdded")
+        .withArgs(addr1.address, true);
+      await expect(
+        await mgdCompany.connect(deployer).isCollectorMint(addr1.address)
+      ).to.be.equal(true);
+
+      // MGD owner blacklist the artist
+      await expect(
+        mgdCompany.connect(deployer).setCollectorMint(addr1.address, false)
+      )
+        .to.emit(mgdCompany, "CollectorMintAdded")
+        .withArgs(addr1.address, false);
+      expect(
+        await mgdCompany.connect(deployer).isCollectorMint(addr1.address)
+      ).to.be.equal(false);
+    });
+
+    it("Should revert with a MGDCompanyUnauthorized error if an address that is not a validator try to whitelist or blacklist a collector mint.", async () => {
+      // MGD owner whitelist the artist
+      await expect(
+        mgdCompany.connect(addr1).whitelist(addr1.address, true)
+      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+    });
+  });
+
   describe("\n--------------- Tests related with the update primary sale fee functionality ---------------\n", function () {
     const valueNewFee = 30;
 
@@ -185,13 +226,13 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
       );
     });
 
-    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the primary sale fee.", async () => {
+    it("Should revert with an Ownable error if an address that is not the owner try to update the primary sale fee.", async () => {
       // MGD owner whitelist the artist
       await expect(
         mgdCompany
           .connect(addr1)
           .updatePrimarySaleFeePercent(toWei(valueNewFee))
-      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
@@ -227,12 +268,12 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
       );
     });
 
-    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the secondary sale fee.", async () => {
+    it("Should revert with an Ownable error if an address that is not the owner try to update the secondary sale fee.", async () => {
       await expect(
         mgdCompany
           .connect(addr1)
           .updatePrimarySaleFeePercent(toWei(valueNewFee))
-      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
@@ -261,10 +302,10 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
       expect(await mgdCompany.collectorFee()).to.be.equal(toWei(valueNewFee));
     });
 
-    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the collector fee.", async () => {
+    it("Should revert with an Ownable error if an address that is not the owner try to update the collector fee.", async () => {
       await expect(
         mgdCompany.connect(addr1).updateCollectorFee(toWei(valueNewFee))
-      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
@@ -293,10 +334,10 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
       expect(await mgdCompany.maxRoyalty()).to.be.equal(toWei(valueNewFee));
     });
 
-    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the max royalty fee.", async () => {
+    it("Should revert with an Ownable error if an address that is not the owner try to update the max royalty fee.", async () => {
       await expect(
         mgdCompany.connect(addr1).updateMaxRoyalty(toWei(valueNewFee))
-      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it(`Should be possible to mint a NFT with a new maximum royalty set.`, async function () {
@@ -305,9 +346,12 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       await mintGoldDustERC721
         .connect(addr1)
-        .mintNft(URI, toWei(valueNewFee), 1, MEMOIR);
+        .mintNft(URI, toWei(valueNewFee), 1, bytesMemoir);
     });
 
     it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than new max royalty that is ${valueNewFee}.`, async function () {
@@ -316,10 +360,13 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
 
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
       await expect(
         mintGoldDustERC721
           .connect(addr1)
-          .mintNft(URI, toWei(valueNewFee + 1), 1, MEMOIR)
+          .mintNft(URI, toWei(valueNewFee + 1), 1, bytesMemoir)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC721,
         "MGDnftRoyaltyInvalidPercentage"
@@ -350,10 +397,10 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
       expect(await mgdCompany.auctionDuration()).to.be.equal(newTime);
     });
 
-    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the auction duration time.", async () => {
+    it("Should revert with an Ownable error if an address that is not the owner try to update the auction duration time.", async () => {
       await expect(
         mgdCompany.connect(addr1).updateAuctionTimeDuration(toWei(newTime))
-      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
@@ -382,10 +429,10 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
       expect(await mgdCompany.auctionFinalMinutes()).to.be.equal(newTime);
     });
 
-    it("Should revert with a MGDCompanyUnauthorized error if an address that is not the owner try to update the auction final time. duration.", async () => {
+    it("Should revert with an Ownable error if an address that is not the owner try to update the auction final time. duration.", async () => {
       await expect(
         mgdCompany.connect(addr1).updateAuctionFinalMinutes(toWei(newTime))
-      ).to.be.revertedWithCustomError(mgdCompany, "MGDCompanyUnauthorized");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 });
