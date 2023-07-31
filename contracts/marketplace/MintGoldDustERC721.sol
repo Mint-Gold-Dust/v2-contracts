@@ -2,7 +2,6 @@
 pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
@@ -18,8 +17,7 @@ import "./MintGoldDustMarketplaceAuction.sol";
 contract MintGoldDustERC721 is
     Initializable,
     ERC721URIStorageUpgradeable,
-    MintGoldDustNFT,
-    ReentrancyGuardUpgradeable
+    MintGoldDustNFT
 {
     /**
      *
