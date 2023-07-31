@@ -400,7 +400,6 @@ abstract contract MintGoldDustMarketplace is
             _saleDTO.contractAddress
         ][_saleDTO.tokenId][_saleDTO.seller];
 
-        item.sold = true;
         item.isSecondarySale = true;
 
         itemsSold.increment();
@@ -570,12 +569,6 @@ abstract contract MintGoldDustMarketplace is
         ][_saleDTO.tokenId][_saleDTO.seller];
 
         item.tokenAmount = item.tokenAmount - _saleDTO.amount;
-
-        newMarketItem.auctionProps = auctionProps;
-
-        idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-            _saleDTO.tokenId
-        ][_sender] = newMarketItem;
 
         if (item.tokenAmount == 0) {
             delete idMarketItemsByContractByOwner[_saleDTO.contractAddress][

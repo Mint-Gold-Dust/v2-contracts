@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import "./MintGoldDustMarketplace.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 error AuctionMustBeEnded(
     uint256 _tokenId,
@@ -27,6 +28,12 @@ error ListPriceMustBeGreaterOrEqualZero();
 contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     using Counters for Counters.Counter;
     Counters.Counter public auctionIds;
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) external view returns (bool) {
+        return interfaceId == type(IERC165).interfaceId;
+    }
 
     /**
      *
@@ -177,7 +184,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
         checkAmount(_amount);
         isNotListed(_tokenId, _contractAddress, msg.sender);
 
-        if (_price < 0) {
+        if (_pricePerToken < 0) {
             revert ListPriceMustBeGreaterOrEqualZero();
         }
         SaleDTO memory _saleDTO = SaleDTO(
@@ -301,6 +308,9 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @param _bidDTO BidDTO struct.
      */
     function checkIfIsLast5MinutesAndAddMore5(BidDTO memory _bidDTO) private {
+        MarketItem storage item = idMarketItemsByContractByOwner[
+            _bidDTO.contractAddress
+        ][_bidDTO.tokenId][_bidDTO.seller];
         /**
          * @dev If a higher bid happens in the last 5 minutes we should add more 5 minutes
          * to the end time auction.
@@ -314,6 +324,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
                 mintGoldDustCompany.auctionFinalMinutes();
             emit AuctionExtended(
                 _bidDTO.tokenId,
+                _bidDTO.contractAddress,
                 item.auctionProps.endTime,
                 item.auctionProps.auctionId
             );
