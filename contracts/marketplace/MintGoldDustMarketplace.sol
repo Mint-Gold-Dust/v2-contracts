@@ -58,6 +58,8 @@ abstract contract MintGoldDustMarketplace is
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
     ) internal onlyInitializing {
+        __ReentrancyGuard_init();
+        __Pausable_init();
         mintGoldDustCompany = MintGoldDustCompany(_mintGoldDustCompany);
         mintGoldDustERC721Address = _mintGoldDustERC721Address;
         mintGoldDustERC1155Address = _mintGoldDustERC1155Address;

@@ -4,7 +4,6 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
@@ -16,8 +15,7 @@ contract MintGoldDustERC1155 is
     Initializable,
     ERC1155Upgradeable,
     ERC1155URIStorageUpgradeable,
-    MintGoldDustNFT,
-    ReentrancyGuardUpgradeable
+    MintGoldDustNFT
 {
     // Add your custom code and functions here
     /**
@@ -30,6 +28,7 @@ contract MintGoldDustERC1155 is
         string calldata baseURI
     ) public initializer {
         __ERC1155_init(baseURI);
+        __ERC1155URIStorage_init();
         MintGoldDustNFT.initialize(_mintGoldDustCompany);
     }
 

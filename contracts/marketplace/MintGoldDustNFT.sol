@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 import "./MintGoldDustCollectorMintControl.sol";
@@ -12,7 +13,11 @@ error UnauthorizedOnNFT(string message);
 error NumberOfCollaboratorsAndPercentagesNotMatch();
 error TheTotalPercentageCantBeGreaterThan100();
 
-abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
+abstract contract MintGoldDustNFT is
+    Initializable,
+    PausableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     // Add your custom code and functions here
     /**
      *
@@ -22,6 +27,8 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
     function initialize(
         address _mintGoldDustCompany
     ) internal onlyInitializing {
+        __ReentrancyGuard_init();
+        __Pausable_init();
         mintGoldDustCompany = MintGoldDustCompany(
             payable(_mintGoldDustCompany)
         );
