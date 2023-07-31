@@ -28,6 +28,7 @@ contract MintGoldDustERC1155 is
         string calldata baseURI
     ) public initializer {
         __ERC1155_init(baseURI);
+        __ERC1155URIStorage_init();
         MintGoldDustNFT.initialize(_mintGoldDustCompany);
     }
 
