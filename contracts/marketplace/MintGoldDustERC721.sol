@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
@@ -23,7 +22,9 @@ contract MintGoldDustERC721 is
      * @notice that the MintGoldDustERC721 is composed by other contract.
      * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
-    function initializeChild(address _mintGoldDustCompany) public initializer {
+    function initializeChild(
+        address _mintGoldDustCompany
+    ) external initializer {
         __ERC721_init("Mint Gold Dust NFT", "MGDNFT");
         __ERC721URIStorage_init();
         MintGoldDustNFT.initialize(_mintGoldDustCompany);
@@ -46,7 +47,7 @@ contract MintGoldDustERC721 is
         address _to,
         uint256 _tokenId,
         uint256 _amount
-    ) public override nonReentrant {
+    ) external override nonReentrant {
         _safeTransfer(_from, _to, _tokenId, "");
     }
 

@@ -24,7 +24,7 @@ contract MintGoldDustCollectorMintControl {
         address _collector
     ) external isAllowedToOpen {
         require(
-            collectorMintWithOpenedTransaction[_collector] == false,
+            !collectorMintWithOpenedTransaction[_collector],
             "Unauthorized"
         );
         collectorMintWithOpenedTransaction[_collector] = true;
@@ -33,10 +33,7 @@ contract MintGoldDustCollectorMintControl {
     function closeCollectorMintTransaction(
         address _collector
     ) external isAllowedToClose {
-        require(
-            collectorMintWithOpenedTransaction[_collector] == true,
-            "Unauthorized"
-        );
+        require(collectorMintWithOpenedTransaction[_collector], "Unauthorized");
         delete collectorMintWithOpenedTransaction[_collector];
     }
 

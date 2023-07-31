@@ -298,12 +298,12 @@ abstract contract MintGoldDustNFT is
     }
 
     /// @notice Pause the contract
-    function pauseContract() public isowner {
+    function pauseContract() external isowner {
         _pause();
     }
 
     /// @notice Unpause the contract
-    function unpauseContract() public isowner {
+    function unpauseContract() external isowner {
         _unpause();
     }
 
@@ -332,7 +332,7 @@ abstract contract MintGoldDustNFT is
     }
 
     modifier isArtistWhitelisted(address _artistAddress) {
-        if (mintGoldDustCompany.isArtistApproved(_artistAddress) == false) {
+        if (!mintGoldDustCompany.isArtistApproved(_artistAddress)) {
             revert UnauthorizedOnNFT("ARTIST");
         }
         _;
@@ -342,7 +342,7 @@ abstract contract MintGoldDustNFT is
         require(
             mintGoldDustCollectorMintControl.collectorMintWithOpenedTransaction(
                 _sender
-            ) == true,
+            ),
             "Collector Mint tx is closed!"
         );
         _;
@@ -354,13 +354,13 @@ abstract contract MintGoldDustNFT is
         uint256 percentage
     ) {
         if (
-            mintGoldDustCompany.isCollectorMint(_sender) == false ||
+            !mintGoldDustCompany.isCollectorMint(_sender) ||
             _sender != address(0)
         ) {
             revert UnauthorizedOnNFT("COLLECTOR_MINT");
         }
         if (
-            mintGoldDustCompany.isArtistApproved(_artistAddress) == false ||
+            !mintGoldDustCompany.isArtistApproved(_artistAddress) ||
             _artistAddress != address(0)
         ) {
             revert UnauthorizedOnNFT("ARTIST");

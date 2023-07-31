@@ -3,9 +3,7 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 import "./MintGoldDustNFT.sol";
 import "./MintGoldDustMarketplaceAuction.sol";
@@ -26,7 +24,7 @@ contract MintGoldDustERC1155 is
     function initializeChild(
         address _mintGoldDustCompany,
         string calldata baseURI
-    ) public initializer {
+    ) external initializer {
         __ERC1155_init(baseURI);
         __ERC1155URIStorage_init();
         MintGoldDustNFT.initialize(_mintGoldDustCompany);
@@ -59,7 +57,7 @@ contract MintGoldDustERC1155 is
         address to,
         uint256 tokenId,
         uint256 amount
-    ) public override nonReentrant {
+    ) external override nonReentrant {
         safeTransferFrom(from, to, tokenId, amount, "");
     }
 

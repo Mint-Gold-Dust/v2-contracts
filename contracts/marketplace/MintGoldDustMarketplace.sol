@@ -274,7 +274,7 @@ abstract contract MintGoldDustMarketplace is
         uint256 _amount,
         address _contractAddress,
         uint256 _price
-    ) public virtual;
+    ) external virtual;
 
     /**
      * @notice that is a more generic list function than the above. This function can be used by both kind of markets
@@ -1373,7 +1373,7 @@ abstract contract MintGoldDustMarketplace is
         uint256[] calldata ids,
         uint256[] calldata values,
         bytes calldata data
-    ) external virtual override returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
     }
 
@@ -1406,12 +1406,12 @@ abstract contract MintGoldDustMarketplace is
     }
 
     /// @notice Pause the contract
-    function pauseContract() public isowner {
+    function pauseContract() external isowner {
         _pause();
     }
 
     /// @notice Unpause the contract
-    function unpauseContract() public isowner {
+    function unpauseContract() external isowner {
         _unpause();
     }
 
