@@ -280,7 +280,7 @@ abstract contract MintGoldDustNFT is
         /// So is necessary do one more addition here.
         totalPercentage += _ownersPercentage[ownersCount];
 
-        if (totalPercentage != 100000000000000000000) {
+        if (totalPercentage != 100e18) {
             revert TheTotalPercentageCantBeGreaterThan100();
         }
 

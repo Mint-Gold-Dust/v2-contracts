@@ -9,8 +9,6 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./MintGoldDustCollectorMintControl.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-error YouCannotDelistMoreThanListed();
-error ErrorToCollectorMint();
 error Log(bytes32 domain, bytes encoded, bytes32 _eip712Hash);
 error ListPriceMustBeGreaterThanZero();
 

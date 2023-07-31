@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 error UseThisFunctionForEOA();
-error UseThisFunctionForContract();
 error YouCannotUpdateThisMemoir();
 
 /// @title A contract responsible by allow new address to create a memoir.

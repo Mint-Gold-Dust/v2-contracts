@@ -18,7 +18,7 @@ contract MintGoldDustERC1155 is
     // Add your custom code and functions here
     /**
      *
-     * @notice that the MintGoldDustERC721 is composed by other contract.
+     * @notice that the MintGoldDustERC1155 is composed by other contract.
      * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
     function initializeChild(
