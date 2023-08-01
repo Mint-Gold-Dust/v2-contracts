@@ -193,5 +193,18 @@ describe("\nMGDCompany.sol Smart Contract \n____________________________________
         mgdCompany.connect(addr1).whitelist(addr1.address, true)
       ).to.be.revertedWithCustomError(mgdCompany, "Unauthorized");
     });
-  });
+
+    it("Should revert with a 'address is zero address' message if an address is the zero address.", async () => {
+        // MGD owner whitelist the artist
+        await expect(
+            mgdCompany.connect(deployer).whitelist("0x0000000000000000000000000000000000000000", true)
+            ).to.be.revertedWith("address is zero address");
+
+        await expect(
+            mgdCompany.connect(deployer).setValidator("0x0000000000000000000000000000000000000000", true))
+                .to.be.revertedWith("address is zero address");
+        });
+
+        
+    });
 });
