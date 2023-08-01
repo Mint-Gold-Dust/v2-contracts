@@ -115,6 +115,7 @@ abstract contract MintGoldDustMarketplace is
      */
     struct AuctionProps {
         uint256 auctionId;
+        uint256 startTime;
         uint256 endTime;
         address highestBidder;
         uint256 highestBid;
@@ -298,12 +299,16 @@ abstract contract MintGoldDustMarketplace is
      *                    the MintGoldDustSetPrice it IS FALSE.
      * @param _marketAddress if the flow comes from the MintGoldDustMarketplaceAuction, so is the respective address
      *                    if not is the MintGoldDustSetPrice address.
+     * @param _sender: who is calling this function
+     *    @dev we need this parameter because in the collectorMint flow who calls this function is the buyer. How it function is internal
+     *    we can have a good control on top of it.
      */
     function list(
         ListDTO memory _listDTO,
         bool _isAuction,
         address _marketAddress,
-        uint256 _auctionId
+        uint256 _auctionId,
+        address _sender
     ) internal {
         MintGoldDustNFT _mintGoldDustNFT;
         bool _isERC721 = false;
@@ -316,7 +321,8 @@ abstract contract MintGoldDustMarketplace is
         } else {
             checkBalanceForERC1155(
                 _listDTO.saleDTO.tokenId,
-                _listDTO.saleDTO.amount
+                _listDTO.saleDTO.amount,
+                _sender
             );
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
             _realAmount = _listDTO.saleDTO.amount;
@@ -324,6 +330,7 @@ abstract contract MintGoldDustMarketplace is
 
         AuctionProps memory auctionProps = AuctionProps(
             _auctionId,
+            0,
             0,
             payable(address(0)),
             0,
@@ -1187,11 +1194,12 @@ abstract contract MintGoldDustMarketplace is
      */
     function checkBalanceForERC1155(
         uint256 _tokenId,
-        uint256 _tokenAmount
-    ) internal view {
+        uint256 _tokenAmount,
+        address _sender
+    ) private view {
         if (
             (MintGoldDustERC1155(mintGoldDustERC1155Address)).balanceOf(
-                msg.sender,
+                _sender,
                 _tokenId
             ) < _tokenAmount
         ) {

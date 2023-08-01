@@ -26,9 +26,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   let MintGoldDustERC1155: ContractFactory;
   let mintGoldDustERC1155: Contract;
 
-  let MintGoldDustCollectorMintControl: ContractFactory;
-  let mintGoldDustCollectorMintControl: Contract;
-
   let MintGoldDustCompany: ContractFactory;
   let mgdCompany: Contract;
 
@@ -137,39 +134,15 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     );
     await mintGoldDustSetPrice.deployed();
 
-    MintGoldDustCollectorMintControl = await ethers.getContractFactory(
-      "MintGoldDustCollectorMintControl"
-    );
-
-    mintGoldDustCollectorMintControl =
-      await MintGoldDustCollectorMintControl.deploy(
-        mintGoldDustSetPrice.address,
-        mintGoldDustERC721.address,
-        mintGoldDustERC1155.address
-      );
-    await mintGoldDustCollectorMintControl.deployed();
-    console.log(
-      "MintGoldDustCollectorMintControl deployed to:",
-      mintGoldDustCollectorMintControl.address
-    );
-
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
 
     await mintGoldDustERC1155
       .connect(deployer)
-      .setMintGoldDustCollectorMintControl(
-        mintGoldDustCollectorMintControl.address
-      );
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
     await mintGoldDustERC721
       .connect(deployer)
-      .setMintGoldDustCollectorMintControl(
-        mintGoldDustCollectorMintControl.address
-      );
-    await mintGoldDustSetPrice
-      .connect(deployer)
-      .setMintGoldDustCollectorMintControl(
-        mintGoldDustCollectorMintControl.address
-      );
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
 
     domainSeparator = {
       name: "MintGoldDustSetPrice",
@@ -184,7 +157,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
   describe("\n--------------- Tests related witn collector mint functionality after a MintGoldDustERC721 traditional purchase on set price ---------------\n", function () {
     let quantityToMint = 10;
-    let quantityToList = 5;
+    let quantityToBuy = 5;
 
     // Create an instance of the ListDTO struct
 
@@ -195,20 +168,20 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       await mgdCompany.connect(deployer).setCollectorMint(addr2.address, true);
 
       // Artist approve gdMarketPlace marketplace to exchange its NFT
-      await mintGoldDustERC721
+      await mintGoldDustERC1155
         .connect(addr1)
         .setApprovalForAll(mintGoldDustSetPrice.address, true);
     });
 
     it("Should track a collector mint flow", async function () {
       let collectrDTO = {
-        contractAddress: mintGoldDustERC721.address,
+        contractAddress: mintGoldDustERC1155.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,
         collaborators: [],
         ownersPercentage: [],
-        amount: 1,
+        amount: quantityToMint,
         artistSigner: addr1.address,
         price: toWei(price),
       };
@@ -248,72 +221,121 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           signature,
           collectorMintId,
           collectorMintDTOHash,
+          quantityToBuy,
           {
-            value: toWei(price),
+            value: toWei(price * quantityToBuy),
           }
         );
 
-      await expect(tx)
-        .to.emit(mintGoldDustERC721, "MintGoldDustNFTMinted")
-        .withArgs(
-          1,
-          URI,
-          addr1.address,
-          toWei(royalty),
-          1,
-          true,
-          1,
-          bytesMemoir
-        );
-      await expect(tx)
-        .to.emit(mintGoldDustSetPrice, "MintGoldDustNftListedToSetPrice")
-        .withArgs(
-          1,
-          addr1.address,
-          toWei(price),
-          1,
-          mintGoldDustERC721.address
-        );
-      await expect(tx)
-        .to.emit(mintGoldDustSetPrice, "MintGoldDustNftPurchasedPrimaryMarket")
-        .withArgs(
-          1,
-          1,
-          addr1.address,
-          addr2.address,
-          toWei(price),
-          toWei(balance),
-          toWei(fee),
-          toWei(collFee),
-          1,
-          false,
-          false,
-          true
-        );
+      const filter = mintGoldDustERC1155.filters.MintGoldDustNFTMinted();
+      const eventPromise = mintGoldDustERC1155.queryFilter(filter);
+
+      const events = await eventPromise;
+
+      const filter1 = mintGoldDustERC1155.filters.URI();
+      const eventPromise1 = mintGoldDustERC1155.queryFilter(filter1);
+
+      const events1 = await eventPromise1;
+
+      expect(events[0].event).to.be.equal("MintGoldDustNFTMinted");
+      expect(events[0].eventSignature).to.be.equal(
+        "MintGoldDustNFTMinted(uint256,string,address,uint256,uint256,bool,uint256,bytes)"
+      );
+      expect(events[0].args!.tokenId).to.be.equal(1);
+      expect(events[0].args!.tokenURI).to.be.equal(URI);
+      expect(events[0].args!.owner).to.be.equal(addr1.address);
+      expect(events[0].args!.royalty).to.be.equal(toWei(royalty));
+      expect(events[0].args!.amount).to.be.equal(quantityToMint);
+      expect(events[0].args!.isERC721).to.be.false;
+      expect(events[0].args!.collectorMintId).to.be.equal(1);
+      expect(events[0].args!.memoir).to.be.equal(
+        ethers.utils.hexlify(bytesMemoir)
+      );
+      expect(ethers.utils.toUtf8String(events[0].args!.memoir)).to.be.equal(
+        MEMOIR
+      );
+
+      expect(events1[0].event).to.be.equal("URI");
+      expect(events1[0].eventSignature).to.be.equal("URI(string,uint256)");
+      expect(events1[0].args!.value).to.be.equal(URI);
+      expect(events1[0].args!.id).to.be.equal(1);
+
+      const receipt = await tx.wait();
+
+      console.log("receipt:", receipt.events);
+
+      expect(receipt.events[4].event).to.be.equal(
+        "MintGoldDustNftListedToSetPrice"
+      );
+      expect(receipt.events[4].eventSignature).to.be.equal(
+        "MintGoldDustNftListedToSetPrice(uint256,address,uint256,uint256,address)"
+      );
+      expect(receipt.events[4].args.tokenId).to.be.equal(1);
+      expect(receipt.events[4].args.seller).to.be.equal(addr1.address);
+      expect(receipt.events[4].args.price).to.be.equal(toWei(price));
+      expect(receipt.events[4].args.amount).to.be.equal(quantityToMint);
+      expect(receipt.events[4].args.contractAddress).to.be.equal(
+        mintGoldDustERC1155.address
+      );
+
+      expect(receipt.events[6].event).to.be.equal(
+        "MintGoldDustNftPurchasedPrimaryMarket"
+      );
+      expect(receipt.events[6].eventSignature).to.be.equal(
+        "MintGoldDustNftPurchasedPrimaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,uint256,uint256,bool,bool,bool)"
+      );
+      expect(receipt.events[6].args.saleId).to.be.equal(1);
+      expect(receipt.events[6].args.tokenId).to.be.equal(1);
+      expect(receipt.events[6].args.seller).to.be.equal(addr1.address);
+      expect(receipt.events[6].args.newOwner).to.be.equal(addr2.address);
+      expect(receipt.events[6].args.buyPrice).to.be.equal(
+        toWei(price * quantityToBuy)
+      );
+      expect(receipt.events[6].args.sellerAmount).to.be.equal(
+        toWei(balance * quantityToBuy)
+      );
+      expect(receipt.events[6].args.feeAmount).to.be.equal(
+        toWei(fee * quantityToBuy)
+      );
+      expect(receipt.events[6].args.collectorFeeAmount).to.be.equal(
+        toWei(collFee * quantityToBuy)
+      );
+      expect(receipt.events[6].args.tokenAmountSold).to.be.equal(quantityToBuy);
+      expect(receipt.events[6].args.hasCollaborators).to.be.false;
+      expect(receipt.events[6].args.isAuction).to.be.false;
+      expect(receipt.events[6].args.isERC721).to.be.false;
 
       let marketItem =
         await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
-          mintGoldDustERC721.address,
+          mintGoldDustERC1155.address,
           1,
           addr2.address
         );
+
+      console.log("marketItem:", marketItem);
 
       expect(marketItem).to.be.not.null;
       expect(marketItem).to.be.not.undefined;
       expect(marketItem).to.be.not.empty;
       expect(marketItem).to.be.not.false;
-      expect(marketItem.tokenId).to.be.equal(1);
-      expect(marketItem.seller).to.be.equal(addr2.address);
-      expect(marketItem.price).to.be.equal(toWei(price));
-      expect(marketItem.sold).to.be.true;
+      expect(marketItem.tokenId).to.be.equal(0);
+      expect(marketItem.seller).to.be.equal(ethers.constants.AddressZero);
+      expect(marketItem.price).to.be.equal(0);
       expect(marketItem.isAuction).to.be.false;
-      expect(marketItem.isSecondarySale).to.be.true;
-      expect(marketItem.isERC721).to.be.true;
-      expect(marketItem.tokenAmount).to.be.equal(1);
+      expect(marketItem.isSecondarySale).to.be.false;
+      expect(marketItem.isERC721).to.be.false;
+      expect(marketItem.tokenAmount).to.be.equal(0);
 
-      expect(await mintGoldDustERC721.tokenURI(1)).to.equal(URI);
-      expect(await mintGoldDustERC721.tokenIdArtist(1)).to.equal(addr1.address);
-      expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr2.address);
+      expect(await mintGoldDustERC1155.uri(1)).to.equal(URI);
+      expect(await mintGoldDustERC1155.tokenIdArtist(1)).to.equal(
+        addr1.address
+      );
+
+      expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(0);
+      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(5);
+      expect(
+        await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
+      ).to.equal(5);
     });
   });
 
@@ -329,62 +351,81 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .connect(addr1)
         .setApprovalForAll(mintGoldDustSetPrice.address, true);
     });
-    it("Call the function passing everything correct. The attacker can generate the object, the EIP712 and everything using an address that is not a whitelisted artist. It MUST revert with an 'Invalid Signature' error.", async () => {
-      let collectrDTO = {
-        contractAddress: mintGoldDustERC721.address,
-        tokenURI: URI,
-        royalty: toWei(royalty),
-        memoir: bytesMemoir,
-        collaborators: [],
-        ownersPercentage: [],
-        amount: 1,
-        artistSigner: addr2.address,
-        price: toWei(price),
-      };
 
-      let collectorMintId = 1;
-
-      const signer = ethers.provider.getSigner(2);
-
-      // Generate the encoded data
-      const encodedData = encodeData(collectrDTO);
-
-      const collectorMintDTOHash = generateCollectorMintDTOHash(
-        collectrDTO,
-        collectorMintId
-      );
-
-      // Generate the EIP712 hash
-      const hash = generateEIP712Hash(encodedData, domainSeparator);
-
-      // Sign the hash
-      const signature = await signData(hash, signer);
-
-      const signerAfter = ethers.utils.verifyMessage(hash, signature);
-
-      // Check if the signer address matches Hardhat address 1
-      if (signerAfter === addr1.address) {
-        console.log("Signature is from Hardhat address 1");
-      } else {
-        console.log("Signature is not from Hardhat address 1");
-      }
-
-      console.log("Address 2: ", addr2.address);
-      const tx = await mintGoldDustSetPrice
-        .connect(addr2)
-        .collectorMintPurchase(
-          collectrDTO,
-          hash,
-          signature,
-          collectorMintId,
-          collectorMintDTOHash,
-          {
-            value: toWei(price),
-          }
-        );
-      // await expect(tx).to.include("reverted with custom error 'UnauthorizedOnNFT("COLLECTOR_MINT")')
+    it('Should call the collectorMint function with an address that is not the mintGoldDustERC721 address. It MUST revert with an "Invalid contract address" error.', async () => {
+      await expect(
+        mintGoldDustERC721
+          .connect(addr1)
+          .collectorMint(
+            URI,
+            toWei(royalty),
+            10,
+            addr1.address,
+            bytesMemoir,
+            1,
+            mintGoldDustSetPrice.address
+          )
+      )
+        .to.be.revertedWithCustomError(mintGoldDustERC1155, "UnauthorizedOnNFT")
+        .withArgs("SET_PRICE");
     });
   });
+  //   it("Call the function passing everything correct. The attacker can generate the object, the EIP712 and everything using an address that is not a whitelisted artist. It MUST revert with an 'Invalid Signature' error.", async () => {
+  //     let collectrDTO = {
+  //       contractAddress: mintGoldDustERC721.address,
+  //       tokenURI: URI,
+  //       royalty: toWei(royalty),
+  //       memoir: bytesMemoir,
+  //       collaborators: [],
+  //       ownersPercentage: [],
+  //       amount: 1,
+  //       artistSigner: addr2.address,
+  //       price: toWei(price),
+  //     };
+
+  //     let collectorMintId = 1;
+
+  //     const signer = ethers.provider.getSigner(2);
+
+  //     // Generate the encoded data
+  //     const encodedData = encodeData(collectrDTO);
+
+  //     const collectorMintDTOHash = generateCollectorMintDTOHash(
+  //       collectrDTO,
+  //       collectorMintId
+  //     );
+
+  //     // Generate the EIP712 hash
+  //     const hash = generateEIP712Hash(encodedData, domainSeparator);
+
+  //     // Sign the hash
+  //     const signature = await signData(hash, signer);
+
+  //     const signerAfter = ethers.utils.verifyMessage(hash, signature);
+
+  //     // Check if the signer address matches Hardhat address 1
+  //     if (signerAfter === addr1.address) {
+  //       console.log("Signature is from Hardhat address 1");
+  //     } else {
+  //       console.log("Signature is not from Hardhat address 1");
+  //     }
+
+  //     console.log("Address 2: ", addr2.address);
+  //     const tx = await mintGoldDustSetPrice
+  //       .connect(addr2)
+  //       .collectorMintPurchase(
+  //         collectrDTO,
+  //         hash,
+  //         signature,
+  //         collectorMintId,
+  //         collectorMintDTOHash,
+  //         {
+  //           value: toWei(price),
+  //         }
+  //       );
+  //     // await expect(tx).to.include("reverted with custom error 'UnauthorizedOnNFT("COLLECTOR_MINT")')
+  //   });
+  // });
 
   // it("Should try to lazy mint passing a modified struct. It MUST revert with an 'Invalid Signature' error.", async function () {
   //   let collectrDTO = {

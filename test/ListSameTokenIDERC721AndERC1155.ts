@@ -174,7 +174,7 @@ describe("\nnMintGoldDustMaretplace.sol + MintGoldDustMaretplaceAuction.sol + Mi
       expect(receipt.events[1].args[0]).to.equal(1);
       expect(receipt.events[1].args[1]).to.equal(mintGoldDustERC1155.address);
       expect(receipt.events[1].args[2]).to.equal(addr1.address);
-      expect(receipt.events[1].args[3]).to.equal(toWei(price / quantityToList));
+      expect(receipt.events[1].args[3]).to.equal(toWei(price));
       expect(receipt.events[1].args[4]).to.equal(
         (await receipt.events[0].getBlock()).timestamp
       );

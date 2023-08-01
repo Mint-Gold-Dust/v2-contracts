@@ -85,6 +85,7 @@ contract MintGoldDustERC1155 is
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(_sender, newTokenId, _amount, "");
+        _setURI(newTokenId, _tokenURI);
         tokenIdArtist[newTokenId] = _sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
         tokenIdMemoir[newTokenId] = _memoir;

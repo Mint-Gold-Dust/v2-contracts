@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "./MintGoldDustCollectorMintControl.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 error YouCannotDelistMoreThanListed();
@@ -17,35 +16,16 @@ error ListPriceMustBeGreaterThanZero();
 contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     using ECDSA for bytes32;
 
-    MintGoldDustCollectorMintControl private mintGoldDustCollectorMintControl;
-
     function supportsInterface(
         bytes4 interfaceId
-    ) external view returns (bool) {
+    ) external pure returns (bool) {
         return interfaceId == type(IERC165).interfaceId;
-    }
-
-    function setMintGoldDustCollectorMintControl(
-        address _mintGoldDustCollectorMintControl
-    ) external {
-        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
-        require(
-            address(mintGoldDustCollectorMintControl) == address(0),
-            "Already setted!"
-        );
-        mintGoldDustCollectorMintControl = MintGoldDustCollectorMintControl(
-            _mintGoldDustCollectorMintControl
-        );
     }
 
     struct DelistDTO {
         uint256 tokenId;
         address contractAddress;
     }
-
-    /// contract -> tokenId -> seller -> amount
-    mapping(address => mapping(uint256 => mapping(address => uint256)))
-        public tokenIdOffChainAmountByContractByOwner;
 
     /**
      *
@@ -151,7 +131,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
 
         ListDTO memory _listDTO = ListDTO(_saleDTO, _price);
 
-        list(_listDTO, false, address(this), 0);
+        list(_listDTO, false, address(this), 0, msg.sender);
 
         emit MintGoldDustNftListedToSetPrice(
             _listDTO.saleDTO.tokenId,
@@ -291,7 +271,6 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         public
         payable
         nonReentrant
-        isTransactionClosed
         checkParameters(
             _collectorMintDTO.artistSigner,
             _collectorMintDTO.royalty
@@ -300,18 +279,20 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     {
         mustBeMintGoldDustERC721Or1155(_collectorMintDTO.contractAddress);
 
-        require(
-            _amountToBuy > _collectorMintDTO.amount,
-            "Invalid amount to buy"
-        );
+        require(_collectorMintDTO.amount > 0, "Invalid amount to mint");
+        require(_amountToBuy > 0, "Invalid amount to buy");
 
         MintGoldDustNFT _mintGoldDustNFT;
+        uint256 realAmount = _collectorMintDTO.amount;
 
         if (_collectorMintDTO.contractAddress == mintGoldDustERC721Address) {
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
+            realAmount = 1;
         } else {
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
         }
+
+        require(_amountToBuy <= realAmount, "Invalid amount to buy");
 
         bytes32 _eip712HashOnChain = generateEIP712Hash(_collectorMintDTO);
         require(_eip712HashOnChain == _eip712HashOffChain, "Invalid hash");
@@ -338,9 +319,6 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         uint256 _tokenId;
 
         if (_collectorMintDTO.collaborators.length == 0) {
-            mintGoldDustCollectorMintControl.openCollectorMintTransaction(
-                msg.sender
-            );
             _tokenId = _mintGoldDustNFT.collectorMint(
                 _collectorMintDTO.tokenURI,
                 _collectorMintDTO.royalty,
@@ -351,9 +329,6 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
                 msg.sender
             );
         } else {
-            mintGoldDustCollectorMintControl.openCollectorMintTransaction(
-                msg.sender
-            );
             _tokenId = _mintGoldDustNFT.collectorSplitMint(
                 _collectorMintDTO.tokenURI,
                 _collectorMintDTO.royalty,
@@ -376,7 +351,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
 
         ListDTO memory _listDTO = ListDTO(_saleDTO, _collectorMintDTO.price);
 
-        list(_listDTO, false, address(this), 0);
+        list(_listDTO, false, address(this), 0, _collectorMintDTO.artistSigner);
 
         emit MintGoldDustNftListedToSetPrice(
             _listDTO.saleDTO.tokenId,
@@ -578,26 +553,16 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         return encodedData;
     }
 
-    modifier isTransactionClosed() {
-        require(
-            mintGoldDustCollectorMintControl.collectorMintWithOpenedTransaction(
-                msg.sender
-            ) == false,
-            "Transaction is opened!"
-        );
-        _;
-    }
-
     modifier checkParameters(address _artistAddress, uint256 percentage) {
         if (
             mintGoldDustCompany.isCollectorMint(msg.sender) == false ||
-            msg.sender != address(0)
+            msg.sender == address(0)
         ) {
             revert UnauthorizedOnNFT("COLLECTOR_MINT");
         }
         if (
             mintGoldDustCompany.isArtistApproved(_artistAddress) == false ||
-            _artistAddress != address(0)
+            _artistAddress == address(0)
         ) {
             revert UnauthorizedOnNFT("ARTIST");
         }
