@@ -22,6 +22,7 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     uint256 public maxRoyalty;
     uint256 public auctionDuration;
     uint256 public auctionFinalMinutes;
+    address public mintGoldDustPublicKey;
     mapping(address => bool) public isArtistApproved;
     mapping(address => bool) public isAddressValidator;
     mapping(address => bool) public isCollectorMint;
@@ -32,6 +33,12 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
         bytes4 interfaceId
     ) public view virtual override returns (bool) {
         return interfaceId == ERC165_ID;
+    }
+
+    function setMintGoldDustPKey(
+        address _mintGoldDustPublicKey
+    ) external onlyOwner isZeroAddress(_mintGoldDustPublicKey) {
+        mintGoldDustPublicKey = _mintGoldDustPublicKey;
     }
 
     /**
