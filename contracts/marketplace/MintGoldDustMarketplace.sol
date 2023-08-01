@@ -1318,6 +1318,7 @@ abstract contract MintGoldDustMarketplace is
      * @param _contractAddress is a MintGoldDustNFT address.
      * @param _marketPlaceAddress it can be a MintGoldDustMarketplaceAuction or a MintGoldDustSetPrice address.
      * @param _tokenQuantity the quantity of tokens desired by the buyer.
+     * @param _seller is the address of the seller of this tokenId.
      */
     function hasEnoughAmountListed(
         uint256 _tokenId,
@@ -1325,7 +1326,7 @@ abstract contract MintGoldDustMarketplace is
         address _marketPlaceAddress,
         uint256 _tokenQuantity,
         address _seller
-    ) private view {
+    ) internal view {
         if (
             _contractAddress == mintGoldDustERC1155Address &&
             (MintGoldDustERC1155(mintGoldDustERC1155Address)).balanceOf(
