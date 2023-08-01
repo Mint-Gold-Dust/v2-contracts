@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
@@ -18,19 +17,21 @@ contract MintGoldDustERC721 is
     ERC721URIStorageUpgradeable,
     MintGoldDustNFT
 {
+    using Counters for Counters.Counter;
+    Counters.Counter public _tokenIds;
+
     /**
      *
      * @notice that the MintGoldDustERC721 is composed by other contract.
      * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
-    function initializeChild(address _mintGoldDustCompany) public initializer {
+    function initializeChild(
+        address _mintGoldDustCompany
+    ) external initializer {
         __ERC721_init("Mint Gold Dust NFT", "MGDNFT");
         __ERC721URIStorage_init();
         MintGoldDustNFT.initialize(_mintGoldDustCompany);
     }
-
-    using Counters for Counters.Counter;
-    Counters.Counter public _tokenIds;
 
     /**
      * @dev the _transfer function is an internal function of ERC721. And because of the
@@ -46,8 +47,19 @@ contract MintGoldDustERC721 is
         address _to,
         uint256 _tokenId,
         uint256 _amount
-    ) public override nonReentrant {
+    ) external override nonReentrant {
         _safeTransfer(_from, _to, _tokenId, "");
+    }
+
+    function tokenURI(
+        uint256 tokenId
+    )
+        public
+        view
+        override(ERC721URIStorageUpgradeable)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
     }
 
     function executeMintFlow(
@@ -57,7 +69,7 @@ contract MintGoldDustERC721 is
         address _sender,
         uint256 _collectorMintId,
         bytes calldata _memoir
-    ) internal override returns (uint256) {
+    ) internal override isZeroAddress(_sender) returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _safeMint(_sender, newTokenId);
@@ -83,16 +95,5 @@ contract MintGoldDustERC721 is
         uint256 tokenId
     ) internal override(ERC721URIStorageUpgradeable) {
         super._burn(tokenId);
-    }
-
-    function tokenURI(
-        uint256 tokenId
-    )
-        public
-        view
-        override(ERC721URIStorageUpgradeable)
-        returns (string memory)
-    {
-        return super.tokenURI(tokenId);
     }
 }

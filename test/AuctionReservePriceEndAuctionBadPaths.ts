@@ -252,7 +252,8 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           1,
           mintGoldDustMarketplaceAuction.address,
           mintGoldDustERC721.address,
-          addr1.address
+          addr1.address,
+          addr3.address
         );
     });
   });

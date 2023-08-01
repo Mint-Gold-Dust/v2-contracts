@@ -6,7 +6,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
-import "./MintGoldDustCollectorMintControl.sol";
 
 error RoyaltyInvalidPercentage();
 error UnauthorizedOnNFT(string message);
@@ -26,7 +25,7 @@ abstract contract MintGoldDustNFT is
      */
     function initialize(
         address _mintGoldDustCompany
-    ) internal onlyInitializing {
+    ) internal onlyInitializing isZeroAddress(_mintGoldDustCompany) {
         __ReentrancyGuard_init();
         __Pausable_init();
         mintGoldDustCompany = MintGoldDustCompany(
@@ -50,19 +49,17 @@ abstract contract MintGoldDustNFT is
 
     uint256[48] __gap;
 
-    MintGoldDustCollectorMintControl private mintGoldDustCollectorMintControl;
+    address private mintGoldDustSetPriceAddress;
 
-    function setMintGoldDustCollectorMintControl(
-        address _mintGoldDustCollectorMintControl
+    function setMintGoldDustSetPriceAddress(
+        address _mintGoldDustSetPriceAddress
     ) external {
-        require(msg.sender == mintGoldDustCompany.owner(), "UnauthorizedOnNFT");
+        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
         require(
-            address(mintGoldDustCollectorMintControl) == address(0),
+            address(mintGoldDustSetPriceAddress) == address(0),
             "Already setted!"
         );
-        mintGoldDustCollectorMintControl = MintGoldDustCollectorMintControl(
-            _mintGoldDustCollectorMintControl
-        );
+        mintGoldDustSetPriceAddress = _mintGoldDustSetPriceAddress;
     }
 
     /**
@@ -195,13 +192,11 @@ abstract contract MintGoldDustNFT is
         address _sender
     )
         external
-        isTransactionOpened(_sender)
+        onlySetPrice
         checkParameters(_sender, _artistAddress, _royaltyPercent)
         whenNotPaused
         returns (uint256)
     {
-        mintGoldDustCollectorMintControl.closeCollectorMintTransaction(_sender);
-
         uint256 newTokenId = executeMintFlow(
             _tokenURI,
             _royaltyPercent,
@@ -226,14 +221,12 @@ abstract contract MintGoldDustNFT is
         address _sender
     )
         external
-        isTransactionOpened(_sender)
+        onlySetPrice
         checkParameters(_sender, _artistAddress, _royalty)
         whenNotPaused
         arrayLengthCheck(_newOwners, _ownersPercentage)
         returns (uint256)
     {
-        mintGoldDustCollectorMintControl.closeCollectorMintTransaction(_sender);
-
         uint256 _tokenId = executeMintFlow(
             _tokenURI,
             _royalty,
@@ -280,7 +273,7 @@ abstract contract MintGoldDustNFT is
         /// So is necessary do one more addition here.
         totalPercentage += _ownersPercentage[ownersCount];
 
-        if (totalPercentage != 100000000000000000000) {
+        if (totalPercentage != 100e18) {
             revert TheTotalPercentageCantBeGreaterThan100();
         }
 
@@ -298,12 +291,12 @@ abstract contract MintGoldDustNFT is
     }
 
     /// @notice Pause the contract
-    function pauseContract() public isowner {
+    function pauseContract() external isowner {
         _pause();
     }
 
     /// @notice Unpause the contract
-    function unpauseContract() public isowner {
+    function unpauseContract() external isowner {
         _unpause();
     }
 
@@ -332,19 +325,9 @@ abstract contract MintGoldDustNFT is
     }
 
     modifier isArtistWhitelisted(address _artistAddress) {
-        if (mintGoldDustCompany.isArtistApproved(_artistAddress) == false) {
+        if (!mintGoldDustCompany.isArtistApproved(_artistAddress)) {
             revert UnauthorizedOnNFT("ARTIST");
         }
-        _;
-    }
-
-    modifier isTransactionOpened(address _sender) {
-        require(
-            mintGoldDustCollectorMintControl.collectorMintWithOpenedTransaction(
-                _sender
-            ) == true,
-            "Collector Mint tx is closed!"
-        );
         _;
     }
 
@@ -354,14 +337,14 @@ abstract contract MintGoldDustNFT is
         uint256 percentage
     ) {
         if (
-            mintGoldDustCompany.isCollectorMint(_sender) == false ||
-            _sender != address(0)
+            !mintGoldDustCompany.isCollectorMint(_sender) ||
+            _sender == address(0)
         ) {
             revert UnauthorizedOnNFT("COLLECTOR_MINT");
         }
         if (
-            mintGoldDustCompany.isArtistApproved(_artistAddress) == false ||
-            _artistAddress != address(0)
+            !mintGoldDustCompany.isArtistApproved(_artistAddress) ||
+            _artistAddress == address(0)
         ) {
             revert UnauthorizedOnNFT("ARTIST");
         }
@@ -371,6 +354,18 @@ abstract contract MintGoldDustNFT is
         if (percentage > mintGoldDustCompany.maxRoyalty()) {
             revert RoyaltyInvalidPercentage();
         }
+        _;
+    }
+
+    modifier onlySetPrice() {
+        if (msg.sender != mintGoldDustSetPriceAddress) {
+            revert UnauthorizedOnNFT("SET_PRICE");
+        }
+        _;
+    }
+
+    modifier isZeroAddress(address _address) {
+        require(_address != address(0), "address is zero address");
         _;
     }
 }

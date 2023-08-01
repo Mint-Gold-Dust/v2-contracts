@@ -225,8 +225,6 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
       const receipt = await tx.wait();
 
-      console.log("receipt: ", receipt.events);
-
       const totalGas = receipt.gasUsed.mul(await tx.gasPrice);
 
       const etherValue = ethers.utils.formatEther(totalGas);

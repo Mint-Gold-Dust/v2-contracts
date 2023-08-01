@@ -31,7 +31,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) external view returns (bool) {
+    ) external pure returns (bool) {
         return interfaceId == type(IERC165).interfaceId;
     }
 
@@ -47,7 +47,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
         address _mintGoldDustCompany,
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
-    ) public initializer {
+    ) external initializer {
         MintGoldDustMarketplace.initialize(
             _mintGoldDustCompany,
             _mintGoldDustERC721Address,
@@ -178,15 +178,12 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
         uint256 _amount,
         address _contractAddress,
         uint256 _pricePerToken
-    ) public override whenNotPaused {
+    ) external override whenNotPaused {
         mustBeMintGoldDustERC721Or1155(_contractAddress);
 
         checkAmount(_amount);
         isNotListed(_tokenId, _contractAddress, msg.sender);
 
-        if (_pricePerToken < 0) {
-            revert ListPriceMustBeGreaterOrEqualZero();
-        }
         SaleDTO memory _saleDTO = SaleDTO(
             _tokenId,
             _amount,
@@ -202,7 +199,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
 
         auctionIds.increment();
 
-        list(_listDTO, true, address(this), auctionIds.current());
+        list(_listDTO, true, address(this), auctionIds.current(), msg.sender);
 
         emit ItemListedToAuction(
             _listDTO.saleDTO.tokenId,
@@ -274,28 +271,28 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
 
     /**
      * @dev the goal of this function start the time for the auction if it was not started yet.
-     * @notice that it EMIT the AuctionTimeStarted event when the time is started.
+     * @notice that it EMITS the AuctionTimeStarted event when the time is started.
      * @notice that the end time is the start time plus the mintGoldDustCompany.auctionDuration(). This
-     *         value is 24 hours at the moment of the deployment of the contracts.
+     *         value is 24 hours and is defined at the moment of the deployment of the contracts.
      * @param _bidDTO BidDTO struct.
      */
     function isAuctionTimeStarted(BidDTO memory _bidDTO) private {
-        /// @dev The time starts to count for the auction.
         MarketItem storage item = idMarketItemsByContractByOwner[
             _bidDTO.contractAddress
         ][_bidDTO.tokenId][_bidDTO.seller];
-        if (item.auctionProps.endTime == 0) {
-            uint256 _startTime = block.timestamp;
-            uint256 _endTime = _startTime +
-                mintGoldDustCompany.auctionDuration();
 
-            item.auctionProps.endTime = _endTime;
+        if (item.auctionProps.endTime == 0) {
+            /// @dev The time starts to count for the auction.
+            item.auctionProps.startTime = block.timestamp;
+            item.auctionProps.endTime =
+                item.auctionProps.startTime +
+                mintGoldDustCompany.auctionDuration();
 
             emit AuctionTimeStarted(
                 _bidDTO.tokenId,
                 _bidDTO.contractAddress,
-                _startTime,
-                _endTime,
+                item.auctionProps.startTime,
+                item.auctionProps.endTime,
                 item.auctionProps.auctionId
             );
         }
@@ -304,7 +301,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     /**
      * @dev the goal of this function is check if the endTime is in the final minutes configured initially
      *      by five minutes in the MintGoldDustCompany contract. If yes it adds more five minutes to the
-     *      auction end time and EMIT the AuctionExtended event.
+     *      auction end time and EMITS the AuctionExtended event.
      * @param _bidDTO BidDTO struct.
      */
     function checkIfIsLast5MinutesAndAddMore5(BidDTO memory _bidDTO) private {
@@ -365,13 +362,13 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @param _bidDTO BidDTO struct.
      */
     function manageNewBid(BidDTO memory _bidDTO) private {
-        /// @dev save the previous bidder to show in the event.
-
         MarketItem storage item = idMarketItemsByContractByOwner[
             _bidDTO.contractAddress
         ][_bidDTO.tokenId][_bidDTO.seller];
 
+        /// @dev save the previous bidder to show in the event.
         address previousBidder = item.auctionProps.highestBidder;
+
         /// @dev here we change the states.
         item.price = msg.value;
         item.auctionProps.highestBid = msg.value;
@@ -387,6 +384,9 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             item.auctionProps.auctionId
         );
     }
+
+    mapping(address => mapping(address => mapping(uint256 => mapping(address => bool))))
+        private checkBidder;
 
     /**
      *
@@ -411,7 +411,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      *                  - contractAddress: is a MintGoldDustNFT address.
      *                  - seller: is the address of the seller of this tokenId.
      */
-    function placeBid(BidDTO memory _bidDTO) public payable nonReentrant {
+    function placeBid(BidDTO memory _bidDTO) external payable nonReentrant {
         /// @dev verifications
         isNotCreator(_bidDTO);
         isNotLastBidder(_bidDTO);
@@ -423,11 +423,24 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
         isAuctionTimeEnded(_bidDTO);
         isBidTooLow(_bidDTO);
 
-        /// @dev starts auction flow
-        isAuctionTimeStarted(_bidDTO);
-        checkIfIsLast5MinutesAndAddMore5(_bidDTO);
-        refundLastBidder(_bidDTO);
-        manageNewBid(_bidDTO);
+        if (
+            checkBidder[msg.sender][_bidDTO.contractAddress][_bidDTO.tokenId][
+                _bidDTO.seller
+            ] == false
+        ) {
+            checkBidder[msg.sender][_bidDTO.contractAddress][_bidDTO.tokenId][
+                _bidDTO.seller
+            ] == true;
+
+            /// @dev starts auction flow
+            isAuctionTimeStarted(_bidDTO);
+            checkIfIsLast5MinutesAndAddMore5(_bidDTO);
+            refundLastBidder(_bidDTO);
+            manageNewBid(_bidDTO);
+            delete checkBidder[msg.sender][_bidDTO.contractAddress][
+                _bidDTO.tokenId
+            ][_bidDTO.seller];
+        }
     }
 
     /**
@@ -442,7 +455,10 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @notice if everything goes alright the token is retrieved by the seller and the function EMIT the AuctionCancelled event.
      *                In the final the item is deleted from the idMarketItemsByContractByOwner mapping.
      */
-    function cancelAuction(uint256 _tokenId, address _contractAddress) public {
+    function cancelAuction(
+        uint256 _tokenId,
+        address _contractAddress
+    ) external nonReentrant {
         isTokenIdListed(_tokenId, _contractAddress, msg.sender);
         require(
             idMarketItemsByContractByOwner[_contractAddress][_tokenId][
@@ -508,7 +524,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      *                  - contractAddress: is a MintGoldDustNFT address.
      *                  - seller: is the address of the seller of this tokenId.
      */
-    function endAuction(BidDTO memory _bidDTO) public nonReentrant {
+    function endAuction(BidDTO memory _bidDTO) external nonReentrant {
         isTokenIdListed(
             _bidDTO.tokenId,
             _bidDTO.contractAddress,

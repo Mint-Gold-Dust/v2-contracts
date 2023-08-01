@@ -23,14 +23,12 @@ error ItemIsNotListedBySeller(
 );
 error ItemIsAlreadyListed(address _contractAddress);
 error AddressUnauthorized(string _reason);
-error ErrorToTransfer(string _reason);
 error FunctionForSetPriceListedNFT();
 error FunctionForAuctionListedNFT();
 error MustBeERC721OrERC1155();
 error LessItemsListedThanThePurchaseAmount();
 error InvalidAmountForThisPurchase();
 error PurchaseOfERC1155InAuctionThatCoverAllListedItems();
-error CollectorMintDataNotMatch();
 error InvalidAmount();
 
 /// @title An abstract contract responsible to define some general responsibilites related with
@@ -58,6 +56,12 @@ abstract contract MintGoldDustMarketplace is
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
     ) internal onlyInitializing {
+        require(
+            _mintGoldDustCompany != address(0) &&
+                _mintGoldDustERC721Address != address(0) &&
+                _mintGoldDustERC1155Address != address(0),
+            "contract address cannot be zero"
+        );
         __ReentrancyGuard_init();
         __Pausable_init();
         mintGoldDustCompany = MintGoldDustCompany(_mintGoldDustCompany);
@@ -117,6 +121,7 @@ abstract contract MintGoldDustMarketplace is
      */
     struct AuctionProps {
         uint256 auctionId;
+        uint256 startTime;
         uint256 endTime;
         address highestBidder;
         uint256 highestBid;
@@ -274,7 +279,7 @@ abstract contract MintGoldDustMarketplace is
         uint256 _amount,
         address _contractAddress,
         uint256 _price
-    ) public virtual;
+    ) external virtual;
 
     /**
      * @notice that is a more generic list function than the above. This function can be used by both kind of markets
@@ -300,12 +305,16 @@ abstract contract MintGoldDustMarketplace is
      *                    the MintGoldDustSetPrice it IS FALSE.
      * @param _marketAddress if the flow comes from the MintGoldDustMarketplaceAuction, so is the respective address
      *                    if not is the MintGoldDustSetPrice address.
+     * @param _sender: who is calling this function
+     *    @dev we need this parameter because in the collectorMint flow who calls this function is the buyer. How it function is internal
+     *    we can have a good control on top of it.
      */
     function list(
         ListDTO memory _listDTO,
         bool _isAuction,
         address _marketAddress,
-        uint256 _auctionId
+        uint256 _auctionId,
+        address _sender
     ) internal {
         MintGoldDustNFT _mintGoldDustNFT;
         bool _isERC721 = false;
@@ -318,7 +327,8 @@ abstract contract MintGoldDustMarketplace is
         } else {
             checkBalanceForERC1155(
                 _listDTO.saleDTO.tokenId,
-                _listDTO.saleDTO.amount
+                _listDTO.saleDTO.amount,
+                _sender
             );
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
             _realAmount = _listDTO.saleDTO.amount;
@@ -326,6 +336,7 @@ abstract contract MintGoldDustMarketplace is
 
         AuctionProps memory auctionProps = AuctionProps(
             _auctionId,
+            0,
             0,
             payable(address(0)),
             0,
@@ -410,12 +421,8 @@ abstract contract MintGoldDustMarketplace is
         uint256 collFee;
         uint256 balance;
 
-        fee =
-            (_value * mintGoldDustCompany.primarySaleFeePercent()) /
-            (100 * 10 ** 18);
-        collFee =
-            (_value * mintGoldDustCompany.collectorFee()) /
-            (100 * 10 ** 18);
+        fee = (_value * mintGoldDustCompany.primarySaleFeePercent()) / (100e18);
+        collFee = (_value * mintGoldDustCompany.collectorFee()) / (100e18);
         balance = _value - (fee + collFee);
 
         checkIfIsSplitPaymentAndCall(
@@ -683,7 +690,7 @@ abstract contract MintGoldDustMarketplace is
             _mintGoldDustNFT.tokenIdCollaboratorsPercentage(
                 _saleDTO.tokenId,
                 0
-            )) / (100 * 10 ** 18);
+            )) / (100e18);
 
         payable(_artist).transfer(balanceSplitPart);
         emit NftPurchasedCollaboratorAmount(
@@ -698,7 +705,7 @@ abstract contract MintGoldDustMarketplace is
                         _saleDTO.tokenId,
                         i
                     )) /
-                (100 * 10 ** 18);
+                (100e18);
             payable(
                 _mintGoldDustNFT.tokenCollaborators(_saleDTO.tokenId, i - 1)
             ).transfer(balanceSplitPart);
@@ -906,11 +913,11 @@ abstract contract MintGoldDustMarketplace is
 
         fee =
             (_value * mintGoldDustCompany.secondarySaleFeePercent()) /
-            (100 * 10 ** 18);
+            (100e18);
         royalty =
             (_value *
                 _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId)) /
-            (100 * 10 ** 18);
+            (100e18);
 
         balance = _value - (fee + royalty);
 
@@ -1158,7 +1165,7 @@ abstract contract MintGoldDustMarketplace is
         uint256 _amount,
         uint256 _value
     ) private pure {
-        if (_value != (_price * (_amount * (10 ** 18))) / (10 ** 18)) {
+        if (_value != (_price * (_amount * (1e18))) / (1e18)) {
             revert InvalidAmountForThisPurchase();
         }
     }
@@ -1189,11 +1196,12 @@ abstract contract MintGoldDustMarketplace is
      */
     function checkBalanceForERC1155(
         uint256 _tokenId,
-        uint256 _tokenAmount
-    ) internal view {
+        uint256 _tokenAmount,
+        address _sender
+    ) private view {
         if (
             (MintGoldDustERC1155(mintGoldDustERC1155Address)).balanceOf(
-                msg.sender,
+                _sender,
                 _tokenId
             ) < _tokenAmount
         ) {
@@ -1373,7 +1381,7 @@ abstract contract MintGoldDustMarketplace is
         uint256[] calldata ids,
         uint256[] calldata values,
         bytes calldata data
-    ) external virtual override returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
     }
 
@@ -1406,12 +1414,12 @@ abstract contract MintGoldDustMarketplace is
     }
 
     /// @notice Pause the contract
-    function pauseContract() public isowner {
+    function pauseContract() external isowner {
         _pause();
     }
 
     /// @notice Unpause the contract
-    function unpauseContract() public isowner {
+    function unpauseContract() external isowner {
         _unpause();
     }
 

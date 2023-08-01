@@ -3,9 +3,7 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 import "./MintGoldDustNFT.sol";
 import "./MintGoldDustMarketplaceAuction.sol";
@@ -20,13 +18,13 @@ contract MintGoldDustERC1155 is
     // Add your custom code and functions here
     /**
      *
-     * @notice that the MintGoldDustERC721 is composed by other contract.
+     * @notice that the MintGoldDustERC1155 is composed by other contract.
      * @param _mintGoldDustCompany The contract responsible to MGD management features.
      */
     function initializeChild(
         address _mintGoldDustCompany,
         string calldata baseURI
-    ) public initializer {
+    ) external initializer {
         __ERC1155_init(baseURI);
         __ERC1155URIStorage_init();
         MintGoldDustNFT.initialize(_mintGoldDustCompany);
@@ -59,7 +57,7 @@ contract MintGoldDustERC1155 is
         address to,
         uint256 tokenId,
         uint256 amount
-    ) public override nonReentrant {
+    ) external override nonReentrant {
         safeTransferFrom(from, to, tokenId, amount, "");
     }
 
@@ -80,10 +78,11 @@ contract MintGoldDustERC1155 is
         address _sender,
         uint256 _collectorMintId,
         bytes calldata _memoir
-    ) internal override returns (uint256) {
+    ) internal override isZeroAddress(_sender) returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(_sender, newTokenId, _amount, "");
+        _setURI(newTokenId, _tokenURI);
         tokenIdArtist[newTokenId] = _sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
         tokenIdMemoir[newTokenId] = _memoir;
