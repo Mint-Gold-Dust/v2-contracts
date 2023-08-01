@@ -78,7 +78,7 @@ contract MintGoldDustERC1155 is
         address _sender,
         uint256 _collectorMintId,
         bytes calldata _memoir
-    ) internal override returns (uint256) {
+    ) internal override isZeroAddress(_sender) returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(_sender, newTokenId, _amount, "");

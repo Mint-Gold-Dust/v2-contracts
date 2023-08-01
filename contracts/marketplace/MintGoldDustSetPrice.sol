@@ -41,10 +41,6 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         address contractAddress;
     }
 
-    /// contract -> tokenId -> seller -> amount
-    mapping(address => mapping(uint256 => mapping(address => uint256)))
-        public tokenIdOffChainAmountByContractByOwner;
-
     /**
      *
      * @notice MGDAuction is a children of MintGoldDustMarketplace and this one is

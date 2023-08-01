@@ -52,7 +52,7 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
         uint256 _maxRoyalty,
         uint256 _auctionDurationInMinutes,
         uint256 _auctionFinalMinutes
-    ) external initializer {
+    ) external initializer isZeroAddress(_owner) {
         __Ownable_init();
         _transferOwnership(_owner);
         primarySaleFeePercent = _primarySaleFeePercent;
@@ -70,7 +70,10 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     event CollectorMintAdded(address indexed validatorAddress, bool state);
 
     /// @notice Add new validators to Mint Gold Dust Company
-    function setValidator(address _address, bool _state) external onlyOwner {
+    function setValidator(
+        address _address,
+        bool _state
+    ) external onlyOwner isZeroAddress(_address) {
         isAddressValidator[_address] = _state;
         emit ValidatorAdded(_address, _state);
     }
@@ -79,7 +82,7 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     function whitelist(
         address _address,
         bool _state
-    ) external isValidatorOrOwner {
+    ) external isValidatorOrOwner isZeroAddress(_address) {
         isArtistApproved[_address] = _state;
         emit ArtistWhitelisted(_address, _state);
     }
@@ -99,5 +102,10 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
         } else {
             revert Unauthorized();
         }
+    }
+
+    modifier isZeroAddress(address _address) {
+        require(_address != address(0), "address is zero address");
+        _;
     }
 }

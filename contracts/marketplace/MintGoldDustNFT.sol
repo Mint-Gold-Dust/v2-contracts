@@ -26,7 +26,7 @@ abstract contract MintGoldDustNFT is
      */
     function initialize(
         address _mintGoldDustCompany
-    ) internal onlyInitializing {
+    ) internal onlyInitializing isZeroAddress(_mintGoldDustCompany) {
         __ReentrancyGuard_init();
         __Pausable_init();
         mintGoldDustCompany = MintGoldDustCompany(
@@ -371,6 +371,11 @@ abstract contract MintGoldDustNFT is
         if (percentage > mintGoldDustCompany.maxRoyalty()) {
             revert RoyaltyInvalidPercentage();
         }
+        _;
+    }
+
+    modifier isZeroAddress(address _address) {
+        require(_address != address(0), "address is zero address");
         _;
     }
 }

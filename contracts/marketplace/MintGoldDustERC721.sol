@@ -17,6 +17,9 @@ contract MintGoldDustERC721 is
     ERC721URIStorageUpgradeable,
     MintGoldDustNFT
 {
+    using Counters for Counters.Counter;
+    Counters.Counter public _tokenIds;
+
     /**
      *
      * @notice that the MintGoldDustERC721 is composed by other contract.
@@ -29,9 +32,6 @@ contract MintGoldDustERC721 is
         __ERC721URIStorage_init();
         MintGoldDustNFT.initialize(_mintGoldDustCompany);
     }
-
-    using Counters for Counters.Counter;
-    Counters.Counter public _tokenIds;
 
     /**
      * @dev the _transfer function is an internal function of ERC721. And because of the
@@ -51,6 +51,17 @@ contract MintGoldDustERC721 is
         _safeTransfer(_from, _to, _tokenId, "");
     }
 
+    function tokenURI(
+        uint256 tokenId
+    )
+        public
+        view
+        override(ERC721URIStorageUpgradeable)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+
     function executeMintFlow(
         string calldata _tokenURI,
         uint256 _royaltyPercent,
@@ -58,7 +69,7 @@ contract MintGoldDustERC721 is
         address _sender,
         uint256 _collectorMintId,
         bytes calldata _memoir
-    ) internal override returns (uint256) {
+    ) internal override isZeroAddress(_sender) returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _safeMint(_sender, newTokenId);
@@ -84,16 +95,5 @@ contract MintGoldDustERC721 is
         uint256 tokenId
     ) internal override(ERC721URIStorageUpgradeable) {
         super._burn(tokenId);
-    }
-
-    function tokenURI(
-        uint256 tokenId
-    )
-        public
-        view
-        override(ERC721URIStorageUpgradeable)
-        returns (string memory)
-    {
-        return super.tokenURI(tokenId);
     }
 }

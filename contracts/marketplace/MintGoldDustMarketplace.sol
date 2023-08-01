@@ -56,6 +56,12 @@ abstract contract MintGoldDustMarketplace is
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
     ) internal onlyInitializing {
+        require(
+            _mintGoldDustCompany != address(0) &&
+                _mintGoldDustERC721Address != address(0) &&
+                _mintGoldDustERC1155Address != address(0),
+            "contract address cannot be zero"
+        );
         __ReentrancyGuard_init();
         __Pausable_init();
         mintGoldDustCompany = MintGoldDustCompany(_mintGoldDustCompany);
