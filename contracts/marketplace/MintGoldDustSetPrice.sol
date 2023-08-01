@@ -239,7 +239,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
             _delistDTO.amount
         );
 
-        if (_marketItem.tokenAmount == 0) {
+        if (_marketItem.tokenAmount <= 0) {
             delete idMarketItemsByContractByOwner[_delistDTO.contractAddress][
                 _delistDTO.tokenId
             ][msg.sender];
