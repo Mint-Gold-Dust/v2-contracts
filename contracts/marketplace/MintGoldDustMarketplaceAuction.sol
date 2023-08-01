@@ -47,7 +47,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
         address _mintGoldDustCompany,
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
-    ) public initializer {
+    ) external initializer {
         MintGoldDustMarketplace.initialize(
             _mintGoldDustCompany,
             _mintGoldDustERC721Address,
@@ -178,7 +178,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
         uint256 _amount,
         address _contractAddress,
         uint256 _pricePerToken
-    ) public override whenNotPaused {
+    ) external override whenNotPaused {
         mustBeMintGoldDustERC721Or1155(_contractAddress);
 
         checkAmount(_amount);
@@ -411,7 +411,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      *                  - contractAddress: is a MintGoldDustNFT address.
      *                  - seller: is the address of the seller of this tokenId.
      */
-    function placeBid(BidDTO memory _bidDTO) public payable nonReentrant {
+    function placeBid(BidDTO memory _bidDTO) external payable nonReentrant {
         /// @dev verifications
         isNotCreator(_bidDTO);
         isNotLastBidder(_bidDTO);
@@ -455,7 +455,10 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @notice if everything goes alright the token is retrieved by the seller and the function EMIT the AuctionCancelled event.
      *                In the final the item is deleted from the idMarketItemsByContractByOwner mapping.
      */
-    function cancelAuction(uint256 _tokenId, address _contractAddress) public {
+    function cancelAuction(
+        uint256 _tokenId,
+        address _contractAddress
+    ) external nonReentrant {
         isTokenIdListed(_tokenId, _contractAddress, msg.sender);
         require(
             idMarketItemsByContractByOwner[_contractAddress][_tokenId][
@@ -521,7 +524,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      *                  - contractAddress: is a MintGoldDustNFT address.
      *                  - seller: is the address of the seller of this tokenId.
      */
-    function endAuction(BidDTO memory _bidDTO) public nonReentrant {
+    function endAuction(BidDTO memory _bidDTO) external nonReentrant {
         isTokenIdListed(
             _bidDTO.tokenId,
             _bidDTO.contractAddress,

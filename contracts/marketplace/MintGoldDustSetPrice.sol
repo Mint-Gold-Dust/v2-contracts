@@ -8,8 +8,6 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-error YouCannotDelistMoreThanListed();
-error ErrorToCollectorMint();
 error Log(bytes32 domain, bytes encoded, bytes32 _eip712Hash);
 error ListPriceMustBeGreaterThanZero();
 
@@ -39,7 +37,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         address _mintGoldDustCompany,
         address payable _mintGoldDustERC721Address,
         address payable _mintGoldDustERC1155Address
-    ) public initializer {
+    ) external initializer {
         MintGoldDustMarketplace.initialize(
             _mintGoldDustCompany,
             _mintGoldDustERC721Address,
@@ -114,7 +112,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         uint256 _amount,
         address _contractAddress,
         uint256 _price
-    ) public override whenNotPaused {
+    ) external override whenNotPaused {
         mustBeMintGoldDustERC721Or1155(_contractAddress);
 
         isNotListed(_tokenId, _contractAddress, msg.sender);
@@ -158,7 +156,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         uint256 _price,
         address _contractAddress,
         address _seller
-    ) public {
+    ) external {
         mustBeMintGoldDustERC721Or1155(_contractAddress);
         isTokenIdListed(_tokenId, _contractAddress, _seller);
         isSeller(_tokenId, _contractAddress, _seller);
@@ -205,7 +203,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      */
-    function delistNft(DelistDTO memory _delistDTO) public nonReentrant {
+    function delistNft(DelistDTO memory _delistDTO) external nonReentrant {
         mustBeMintGoldDustERC721Or1155(_delistDTO.contractAddress);
         isTokenIdListed(
             _delistDTO.tokenId,
@@ -268,7 +266,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         bytes32 _collectorMintDTOHash,
         uint256 _amountToBuy
     )
-        public
+        external
         payable
         nonReentrant
         checkParameters(
@@ -555,13 +553,13 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
 
     modifier checkParameters(address _artistAddress, uint256 percentage) {
         if (
-            mintGoldDustCompany.isCollectorMint(msg.sender) == false ||
+            !mintGoldDustCompany.isCollectorMint(msg.sender) ||
             msg.sender == address(0)
         ) {
             revert UnauthorizedOnNFT("COLLECTOR_MINT");
         }
         if (
-            mintGoldDustCompany.isArtistApproved(_artistAddress) == false ||
+            !mintGoldDustCompany.isArtistApproved(_artistAddress) ||
             _artistAddress == address(0)
         ) {
             revert UnauthorizedOnNFT("ARTIST");

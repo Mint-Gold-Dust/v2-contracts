@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 
@@ -11,7 +12,11 @@ error UnauthorizedOnNFT(string message);
 error NumberOfCollaboratorsAndPercentagesNotMatch();
 error TheTotalPercentageCantBeGreaterThan100();
 
-abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
+abstract contract MintGoldDustNFT is
+    Initializable,
+    PausableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     // Add your custom code and functions here
     /**
      *
@@ -20,7 +25,9 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
      */
     function initialize(
         address _mintGoldDustCompany
-    ) internal onlyInitializing {
+    ) internal onlyInitializing isZeroAddress(_mintGoldDustCompany) {
+        __ReentrancyGuard_init();
+        __Pausable_init();
         mintGoldDustCompany = MintGoldDustCompany(
             payable(_mintGoldDustCompany)
         );
@@ -266,7 +273,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         /// So is necessary do one more addition here.
         totalPercentage += _ownersPercentage[ownersCount];
 
-        if (totalPercentage != 100000000000000000000) {
+        if (totalPercentage != 100e18) {
             revert TheTotalPercentageCantBeGreaterThan100();
         }
 
@@ -284,12 +291,12 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
     }
 
     /// @notice Pause the contract
-    function pauseContract() public isowner {
+    function pauseContract() external isowner {
         _pause();
     }
 
     /// @notice Unpause the contract
-    function unpauseContract() public isowner {
+    function unpauseContract() external isowner {
         _unpause();
     }
 
@@ -318,7 +325,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
     }
 
     modifier isArtistWhitelisted(address _artistAddress) {
-        if (mintGoldDustCompany.isArtistApproved(_artistAddress) == false) {
+        if (!mintGoldDustCompany.isArtistApproved(_artistAddress)) {
             revert UnauthorizedOnNFT("ARTIST");
         }
         _;
@@ -330,13 +337,13 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         uint256 percentage
     ) {
         if (
-            mintGoldDustCompany.isCollectorMint(_sender) == false ||
+            !mintGoldDustCompany.isCollectorMint(_sender) ||
             _sender == address(0)
         ) {
             revert UnauthorizedOnNFT("COLLECTOR_MINT");
         }
         if (
-            mintGoldDustCompany.isArtistApproved(_artistAddress) == false ||
+            !mintGoldDustCompany.isArtistApproved(_artistAddress) ||
             _artistAddress == address(0)
         ) {
             revert UnauthorizedOnNFT("ARTIST");
@@ -354,6 +361,11 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         if (msg.sender != mintGoldDustSetPriceAddress) {
             revert UnauthorizedOnNFT("SET_PRICE");
         }
+        _;
+    }
+
+    modifier isZeroAddress(address _address) {
+        require(_address != address(0), "address is zero address");
         _;
     }
 }

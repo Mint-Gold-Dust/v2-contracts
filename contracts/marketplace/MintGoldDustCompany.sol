@@ -4,9 +4,6 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 error Unauthorized();
 
@@ -55,7 +52,7 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
         uint256 _maxRoyalty,
         uint256 _auctionDurationInMinutes,
         uint256 _auctionFinalMinutes
-    ) public initializer {
+    ) external initializer isZeroAddress(_owner) {
         __Ownable_init();
         _transferOwnership(_owner);
         primarySaleFeePercent = _primarySaleFeePercent;
@@ -73,7 +70,10 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     event CollectorMintAdded(address indexed validatorAddress, bool state);
 
     /// @notice Add new validators to Mint Gold Dust Company
-    function setValidator(address _address, bool _state) public onlyOwner {
+    function setValidator(
+        address _address,
+        bool _state
+    ) external onlyOwner isZeroAddress(_address) {
         isAddressValidator[_address] = _state;
         emit ValidatorAdded(_address, _state);
     }
@@ -82,7 +82,7 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     function whitelist(
         address _address,
         bool _state
-    ) public isValidatorOrOwner {
+    ) external isValidatorOrOwner isZeroAddress(_address) {
         isArtistApproved[_address] = _state;
         emit ArtistWhitelisted(_address, _state);
     }
@@ -91,16 +91,21 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     function setCollectorMint(
         address _address,
         bool _state
-    ) public isValidatorOrOwner {
+    ) external isValidatorOrOwner {
         isCollectorMint[_address] = _state;
         emit CollectorMintAdded(_address, _state);
     }
 
     modifier isValidatorOrOwner() {
-        if (isAddressValidator[msg.sender] == true || msg.sender == owner()) {
+        if (isAddressValidator[msg.sender] || msg.sender == owner()) {
             _;
         } else {
             revert Unauthorized();
         }
+    }
+
+    modifier isZeroAddress(address _address) {
+        require(_address != address(0), "address is zero address");
+        _;
     }
 }

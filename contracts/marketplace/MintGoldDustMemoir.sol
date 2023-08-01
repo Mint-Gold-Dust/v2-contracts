@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 error UseThisFunctionForEOA();
-error UseThisFunctionForContract();
 error YouCannotUpdateThisMemoir();
 
 /// @title A contract responsible by allow new address to create a memoir.
@@ -17,7 +16,7 @@ contract MintGoldDustMemoir is Initializable {
     mapping(address => mapping(uint256 => bytes)) public userCounterMemoirs;
     mapping(address => uint256) public userCounter;
 
-    function initialize() public initializer {
+    function initialize() external initializer {
         // Empty initializer function for the upgrade proxy pattern
     }
 
@@ -46,7 +45,7 @@ contract MintGoldDustMemoir is Initializable {
      *        to verify the last state of the counter and add more one
      *        before update the mapping for this user.
      */
-    function addMemoirForEOA(address _eoa, bytes calldata _memoir) public {
+    function addMemoirForEOA(address _eoa, bytes calldata _memoir) external {
         if (isContract(_eoa)) {
             revert UseThisFunctionForEOA();
         }
