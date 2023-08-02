@@ -868,6 +868,53 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         "InvalidAmountForThisPurchase"
       );
     });
+
+    it("Should pass if there are enough tokens listed for an ERC1155.", async () => {
+        await mintGoldDustSetPrice.connect(addr2).purchaseNft({
+            tokenId: 1,
+            amount: amountToBuy,
+            contractAddress: mintGoldDustERC1155.address,
+            seller: addr1.address,
+        }, {
+            value: toWei(priceToBuy),
+        });
+
+        // Check if the balance is as expected
+        expect(await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1))
+            .to.equal(amountToList - amountToBuy);
+    });
+
+    it("Should revert with a LessItemsListedThanThePurchaseAmount error if the amount requested for purchase is more than the amount listed on the contract for ERC1155.", async () => {
+        await expect(
+            mintGoldDustSetPrice.connect(addr2).purchaseNft({
+                tokenId: 1,
+                amount: amountToList + 1,
+                contractAddress: mintGoldDustERC1155.address,
+                seller: addr1.address,
+            }, {
+                value: toWei(priceToBuy),
+            })
+        ).to.be.revertedWithCustomError(
+            mintGoldDustSetPrice,
+            "LessItemsListedThanThePurchaseAmount"
+        );
+    });
+
+    it("Should revert with a LessItemsListedThanThePurchaseAmount error if the amount requested for purchase is more than the amount available in the idMarketItemsByContractByOwner mapping for ERC1155.", async () => {
+        await expect(
+            mintGoldDustSetPrice.connect(addr2).purchaseNft({
+                tokenId: 1,
+                amount: amountToList + 1,
+                contractAddress: mintGoldDustERC1155.address,
+                seller: addr1.address,
+            }, {
+                value: toWei(priceToBuy),
+            })
+        ).to.be.revertedWithCustomError(
+            mintGoldDustSetPrice,
+            "LessItemsListedThanThePurchaseAmount"
+        );
+    });
   });
 
   describe("\n--------------- Purchase NFT on secondary market ---------------\n", function () {
