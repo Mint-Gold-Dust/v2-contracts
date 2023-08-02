@@ -243,7 +243,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         "MintGoldDustNftPurchasedPrimaryMarket"
       );
       expect(receipt.events[1].eventSignature).to.be.equal(
-        "MintGoldDustNftPurchasedPrimaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,uint256,uint256,bool,bool,bool)"
+        "MintGoldDustNftPurchasedPrimaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,uint256,uint256,bool,bool)"
       );
       expect(receipt.events[1].args.saleId).to.be.equal(1);
       expect(receipt.events[1].args.tokenId).to.be.equal(1);
@@ -264,7 +264,6 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       );
       expect(receipt.events[1].args.tokenAmountSold).to.be.equal(1);
       expect(receipt.events[1].args.hasCollaborators).to.be.equal(false);
-      expect(receipt.events[1].args.isAuction).to.be.equal(true);
       expect(receipt.events[1].args.isERC721).to.be.equal(true);
 
       const sellerBalanceAfter = await addr1.getBalance();
