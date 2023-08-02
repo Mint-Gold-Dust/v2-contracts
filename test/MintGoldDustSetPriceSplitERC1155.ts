@@ -244,6 +244,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price));
       await mintGoldDustSetPrice.connect(addr1).delistNft({
         tokenId: 1,
+        amount: quantityToList,
         contractAddress: mintGoldDustERC1155.address,
       });
       await mintGoldDustSetPrice
@@ -442,7 +443,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
             1,
             toWei(newPrice),
             mintGoldDustERC1155.address,
-            addr2.address
+            addr1.address
           )
       )
         .to.be.revertedWithCustomError(
@@ -452,7 +453,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         .withArgs("Not seller!");
     });
 
-    it("Should revert the transaction with an MGDMarketplaceItemIsNotListed error if some user tries to update an item that is not on sale.", async function () {
+    it("Should revert the transaction with an ItemIsNotListed error if some user tries to update an item that is not on sale.", async function () {
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -474,8 +475,14 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
             addr2.address
           )
       )
-        .to.be.revertedWithCustomError(mintGoldDustSetPrice, "ItemIsNotListed")
-        .withArgs(mintGoldDustERC1155.address);
+        .to.be.revertedWithCustomError(mintGoldDustSetPrice, "ItemIsNotListedBySeller")
+        .withArgs(
+            1,
+            mintGoldDustSetPrice.address,
+            mintGoldDustERC1155.address,
+            addr2.address,
+            addr2.address
+          );
     });
   });
 
@@ -517,7 +524,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         );
     });
 
-    it("Should delist a NFT from the marketplace and emit the MintGoldDustNftRemovedFromMarketplace event.", async function () {
+    it("Should delist a NFT from the marketplace and emit the NftQuantityDelisted event.", async function () {
       console.log(
         "\t ARTIST BALANCE BEFORE DELIST (ETH): ",
         parseFloat(fromWei(await addr1.getBalance()))
@@ -533,16 +540,17 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
               1,
               addr1.address
             )
-        ).sold
-      ).to.be.equal(false);
+        ).tokenAmount
+      ).to.be.equal(quantityToList);
       // addr2 relist a purchased NFT
       await expect(
         mintGoldDustSetPrice.connect(addr1).delistNft({
           tokenId: 1,
+          amount: quantityToList,
           contractAddress: mintGoldDustERC1155.address,
         })
       )
-        .to.emit(mintGoldDustSetPrice, "MintGoldDustNftRemovedFromMarketplace")
+        .to.emit(mintGoldDustSetPrice, "NftQuantityDelisted")
         .withArgs(1, addr1.address, mintGoldDustERC1155.address);
       // the market item should be sold
       //   await expect(
@@ -574,7 +582,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       );
     });
 
-    it("Should revert with a MGDMarketplaceUnauthorized error if some address that is not the item seller try to delist its NFT from marketplace.", async function () {
+    it("Should revert with a ItemIsNotListedBySeller error if some address that is not the item seller try to delist its NFT from marketplace, because it has 0 tokens.", async function () {
       // the market item should be not sold
       expect(
         (
@@ -585,17 +593,18 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
               1,
               addr1.address
             )
-        ).sold
-      ).to.be.equal(false);
+        ).tokenAmount
+      ).to.be.equal(quantityToList);
       // addr2 relist a purchased NFT
       await expect(
         mintGoldDustSetPrice.connect(addr2).delistNft({
           tokenId: 1,
+          amount: quantityToList,
           contractAddress: mintGoldDustERC1155.address,
         })
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "AddressUnauthorized"
+        "ItemIsNotListedBySeller"
       );
       // the market item should still be not sold
       expect(
@@ -607,8 +616,8 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
               1,
               addr1.address
             )
-        ).sold
-      ).to.be.equal(false);
+        ).tokenAmount
+      ).to.be.equal(quantityToList);
     });
   });
 
@@ -897,7 +906,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
             value: toWei(priceToBuy),
           }
         )
-      ).to.be.revertedWithCustomError(mintGoldDustSetPrice, "ItemIsNotListed");
+      ).to.be.revertedWithCustomError(mintGoldDustSetPrice, "ItemIsNotListedBySeller");
     });
 
     it("Should revert with InvalidAmountForThisPurchase if the user tries to buy an itemId with an amount greater than the item's price.", async () => {
