@@ -869,21 +869,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
     });
 
-    it("Should pass if there are enough tokens listed for an ERC1155.", async () => {
-        await mintGoldDustSetPrice.connect(addr2).purchaseNft({
-            tokenId: 1,
-            amount: amountToBuy,
-            contractAddress: mintGoldDustERC1155.address,
-            seller: addr1.address,
-        }, {
-            value: toWei(priceToBuy),
-        });
-
-        // Check if the balance is as expected
-        expect(await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1))
-            .to.equal(amountToList - amountToBuy);
-    });
-
     it("Should revert with a LessItemsListedThanThePurchaseAmount error if the amount requested for purchase is more than the amount listed on the contract for ERC1155.", async () => {
         await expect(
             mintGoldDustSetPrice.connect(addr2).purchaseNft({

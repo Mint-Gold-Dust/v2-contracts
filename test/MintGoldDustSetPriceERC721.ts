@@ -839,7 +839,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         "InvalidAmountForThisPurchase"
       );
     });
-    it("Should pass if there are enough tokens listed for an ERC1155.", async () => {
+    it("Should pass if there are enough tokens listed for an ERC721.", async () => {
         await mintGoldDustSetPrice.connect(addr2).purchaseNft({
             tokenId: 1,
             amount: amountToBuy,
