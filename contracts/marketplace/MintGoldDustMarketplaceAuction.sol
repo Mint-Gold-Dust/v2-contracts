@@ -184,25 +184,23 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
         checkAmount(_amount);
         isNotListed(_tokenId, _contractAddress, msg.sender);
 
-        SaleDTO memory _saleDTO = SaleDTO(
-            _tokenId,
-            _amount,
-            _contractAddress,
-            msg.sender
-        );
-
         uint256 _totalPrice = _pricePerToken * _amount;
 
         require(_totalPrice / _amount == _pricePerToken, "Mismatched prices");
 
-        ListDTO memory _listDTO = ListDTO(_saleDTO, _pricePerToken);
+        ListDTO memory _listDTO = ListDTO(
+            _tokenId,
+            _amount,
+            _contractAddress,
+            _pricePerToken
+        );
 
         auctionIds.increment();
 
-        list(_listDTO, true, address(this), auctionIds.current(), msg.sender);
+        list(_listDTO, auctionIds.current(), msg.sender);
 
         emit ItemListedToAuction(
-            _listDTO.saleDTO.tokenId,
+            _listDTO.tokenId,
             _contractAddress,
             msg.sender,
             _listDTO.price,
@@ -556,9 +554,9 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
                 _bidDTO.contractAddress,
                 _bidDTO.seller
             ),
-            item.auctionProps.highestBid,
-            item.auctionProps.highestBidder
+            item.auctionProps.highestBid
         );
+
         emit AuctionWinnerCall(
             _bidDTO.tokenId,
             _bidDTO.contractAddress,

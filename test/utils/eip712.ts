@@ -10,6 +10,7 @@ interface CollectorMintDTO {
   amount: number;
   artistSigner: string;
   price: BigNumber;
+  collectorMintId: number;
 }
 
 const collectorMintDTOType: any = [
@@ -22,6 +23,7 @@ const collectorMintDTOType: any = [
   { name: "amount", type: "uint256" },
   { name: "artistSigner", type: "address" },
   { name: "price", type: "uint256" },
+  { name: "collectorMintId", type: "uint256" },
 ];
 
 function encodeData(collectorMintDTO: CollectorMintDTO): string {
@@ -36,46 +38,47 @@ function encodeData(collectorMintDTO: CollectorMintDTO): string {
     collectorMintDTO.amount,
     collectorMintDTO.artistSigner,
     collectorMintDTO.price,
+    collectorMintDTO.collectorMintId,
   ]);
 
   return encodedData;
 }
 
-function generateCollectorMintDTOHash(
-  collectorMintDTO: CollectorMintDTO,
-  collectorMintId: number
-): string {
-  let encodedDataHash = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(
-      [
-        "address",
-        "string",
-        "uint256",
-        "bytes",
-        "address[]",
-        "uint256[]",
-        "uint256",
-        "address",
-        "uint256",
-        "uint256",
-      ],
-      [
-        collectorMintDTO.contractAddress,
-        collectorMintDTO.tokenURI,
-        collectorMintDTO.royalty,
-        collectorMintDTO.memoir,
-        collectorMintDTO.collaborators,
-        collectorMintDTO.ownersPercentage,
-        collectorMintDTO.amount,
-        collectorMintDTO.artistSigner,
-        collectorMintDTO.price,
-        collectorMintId,
-      ]
-    )
-  );
+// function generateCollectorMintDTOHash(
+//   collectorMintDTO: CollectorMintDTO,
+//   collectorMintId: number
+// ): string {
+//   let encodedDataHash = ethers.utils.keccak256(
+//     ethers.utils.defaultAbiCoder.encode(
+//       [
+//         "address",
+//         "string",
+//         "uint256",
+//         "bytes",
+//         "address[]",
+//         "uint256[]",
+//         "uint256",
+//         "address",
+//         "uint256",
+//         "uint256",
+//       ],
+//       [
+//         collectorMintDTO.contractAddress,
+//         collectorMintDTO.tokenURI,
+//         collectorMintDTO.royalty,
+//         collectorMintDTO.memoir,
+//         collectorMintDTO.collaborators,
+//         collectorMintDTO.ownersPercentage,
+//         collectorMintDTO.amount,
+//         collectorMintDTO.artistSigner,
+//         collectorMintDTO.price,
+//         collectorMintId,
+//       ]
+//     )
+//   );
 
-  return encodedDataHash;
-}
+//   return encodedDataHash;
+// }
 
 function generateEIP712Hash(
   encodedData: string,
@@ -120,9 +123,4 @@ async function signData(
   return signature;
 }
 
-export {
-  encodeData,
-  generateEIP712Hash,
-  signData,
-  generateCollectorMintDTOHash,
-};
+export { encodeData, generateEIP712Hash, signData };

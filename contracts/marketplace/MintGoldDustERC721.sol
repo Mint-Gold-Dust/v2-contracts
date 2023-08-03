@@ -5,7 +5,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 import "./MintGoldDustNFT.sol";
-import "./MintGoldDustMarketplaceAuction.sol";
 
 /// @title A contract responsible by mint and transfer Mint Gold Dust ERC721 tokens.
 /// @notice Contains functions to mint and transfer MGD ERC721 tokens.
