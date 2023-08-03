@@ -11,7 +11,7 @@ chai.use(chaiAsPromised);
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMGDSetPrice.sol Smart Contract \n**********\*\*\*\***********\_\_\_**********\*\*\*\***********\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the MintGoldDustSetPrice market and the MintGoldDustERC1155 tokens. \n\n", function () {
+describe("\nMGDSetPrice.sol Smart Contract \n****\*\*****\*\*\*\*****\*\*****\_\_\_****\*\*****\*\*\*\*****\*\*****\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the MintGoldDustSetPrice market and the MintGoldDustERC1155 tokens. \n\n", function () {
 let MintGoldDustERC721: ContractFactory;
 let mintGoldDustERC721: Contract;
 
@@ -140,7 +140,7 @@ let priceToBuy = priceToList \* amountToBuy;
       balance = priceToBuy - primarySaleFee;
     });
 
-    it("Shoud revert with a LessItemsListedThanThePurchaseAmount error if some collector tries to buy an amount greater than the number of tokens listed for an ERC1155.", async () => {
+    it("Shoud revert with a LessItemsListedThanTheRequiredAmount error if some collector tries to buy an amount greater than the number of tokens listed for an ERC1155.", async () => {
       await expect(
         mgdSetPrice
           .connect(addr2)
@@ -149,7 +149,7 @@ let priceToBuy = priceToList \* amountToBuy;
           })
       ).to.be.revertedWithCustomError(
         mgdSetPrice,
-        "LessItemsListedThanThePurchaseAmount"
+        "LessItemsListedThanTheRequiredAmount"
       );
     });
 
@@ -297,7 +297,7 @@ let priceToBuy = priceToList \* amountToBuy;
       );
     });
 
-    it("Should revert with LessItemsListedThanThePurchaseAmount error if the user tries to buy a MintGoldDustERC1155 that was already sold.", async () => {
+    it("Should revert with LessItemsListedThanTheRequiredAmount error if the user tries to buy a MintGoldDustERC1155 that was already sold.", async () => {
       await mgdSetPrice
         .connect(addr2)
         .purchaseNft(1, amountToList, mintGoldDustERC1155.address, {
@@ -311,7 +311,7 @@ let priceToBuy = priceToList \* amountToBuy;
           })
       ).to.be.revertedWithCustomError(
         mgdSetPrice,
-        "LessItemsListedThanThePurchaseAmount"
+        "LessItemsListedThanTheRequiredAmount"
       );
     });
 

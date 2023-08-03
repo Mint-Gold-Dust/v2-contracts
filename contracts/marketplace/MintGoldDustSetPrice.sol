@@ -184,27 +184,32 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
    * @param _delistDTO The DelistDTO parameter to use.
    *                 It consists of the following fields:
    *                    - tokenid: The tokenId of the marketItem.
+   *                    - amount: The quantity of tokens to be delisted for an MintGoldDustERC1155.
    *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
-   *                    - seller: The seller of the marketItem.
    */
   function delistNft(DelistDTO memory _delistDTO) external nonReentrant {
     mustBeMintGoldDustERC721Or1155(_delistDTO.contractAddress);
     isTokenIdListed(_delistDTO.tokenId, _delistDTO.contractAddress, msg.sender);
     isSeller(_delistDTO.tokenId, _delistDTO.contractAddress, msg.sender);
 
-    hasEnoughAmountListed(
-      _delistDTO.tokenId,
-      _delistDTO.contractAddress,
-      address(this),
-      _delistDTO.amount,
-      msg.sender
-    );
+    uint realAmount = 1;
+
+    if (_delistDTO.contractAddress == mintGoldDustERC1155Address) {
+      realAmount = _delistDTO.amount;
+      hasEnoughAmountListed(
+        _delistDTO.tokenId,
+        _delistDTO.contractAddress,
+        address(this),
+        _delistDTO.amount,
+        msg.sender
+      );
+    }
 
     MarketItem memory _marketItem = idMarketItemsByContractByOwner[
       _delistDTO.contractAddress
     ][_delistDTO.tokenId][msg.sender];
 
-    _marketItem.tokenAmount = _marketItem.tokenAmount - _delistDTO.amount;
+    _marketItem.tokenAmount = _marketItem.tokenAmount - realAmount;
 
     MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(_marketItem.isERC721);
 
@@ -215,7 +220,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
       _delistDTO.amount
     );
 
-    if (_marketItem.tokenAmount <= 0) {
+    if (_marketItem.tokenAmount == 0) {
       delete idMarketItemsByContractByOwner[_delistDTO.contractAddress][
         _delistDTO.tokenId
       ][msg.sender];
@@ -227,8 +232,6 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
       _delistDTO.contractAddress
     );
   }
-
-  error Merda(address merdinha);
 
   /**
    * @notice that is a function responsilble by start the collector (lazy) mint process on chain.
