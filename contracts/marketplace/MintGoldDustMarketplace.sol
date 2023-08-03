@@ -88,7 +88,17 @@ abstract contract MintGoldDustMarketplace is
   mapping(address => mapping(uint256 => mapping(address => MarketItem)))
     public idMarketItemsByContractByOwner;
 
-  mapping(uint256 => bool) public isSecondarySale;
+  /// @notice that this mapping will manage the state to track the secondary sales.
+  mapping(address => mapping(uint256 => ManageSecondarySale))
+    public isSecondarySale;
+
+  /// @notice that this struct has the necessary fields to manage the secondary sales.
+  /// @dev it will be used by the isSecondarySale mapping.
+  struct ManageSecondarySale {
+    address owner;
+    bool sold;
+    uint256 amount;
+  }
 
   /**
    * This struct consists of the following fields:
@@ -97,7 +107,6 @@ abstract contract MintGoldDustMarketplace is
    *    - price: The price which the item should be sold.
    *    - sold: It says if an item was or not sold.
    *    - isAuction: true if the item was listed for marketplace auction and false if for set price market.
-   *    - isSecondarySale: true if the item was already sold first time.
    *    - isERC721: true is an MintGoldDustERC721 token.
    *    - tokenAmount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
    *              MintGoldDustERC721 the amout must be always one.
@@ -107,7 +116,6 @@ abstract contract MintGoldDustMarketplace is
     uint256 tokenId;
     address seller;
     uint256 price;
-    bool isSecondarySale;
     bool isERC721;
     uint256 tokenAmount;
     AuctionProps auctionProps;
@@ -233,7 +241,9 @@ abstract contract MintGoldDustMarketplace is
    *                             to the reserve price for the marketplace auction.
    */
   struct ListDTO {
-    SaleDTO saleDTO;
+    uint256 tokenId;
+    uint256 amount;
+    address contractAddress;
     uint256 price;
   }
 
@@ -294,22 +304,18 @@ abstract contract MintGoldDustMarketplace is
    *      markeplace address (marketplace auction or set price).
    * @param _listDTO The ListDTO struct parameter to use.
    *                 It consists of the following fields:
-   *                    - SaleDTO struct that contains:
-   *                        - tokenid: The tokenId of the marketItem.
-   *                        - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-   *                                  MintGoldDustERC721 the amout must be always one.
-   *                        - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
-   *                        - seller: The seller of the marketItem.
+   *                    - tokenid: The tokenId of the marketItem.
+   *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
+   *                              MintGoldDustERC721 the amout must be always one.
+   *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+   *                    - seller: The seller of the marketItem.
    *                    - price: the price to list the item. For auction it corresponds to the reserve price.
-   * @param _marketAddress if the flow comes from the MintGoldDustMarketplaceAuction, so is the respective address
-   *                    if not is the MintGoldDustSetPrice address.
-   * @param _sender: who is calling this function
-   *    @dev we need this parameter because in the collectorMint flow who calls this function is the buyer. How it function is internal
-   *    we can have a good control on top of it.
+   * @param _auctionId the auctionId for the auction. If the item is being listed to the set price market it is *                   zero.
+   * @param _sender the address that is listing the item.
+   *    @dev we need this parameter because in the collectorMint flow who calls this function is the buyer. How *    it function is internal we can have a good control on top of it.
    */
   function list(
     ListDTO memory _listDTO,
-    address _marketAddress,
     uint256 _auctionId,
     address _sender
   ) internal {
@@ -317,18 +323,30 @@ abstract contract MintGoldDustMarketplace is
     bool _isERC721 = false;
     uint256 _realAmount = 1;
 
-    if (_listDTO.saleDTO.contractAddress == mintGoldDustERC721Address) {
-      isNFTowner(_listDTO.saleDTO.tokenId, _listDTO.saleDTO.seller);
+    if (_listDTO.contractAddress == mintGoldDustERC721Address) {
+      isNFTowner(_listDTO.tokenId, _sender);
       _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
       _isERC721 = true;
     } else {
-      checkBalanceForERC1155(
-        _listDTO.saleDTO.tokenId,
-        _listDTO.saleDTO.amount,
-        _sender
-      );
+      checkBalanceForERC1155(_listDTO.tokenId, _listDTO.amount, _sender);
       _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
-      _realAmount = _listDTO.saleDTO.amount;
+      _realAmount = _listDTO.amount;
+    }
+
+    if (
+      isSecondarySale[address(_mintGoldDustNFT)][_listDTO.tokenId].owner ==
+      address(0)
+    ) {
+      uint256 _amountMinted = 1;
+
+      if (address(_mintGoldDustNFT) == mintGoldDustERC1155Address) {
+        _amountMinted = (MintGoldDustERC1155(mintGoldDustERC1155Address))
+          .balanceOf(_sender, _listDTO.tokenId);
+      }
+
+      isSecondarySale[address(_mintGoldDustNFT)][
+        _listDTO.tokenId
+      ] = ManageSecondarySale(_sender, false, _amountMinted);
     }
 
     AuctionProps memory auctionProps = AuctionProps(
@@ -340,24 +358,21 @@ abstract contract MintGoldDustMarketplace is
       false
     );
 
-    idMarketItemsByContractByOwner[_listDTO.saleDTO.contractAddress][
-      _listDTO.saleDTO.tokenId
-    ][_listDTO.saleDTO.seller] = MarketItem(
-      _listDTO.saleDTO.tokenId,
-      _listDTO.saleDTO.seller,
+    idMarketItemsByContractByOwner[_listDTO.contractAddress][_listDTO.tokenId][
+      _sender
+    ] = MarketItem(
+      _listDTO.tokenId,
+      _sender,
       _listDTO.price,
-      idMarketItemsByContractByOwner[_listDTO.saleDTO.contractAddress][
-        _listDTO.saleDTO.tokenId
-      ][_listDTO.saleDTO.seller].isSecondarySale,
       _isERC721,
       _realAmount,
       auctionProps
     );
 
     _mintGoldDustNFT.transfer(
-      _listDTO.saleDTO.seller,
-      _marketAddress,
-      _listDTO.saleDTO.tokenId,
+      _sender,
+      address(this),
+      _listDTO.tokenId,
       _realAmount
     );
   }
@@ -373,7 +388,6 @@ abstract contract MintGoldDustMarketplace is
    *                    - price: The price which the item should be sold.
    *                    - sold: It says if an item was or not sold.
    *                    - isAuction: true if the item was listed for marketplace auction and false if for set price market.
-   *                    - isSecondarySale: true if the item was already sold first time.
    *                    - isERC721: true is an MintGoldDustERC721 token.
    *                    - tokenAmount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
    *                              MintGoldDustERC721 the amout must be always one.
@@ -399,11 +413,19 @@ abstract contract MintGoldDustMarketplace is
     MarketItem memory _marketItem,
     SaleDTO memory _saleDTO,
     uint256 _value,
-    address _sender
+    address _sender,
+    uint256 _realAmount
   ) private {
     MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(_marketItem.isERC721);
+    ManageSecondarySale memory _manageSecondarySale = isSecondarySale[
+      address(_mintGoldDustNFT)
+    ][_saleDTO.tokenId];
 
-    isSecondarySale[_saleDTO.tokenId] = true;
+    _manageSecondarySale.amount = _manageSecondarySale.amount - _realAmount;
+
+    if (_manageSecondarySale.amount == 0) {
+      _manageSecondarySale.sold = true;
+    }
 
     itemsSold.increment();
 
@@ -854,7 +876,6 @@ abstract contract MintGoldDustMarketplace is
    *                    - price: The price which the item should be sold.
    *                    - sold: It says if an item was or not sold.
    *                    - isAuction: true if the item was listed for marketplace auction and false if for set price market.
-   *                    - isSecondarySale: true if the item was already sold first time.
    *                    - isERC721: true is an MintGoldDustERC721 token.
    *                    - tokenAmount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
    *                              MintGoldDustERC721 the amout must be always one.
@@ -928,7 +949,6 @@ abstract contract MintGoldDustMarketplace is
    *                    - price: The price which the item should be sold.
    *                    - sold: It says if an item was or not sold.
    *                    - isAuction: true if the item was listed for marketplace auction and false if for set price market.
-   *                    - isSecondarySale: true if the item was already sold first time.
    *                    - isERC721: true is an MintGoldDustERC721 token.
    *                    - tokenAmount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
    *                              MintGoldDustERC721 the amout must be always one.
@@ -1011,7 +1031,8 @@ abstract contract MintGoldDustMarketplace is
       _marketItem,
       _saleDTO,
       _value,
-      _sender
+      _sender,
+      _realAmount
     );
   }
 
@@ -1030,14 +1051,23 @@ abstract contract MintGoldDustMarketplace is
     MarketItem memory _marketItem,
     SaleDTO memory _saleDTO,
     uint256 _value,
-    address _sender
+    address _sender,
+    uint256 _realAmount
   ) private {
-    if (!isSecondarySale[_marketItem.tokenId]) {
-      primarySale(_marketItem, _saleDTO, _value, _sender);
+    ManageSecondarySale memory manageSecondarySale = isSecondarySale[
+      _saleDTO.contractAddress
+    ][_marketItem.tokenId];
+
+    if (
+      (manageSecondarySale.owner == _saleDTO.seller &&
+        manageSecondarySale.sold) ||
+      (manageSecondarySale.owner != _saleDTO.seller)
+    ) {
+      secondarySale(_marketItem, _saleDTO, _value, _sender);
       return;
     }
 
-    secondarySale(_marketItem, _saleDTO, _value, _sender);
+    primarySale(_marketItem, _saleDTO, _value, _sender, _realAmount);
   }
 
   /**
@@ -1097,7 +1127,8 @@ abstract contract MintGoldDustMarketplace is
       _marketItem,
       _saleDTO,
       _value,
-      msg.sender
+      msg.sender,
+      _realAmount
     );
   }
 

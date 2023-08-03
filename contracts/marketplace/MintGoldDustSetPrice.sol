@@ -120,21 +120,19 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
       revert ListPriceMustBeGreaterThanZero();
     }
 
-    SaleDTO memory _saleDTO = SaleDTO(
+    ListDTO memory _listDTO = ListDTO(
       _tokenId,
       _amount,
       _contractAddress,
-      msg.sender
+      _price
     );
 
-    ListDTO memory _listDTO = ListDTO(_saleDTO, _price);
-
-    list(_listDTO, address(this), 0, msg.sender);
+    list(_listDTO, 0, msg.sender);
 
     emit MintGoldDustNftListedToSetPrice(
-      _listDTO.saleDTO.tokenId,
+      _tokenId,
       msg.sender,
-      _listDTO.price,
+      _price,
       _contractAddress == mintGoldDustERC721Address ? 1 : _amount,
       _contractAddress
     );
@@ -165,21 +163,8 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
       revert ListPriceMustBeGreaterThanZero();
     }
 
-    MarketItem memory _marketItem = idMarketItemsByContractByOwner[
-      _contractAddress
-    ][_tokenId][_seller];
-
-    idMarketItemsByContractByOwner[_contractAddress][_tokenId][
-      _seller
-    ] = MarketItem(
-      _marketItem.tokenId,
-      _marketItem.seller,
-      _price,
-      _marketItem.isSecondarySale,
-      _marketItem.isERC721,
-      _marketItem.tokenAmount,
-      _marketItem.auctionProps
-    );
+    idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
+      .price = _price;
 
     emit MintGoldDustNftListedItemUpdated(
       _tokenId,
@@ -348,19 +333,17 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
       );
     }
 
-    SaleDTO memory _saleDTO = SaleDTO(
+    ListDTO memory _listDTO = ListDTO(
       _tokenId,
       _collectorMintDTO.amount,
       _collectorMintDTO.contractAddress,
-      _collectorMintDTO.artistSigner
+      _collectorMintDTO.price
     );
 
-    ListDTO memory _listDTO = ListDTO(_saleDTO, _collectorMintDTO.price);
-
-    list(_listDTO, address(this), 0, _collectorMintDTO.artistSigner);
+    list(_listDTO, 0, _collectorMintDTO.artistSigner);
 
     emit MintGoldDustNftListedToSetPrice(
-      _listDTO.saleDTO.tokenId,
+      _listDTO.tokenId,
       _collectorMintDTO.artistSigner,
       _listDTO.price,
       _collectorMintDTO.amount,

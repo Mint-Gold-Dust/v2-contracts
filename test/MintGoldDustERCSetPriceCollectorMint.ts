@@ -337,7 +337,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       expect(marketItem.tokenId).to.be.equal(0);
       expect(marketItem.seller).to.be.equal(ethers.constants.AddressZero);
       expect(marketItem.price).to.be.equal(0);
-      expect(marketItem.isSecondarySale).to.be.false;
       expect(marketItem.isERC721).to.be.false;
       expect(marketItem.tokenAmount).to.be.equal(0);
 
