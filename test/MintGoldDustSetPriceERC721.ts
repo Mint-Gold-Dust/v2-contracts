@@ -230,12 +230,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .idMarketItemsByContractByOwner(
-              mintGoldDustERC721.address,
-              1,
-              addr1.address
-            )
-        ).isSecondarySale
+            .isSecondarySale(mintGoldDustERC721.address, 1)
+        ).sold
       ).to.be.equal(false);
     });
 

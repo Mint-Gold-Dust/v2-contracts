@@ -6,8 +6,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 import "./MintGoldDustNFT.sol";
-import "./MintGoldDustMarketplaceAuction.sol";
-import "./MintGoldDustMarketplace.sol";
 
 contract MintGoldDustERC1155 is
     Initializable,

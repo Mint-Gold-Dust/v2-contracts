@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 error UseThisFunctionForEOA();
 error YouCannotUpdateThisMemoir();
 
-/// @title A contract responsible by allow new address to create a memoir.
+/// @title A contract responsible by allow External Owned Accounts to create one or more memoirs.
 /// A memoir is a form of expression that the artist or any user of the platform can use
 /// to show your feelings related to art or the current moment.
 /// @author Mint Gold Dust LLC

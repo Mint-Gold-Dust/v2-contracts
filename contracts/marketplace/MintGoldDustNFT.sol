@@ -337,12 +337,6 @@ abstract contract MintGoldDustNFT is
         uint256 percentage
     ) {
         if (
-            !mintGoldDustCompany.isCollectorMint(_sender) ||
-            _sender == address(0)
-        ) {
-            revert UnauthorizedOnNFT("COLLECTOR_MINT");
-        }
-        if (
             !mintGoldDustCompany.isArtistApproved(_artistAddress) ||
             _artistAddress == address(0)
         ) {

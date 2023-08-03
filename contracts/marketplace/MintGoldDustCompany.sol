@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 error Unauthorized();
 
 /// @title A contract responsible by Mint Gold Dust management.
-/// @notice Contains functions for update the MGD fees and some access levels.
+/// @notice Contains functions for access levels management.
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
 contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
@@ -22,10 +22,9 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     uint256 public maxRoyalty;
     uint256 public auctionDuration;
     uint256 public auctionFinalMinutes;
-    address public mintGoldDustPublicKey;
+    address public publicKey;
     mapping(address => bool) public isArtistApproved;
     mapping(address => bool) public isAddressValidator;
-    mapping(address => bool) public isCollectorMint;
 
     bytes4 private constant ERC165_ID = 0x01ffc9a7; //ERC165
 
@@ -35,10 +34,10 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
         return interfaceId == ERC165_ID;
     }
 
-    function setMintGoldDustPKey(
+    function setPublicKey(
         address _mintGoldDustPublicKey
     ) external onlyOwner isZeroAddress(_mintGoldDustPublicKey) {
-        mintGoldDustPublicKey = _mintGoldDustPublicKey;
+        publicKey = _mintGoldDustPublicKey;
     }
 
     /**
@@ -92,15 +91,6 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     ) external isValidatorOrOwner isZeroAddress(_address) {
         isArtistApproved[_address] = _state;
         emit ArtistWhitelisted(_address, _state);
-    }
-
-    /// @notice Whitelist/Blacklist collector mint
-    function setCollectorMint(
-        address _address,
-        bool _state
-    ) external isValidatorOrOwner {
-        isCollectorMint[_address] = _state;
-        emit CollectorMintAdded(_address, _state);
     }
 
     modifier isValidatorOrOwner() {
