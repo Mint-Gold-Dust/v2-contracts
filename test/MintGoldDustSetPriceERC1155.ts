@@ -225,17 +225,15 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       await mintGoldDustSetPrice
         .connect(addr1)
         .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price));
-
       expect(
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .idMarketItemsByContractByOwner(
+            .isSecondarySale(
               mintGoldDustERC1155.address,
-              1,
-              addr1.address
+              1
             )
-        ).isSecondarySale
+        ).sold
       ).to.be.equal(false);
     });
 
@@ -620,7 +618,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       balance = priceToBuy - primarySaleFee;
     });
 
-    it("Shoud revert with a LessItemsListedThanThePurchaseAmount error if some collector tries to buy an amount greater than the number of tokens listed for an ERC1155.", async () => {
+    it("Shoud revert with a LessItemsListedThanTheRequiredAmount error if some collector tries to buy an amount greater than the number of tokens listed for an ERC1155.", async () => {
       await expect(
         mintGoldDustSetPrice.connect(addr2).purchaseNft(
           {
@@ -635,7 +633,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         )
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "LessItemsListedThanThePurchaseAmount"
+        "LessItemsListedThanTheRequiredAmount"
       );
     });
 
@@ -652,13 +650,12 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .idMarketItemsByContractByOwner(
-              mintGoldDustERC1155.address,
-              1,
-              addr1.address
-            )
-        ).isSecondarySale
-      ).to.be.equal(false);
+            .isSecondarySale(
+                mintGoldDustERC1155.address,
+                1
+              )
+          ).sold
+        ).to.be.equal(false);
 
       let gasPrice = await mintGoldDustSetPrice.signer.getGasPrice();
       let gasLimit = await mintGoldDustSetPrice.estimateGas.purchaseNft(
@@ -715,7 +712,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           toWei(collFee),
           amountToBuy,
           false,
-          false,
           false
         );
 
@@ -747,18 +743,17 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         amountToBuy
       );
 
-      // verify if the flag for secondary market changed for true
+      // verify if the amount is the difference of the list and buy
       expect(
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .idMarketItemsByContractByOwner(
-              mintGoldDustERC1155.address,
-              1,
-              addr2.address
-            )
-        ).isSecondarySale
-      ).to.be.equal(true);
+            .isSecondarySale(
+                mintGoldDustERC1155.address,
+                1
+              )
+          ).amount
+        ).to.be.equal(amountToList - amountToBuy);
 
       // verify if the marketplace owner's balance increased the fee
       expect(await deployer.getBalance()).to.be.equal(
@@ -869,7 +864,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
     });
 
-    it("Should revert with a LessItemsListedThanThePurchaseAmount error if the amount requested for purchase is more than the amount listed on the contract for ERC1155.", async () => {
+    it("Should revert with a LessItemsListedThanTheRequiredAmount error if the amount requested for purchase is more than the amount listed on the contract for ERC1155.", async () => {
         await expect(
             mintGoldDustSetPrice.connect(addr2).purchaseNft({
                 tokenId: 1,
@@ -881,11 +876,11 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             })
         ).to.be.revertedWithCustomError(
             mintGoldDustSetPrice,
-            "LessItemsListedThanThePurchaseAmount"
+            "LessItemsListedThanTheRequiredAmount"
         );
     });
 
-    it("Should revert with a LessItemsListedThanThePurchaseAmount error if the amount requested for purchase is more than the amount available in the idMarketItemsByContractByOwner mapping for ERC1155.", async () => {
+    it("Should revert with a LessItemsListedThanTheRequiredAmount error if the amount requested for purchase is more than the amount available in the idMarketItemsByContractByOwner mapping for ERC1155.", async () => {
         await expect(
             mintGoldDustSetPrice.connect(addr2).purchaseNft({
                 tokenId: 1,
@@ -897,7 +892,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             })
         ).to.be.revertedWithCustomError(
             mintGoldDustSetPrice,
-            "LessItemsListedThanThePurchaseAmount"
+            "LessItemsListedThanTheRequiredAmount"
         );
     });
   });
@@ -913,7 +908,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     let primarySaleFee: number;
     let amountToMint = 10;
     let amountToList = 5;
-    let amountToBuy = 4;
+    let amountToBuy = 5;
     let priceToList = 20;
     let priceToBuy = priceToList * amountToBuy;
 
@@ -995,13 +990,12 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       // verify if the isSecondarySale sale attribute is true
       expect(
         (
-          await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
+          await mintGoldDustSetPrice.isSecondarySale(
             mintGoldDustERC1155.address,
-            1,
-            addr2.address
+            1
           )
-        ).isSecondarySale
-      ).to.equal(true);
+      ).sold
+    ).to.be.equal(true);
       // get the balances for the seller and the owner of the marketplace.
       const feeAccountInitialEthBal = await deployer.getBalance();
       let addr3BalanceBefore = await addr3.getBalance();
@@ -1063,7 +1057,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           artistCreatorAddress,
           toWei(secondarySaleFee),
           amountToBuyForSecondary,
-          false,
           false,
           false
         );
