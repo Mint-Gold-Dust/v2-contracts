@@ -809,7 +809,7 @@ let priceToBuy = priceToList * amountToBuy;
                 1
               )
           ).amount
-        ).to.be.equal(0);
+        ).to.be.equal(amountToMint - amountToBuy);
 
       // verify if the marketplace owner's balance increased the fee
       expect(await deployer.getBalance()).to.be.equal(
@@ -1018,7 +1018,7 @@ let secondarySaleFee: number;
 
       expect(
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
-      ).to.equal(amountToList - amountToBuy);
+      ).to.equal(amountToMint - amountToBuy);
 
       expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(
         amountToBuy

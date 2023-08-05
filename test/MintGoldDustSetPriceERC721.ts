@@ -119,8 +119,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
   describe("\n--------------- Tests related witn the list NFT functionality ---------------\n", function () {
     let price = 1;
-    let quantityToMint = 10;
-    let quantityToList = 5;
+    let quantityToMint = 1;
+    let quantityToList = 1;
 
     // Create an instance of the ListDTO struct
 
@@ -256,8 +256,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   describe("\n--------------- Tests related with the update a listed NFT functionality ---------------\n", function () {
     let primaryPrice = 1;
     let newPrice = 2;
-    const quantityToList = 5;
-    const quantityToMint = 10;
+    const quantityToList = 1;
+    const quantityToMint = 1;
 
     beforeEach(async () => {
       // MGD owner whitelist the artist
@@ -451,8 +451,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
   describe("\n--------------- Tests related with delist NFT functionality ---------------", function () {
     let primaryPrice = 1;
-    const quantityToList = 5;
-    const quantityToMint = 10;
+    const quantityToList = 1;
+    const quantityToMint = 1;
 
     beforeEach(async () => {
       // MGD owner whitelist the artist
@@ -583,9 +583,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     let balance: number;
     let collFee: number;
     let primarySaleFee: number;
-    let amountToMint = 10;
-    let amountToList = 5;
-    let amountToBuy = 3;
+    let amountToMint = 1;
+    let amountToList = 1;
+    let amountToBuy = 1;
     let priceToList = 20;
     let priceToBuy = priceToList * amountToBuy;
 
