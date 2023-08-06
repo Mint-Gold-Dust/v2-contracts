@@ -1197,7 +1197,7 @@ abstract contract MintGoldDustMarketplace is
       isBuyingAllListedTokens(_saleDTO);
     }
 
-    isMsgValueEnough(_marketItem.price, _realAmount, _value);
+    require(_marketItem.price == _value, "Invalid amount for this purchase");
 
     checkIfIsPrimaryOrSecondarySaleAndCall(
       _marketItem,

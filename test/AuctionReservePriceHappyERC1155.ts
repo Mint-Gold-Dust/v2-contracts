@@ -134,6 +134,14 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
     await mintGoldDustCompany
       .connect(deployer)
       .setValidator(deployer.address, true);
+
+    await mintGoldDustMarketplaceAuction
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
+
+    await mintGoldDustSetPrice
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustMarketplaceAuction.address);
   });
 
   describe("\n \n ****************_**************** PLACE A BID HAPPY PATHS ****************_****************\n", function () {
@@ -153,11 +161,11 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       const bytesMemoir = encoder.encode(MEMOIR);
 
       // addr1 mints a nft
-      await mintGoldDustERC721
+      await mintGoldDustERC1155
         .connect(addr1)
         .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
-      await mintGoldDustERC721
+      await mintGoldDustERC1155
         .connect(addr1)
         .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
     });
@@ -166,7 +174,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       beforeEach(async () => {
         await mintGoldDustMarketplaceAuction
           .connect(addr1)
-          .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
+          .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price));
       });
 
       it("Should place a first bid and: \n\t - Verify if the highest bid was updated. \n\t - Verify if the endAuction time was updated. \n\t - Verify if the bidder balance was decreased the gas fee plus the auction price. \n\t - Verify if the auction contract balance was added by the bid value.", async function () {
@@ -176,7 +184,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -187,7 +195,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -199,7 +207,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -211,7 +219,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -231,7 +239,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         const tx = await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
           {
             tokenId: 1,
-            contractAddress: mintGoldDustERC721.address,
+            contractAddress: mintGoldDustERC1155.address,
             seller: addr1.address,
           },
           {
@@ -248,7 +256,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         );
         expect(receipt.events[0].args.tokenId).to.be.equal(1);
         expect(receipt.events[0].args.contractAddress).to.be.equal(
-          mintGoldDustERC721.address
+          mintGoldDustERC1155.address
         );
         expect(receipt.events[0].args.startTime).to.be.equal(
           (await receipt.events[0].getBlock()).timestamp
@@ -277,7 +285,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         );
         expect(receipt.events[1].args.tokenId).to.be.equal(1);
         expect(receipt.events[1].args.contractAddress).to.be.equal(
-          mintGoldDustERC721.address
+          mintGoldDustERC1155.address
         );
         expect(receipt.events[1].args.previousBidder).to.be.equal(
           ethers.constants.AddressZero
@@ -343,7 +351,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -356,7 +364,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
               await mintGoldDustMarketplaceAuction
                 .connect(addr1)
                 .idMarketItemsByContractByOwner(
-                  mintGoldDustERC721.address,
+                  mintGoldDustERC1155.address,
                   1,
                   addr1.address
                 )
@@ -370,7 +378,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -385,7 +393,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 await mintGoldDustMarketplaceAuction
                   .connect(addr1)
                   .idMarketItemsByContractByOwner(
-                    mintGoldDustERC721.address,
+                    mintGoldDustERC1155.address,
                     1,
                     addr1.address
                   )
@@ -398,7 +406,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -412,7 +420,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       beforeEach(async () => {
         await mintGoldDustMarketplaceAuction
           .connect(addr1)
-          .list(1, quantityToList, mintGoldDustERC721.address, toWei(0));
+          .list(1, quantityToList, mintGoldDustERC1155.address, toWei(0));
       });
       it("Should place a first bid and: \n\t - Verify if the highest bid was updated. \n\t - Verify if the endAuction time was updated. \n\t - Verify if the bidder balance was decreased the gas fee plus the auction price. \n\t - Verify if the auction contract balance was added by the bid value.", async function () {
         console.log(
@@ -421,7 +429,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -432,7 +440,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -444,7 +452,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -456,7 +464,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -477,7 +485,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         const tx = await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
           {
             tokenId: 1,
-            contractAddress: mintGoldDustERC721.address,
+            contractAddress: mintGoldDustERC1155.address,
             seller: addr1.address,
           },
           {
@@ -494,7 +502,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         );
         expect(receipt.events[0].args.tokenId).to.be.equal(1);
         expect(receipt.events[0].args.contractAddress).to.be.equal(
-          mintGoldDustERC721.address
+          mintGoldDustERC1155.address
         );
         expect(receipt.events[0].args.startTime).to.be.equal(
           (await receipt.events[0].getBlock()).timestamp
@@ -523,7 +531,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         );
         expect(receipt.events[1].args.tokenId).to.be.equal(1);
         expect(receipt.events[1].args.contractAddress).to.be.equal(
-          mintGoldDustERC721.address
+          mintGoldDustERC1155.address
         );
         expect(receipt.events[1].args.previousBidder).to.be.equal(
           ethers.constants.AddressZero
@@ -552,7 +560,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 await mintGoldDustMarketplaceAuction
                   .connect(addr1)
                   .idMarketItemsByContractByOwner(
-                    mintGoldDustERC721.address,
+                    mintGoldDustERC1155.address,
                     1,
                     addr1.address
                   )
@@ -567,7 +575,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -578,7 +586,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           await mintGoldDustMarketplaceAuction
             .connect(addr1)
             .idMarketItemsByContractByOwner(
-              mintGoldDustERC721.address,
+              mintGoldDustERC1155.address,
               1,
               addr1.address
             )
@@ -590,7 +598,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
               await mintGoldDustMarketplaceAuction
                 .connect(addr1)
                 .idMarketItemsByContractByOwner(
-                  mintGoldDustERC721.address,
+                  mintGoldDustERC1155.address,
                   1,
                   addr1.address
                 )
@@ -604,7 +612,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -617,7 +625,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -630,7 +638,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           .placeBid(
             {
               tokenId: 1,
-              contractAddress: mintGoldDustERC721.address,
+              contractAddress: mintGoldDustERC1155.address,
               seller: addr1.address,
             },
             {
@@ -650,7 +658,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         );
         expect(receipt2.events[1].args.tokenId).to.be.equal(1);
         expect(receipt2.events[1].args.contractAddress).to.be.equal(
-          mintGoldDustERC721.address
+          mintGoldDustERC1155.address
         );
         expect(receipt2.events[1].args.previousBidder).to.be.equal(
           addr2.address
@@ -679,7 +687,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           await mintGoldDustMarketplaceAuction
             .connect(addr1)
             .idMarketItemsByContractByOwner(
-              mintGoldDustERC721.address,
+              mintGoldDustERC1155.address,
               1,
               addr1.address
             )
@@ -781,7 +789,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -796,7 +804,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 await mintGoldDustMarketplaceAuction
                   .connect(addr1)
                   .idMarketItemsByContractByOwner(
-                    mintGoldDustERC721.address,
+                    mintGoldDustERC1155.address,
                     1,
                     addr1.address
                   )
@@ -810,7 +818,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -823,7 +831,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -837,7 +845,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       beforeEach(async () => {
         await mintGoldDustMarketplaceAuction
           .connect(addr1)
-          .list(1, quantityToList, mintGoldDustERC721.address, toWei(0));
+          .list(1, quantityToList, mintGoldDustERC1155.address, toWei(0));
       });
       it("Should place a second bid in the last 5 minutes and: \n\t - Verify if the end time was increased by more 5 minutes.", async function () {
         console.log(
@@ -848,7 +856,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 await mintGoldDustMarketplaceAuction
                   .connect(addr1)
                   .idMarketItemsByContractByOwner(
-                    mintGoldDustERC721.address,
+                    mintGoldDustERC1155.address,
                     1,
                     addr1.address
                   )
@@ -861,7 +869,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -875,7 +883,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         const tx = await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
           {
             tokenId: 1,
-            contractAddress: mintGoldDustERC721.address,
+            contractAddress: mintGoldDustERC1155.address,
             seller: addr1.address,
           },
           {
@@ -892,7 +900,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         );
         expect(receipt.events[0].args.tokenId).to.be.equal(1);
         expect(receipt.events[0].args.contractAddress).to.be.equal(
-          mintGoldDustERC721.address
+          mintGoldDustERC1155.address
         );
         expect(receipt.events[0].args.startTime).to.be.equal(
           (await receipt.events[0].getBlock()).timestamp
@@ -921,7 +929,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         );
         expect(receipt.events[1].args.tokenId).to.be.equal(1);
         expect(receipt.events[1].args.contractAddress).to.be.equal(
-          mintGoldDustERC721.address
+          mintGoldDustERC1155.address
         );
         expect(receipt.events[1].args.previousBidder).to.be.equal(
           ethers.constants.AddressZero
@@ -941,7 +949,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )
@@ -952,7 +960,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           await mintGoldDustMarketplaceAuction
             .connect(addr1)
             .idMarketItemsByContractByOwner(
-              mintGoldDustERC721.address,
+              mintGoldDustERC1155.address,
               1,
               addr1.address
             )
@@ -965,7 +973,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
               await mintGoldDustMarketplaceAuction
                 .connect(addr1)
                 .idMarketItemsByContractByOwner(
-                  mintGoldDustERC721.address,
+                  mintGoldDustERC1155.address,
                   1,
                   addr1.address
                 )
@@ -982,7 +990,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           .placeBid(
             {
               tokenId: 1,
-              contractAddress: mintGoldDustERC721.address,
+              contractAddress: mintGoldDustERC1155.address,
               seller: addr1.address,
             },
             {
@@ -1016,7 +1024,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         );
         expect(receipt2.events[0].args.tokenId).to.be.equal(1);
         expect(receipt2.events[0].args.contractAddress).to.be.equal(
-          mintGoldDustERC721.address
+          mintGoldDustERC1155.address
         );
         expect(receipt2.events[0].args.newEndTime).to.be.equal(
           resultDateExtended.getTime() / 1000
@@ -1036,7 +1044,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         );
         expect(receipt2.events[2].args.tokenId).to.be.equal(1);
         expect(receipt2.events[2].args.contractAddress).to.be.equal(
-          mintGoldDustERC721.address
+          mintGoldDustERC1155.address
         );
         expect(receipt2.events[2].args.previousBidder).to.be.equal(
           addr2.address
@@ -1065,7 +1073,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           await mintGoldDustMarketplaceAuction
             .connect(addr1)
             .idMarketItemsByContractByOwner(
-              mintGoldDustERC721.address,
+              mintGoldDustERC1155.address,
               1,
               addr1.address
             )
@@ -1083,7 +1091,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             await mintGoldDustMarketplaceAuction
               .connect(addr1)
               .idMarketItemsByContractByOwner(
-                mintGoldDustERC721.address,
+                mintGoldDustERC1155.address,
                 1,
                 addr1.address
               )

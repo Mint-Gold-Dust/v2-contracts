@@ -125,6 +125,14 @@ describe("\nnMintGoldDustMaretplace.sol + MintGoldDustMaretplaceAuction.sol + Mi
     await mintGoldDustCompany
       .connect(deployer)
       .setValidator(deployer.address, true);
+
+    await mintGoldDustMarketplaceAuction
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
+
+    await mintGoldDustSetPrice
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustMarketplaceAuction.address);
   });
 
   describe("\n****************_**************** Tests related with listing a MintGoldDustERC1155 and a MintGoldDustERC721 for auction ****************_****************\n", function () {
@@ -182,7 +190,7 @@ describe("\nnMintGoldDustMaretplace.sol + MintGoldDustMaretplaceAuction.sol + Mi
 
       const tx2 = await mintGoldDustMarketplaceAuction
         .connect(addr1)
-        .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
+        .list(1, 1, mintGoldDustERC721.address, toWei(price));
 
       const receipt2 = await tx2.wait();
 

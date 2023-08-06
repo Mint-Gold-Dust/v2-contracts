@@ -27,6 +27,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   let MintGoldDustMemoir: ContractFactory;
   let mintGoldDustMemoir: Contract;
 
+  let MintGoldDustMarketplaceAuction: ContractFactory;
+  let mintGoldDustMarketplaceAuction: Contract;
+
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
@@ -57,13 +60,21 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     MintGoldDustCompany = await ethers.getContractFactory(
       "MintGoldDustCompany"
     );
+
+    MintGoldDustMarketplaceAuction = await ethers.getContractFactory(
+      "MintGoldDustMarketplaceAuction"
+    );
+
     MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
+
     MintGoldDustSetPrice = await ethers.getContractFactory(
       "MintGoldDustSetPrice"
     );
+
     MintGoldDustERC1155 = await ethers.getContractFactory(
       "MintGoldDustERC1155"
     );
+
     MintGoldDustMemoir = await ethers.getContractFactory("MintGoldDustMemoir");
 
     mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
@@ -114,7 +125,26 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     );
     await mintGoldDustSetPrice.deployed();
 
+    mintGoldDustMarketplaceAuction = await upgrades.deployProxy(
+      MintGoldDustMarketplaceAuction,
+      [
+        mgdCompany.address,
+        mintGoldDustERC721.address,
+        mintGoldDustERC1155.address,
+      ],
+      { initializer: "initializeChild" }
+    );
+    await mintGoldDustMarketplaceAuction.deployed();
+
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
+
+    await mintGoldDustMarketplaceAuction
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
+
+    await mintGoldDustSetPrice
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustMarketplaceAuction.address);
   });
 
   describe("\n--------------- Tests related witn the list NFT functionality ---------------\n", function () {
@@ -215,7 +245,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       await mintGoldDustSetPrice.connect(addr1).delistNft({
         tokenId: 1,
         amount: 1,
-        contractAddress: mintGoldDustERC721.address
+        contractAddress: mintGoldDustERC721.address,
       });
 
       await mintGoldDustSetPrice
@@ -438,7 +468,10 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             addr2.address
           )
       )
-        .to.be.revertedWithCustomError(mintGoldDustSetPrice, "ItemIsNotListedBySeller")
+        .to.be.revertedWithCustomError(
+          mintGoldDustSetPrice,
+          "ItemIsNotListedBySeller"
+        )
         .withArgs(
           1,
           mintGoldDustSetPrice.address,
@@ -628,12 +661,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(
-                mintGoldDustERC721.address,
-                1
-              )
-          ).sold
-        ).to.be.equal(false);
+            .isSecondarySale(mintGoldDustERC721.address, 1)
+        ).sold
+      ).to.be.equal(false);
 
       let gasPrice = await mintGoldDustSetPrice.signer.getGasPrice();
       let gasLimit = await mintGoldDustSetPrice.estimateGas.purchaseNft(
@@ -789,7 +819,10 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             value: toWei(priceToList),
           }
         )
-      ).to.be.revertedWithCustomError(mintGoldDustSetPrice, "ItemIsNotListedBySeller");
+      ).to.be.revertedWithCustomError(
+        mintGoldDustSetPrice,
+        "ItemIsNotListedBySeller"
+      );
     });
 
     it("Should revert with InvalidAmountForThisPurchase if the user tries to buy an itemId with an amount greater than the item's price.", async () => {
@@ -831,35 +864,41 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Should revert with a LessItemsListedThanTheRequiredAmount error if the amount requested for purchase is more than the amount listed on the contract for ERC1155.", async () => {
-        await expect(
-            mintGoldDustSetPrice.connect(addr2).purchaseNft({
-                tokenId: 1,
-                amount: amountToList + 1,
-                contractAddress: mintGoldDustERC721.address,
-                seller: addr1.address,
-            }, {
-                value: toWei(priceToBuy),
-            })
-        ).to.be.revertedWithCustomError(
-            mintGoldDustSetPrice,
-            "LessItemsListedThanTheRequiredAmount"
-        );
+      await expect(
+        mintGoldDustSetPrice.connect(addr2).purchaseNft(
+          {
+            tokenId: 1,
+            amount: amountToList + 1,
+            contractAddress: mintGoldDustERC721.address,
+            seller: addr1.address,
+          },
+          {
+            value: toWei(priceToBuy),
+          }
+        )
+      ).to.be.revertedWithCustomError(
+        mintGoldDustSetPrice,
+        "LessItemsListedThanTheRequiredAmount"
+      );
     });
 
     it("Should revert with a LessItemsListedThanTheRequiredAmount error if the amount requested for purchase is more than the amount available in the idMarketItemsByContractByOwner mapping for ERC1155.", async () => {
-        await expect(
-            mintGoldDustSetPrice.connect(addr2).purchaseNft({
-                tokenId: 1,
-                amount: amountToList + 1,
-                contractAddress: mintGoldDustERC721.address,
-                seller: addr1.address,
-            }, {
-                value: toWei(priceToBuy),
-            })
-        ).to.be.revertedWithCustomError(
-            mintGoldDustSetPrice,
-            "LessItemsListedThanTheRequiredAmount"
-        );
+      await expect(
+        mintGoldDustSetPrice.connect(addr2).purchaseNft(
+          {
+            tokenId: 1,
+            amount: amountToList + 1,
+            contractAddress: mintGoldDustERC721.address,
+            seller: addr1.address,
+          },
+          {
+            value: toWei(priceToBuy),
+          }
+        )
+      ).to.be.revertedWithCustomError(
+        mintGoldDustSetPrice,
+        "LessItemsListedThanTheRequiredAmount"
+      );
     });
   });
 
@@ -946,14 +985,14 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     it("Should simulate a secondary sale that transfer an NFT to the buyer, verify if the item changed status for sale, verify if the seller balance increases and also if the marketplace's owner receives the fee and verify if the artist creator have received the royalty.", async function () {
       // verify if the isSecondarySale sale attribute is true
-       expect(
+      expect(
         (
-            await mintGoldDustSetPrice.isSecondarySale(
+          await mintGoldDustSetPrice.isSecondarySale(
             mintGoldDustERC721.address,
             1
           )
-      ).sold
-    ).to.be.equal(true);
+        ).sold
+      ).to.be.equal(true);
       // get the balances for the seller and the owner of the marketplace.
       const feeAccountInitialEthBal = await deployer.getBalance();
       let addr3BalanceBefore = await addr3.getBalance();

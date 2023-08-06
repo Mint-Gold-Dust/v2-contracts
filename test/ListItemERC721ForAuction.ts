@@ -125,12 +125,20 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
     await mintGoldDustCompany
       .connect(deployer)
       .setValidator(deployer.address, true);
+
+    await mintGoldDustMarketplaceAuction
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
+
+    await mintGoldDustSetPrice
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustMarketplaceAuction.address);
   });
 
   describe("\n****************_**************** Tests related with listing MintGoldDustERC721 for auction ****************_****************\n", function () {
     let price = 1;
-    let quantityToMint = 10;
-    let quantityToList = 5;
+    let quantityToMint = 1;
+    let quantityToList = 1;
 
     beforeEach(async () => {
       // MGD owner whitelist the artist
@@ -193,26 +201,12 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         .withArgs(mintGoldDustERC721.address);
     });
 
-    it("Should not revert with an AddressUnauthorized error if an address tries to list a quantity of a MintGoldDustERC721 itemId greater than it has, because for MintGoldDustERC721 the frontend should not concern about the quantity. It is always ONE.", async function () {
-      const tx = await mintGoldDustMarketplaceAuction
-        .connect(addr1)
-        .list(1, quantityToList * 3, mintGoldDustERC721.address, toWei(price));
-
-      const receipt = await tx.wait();
-
-      expect(receipt.status).to.equal(1);
-      expect(receipt.events[1].event).to.equal("ItemListedToAuction");
-      expect(receipt.events[1].eventSignature).to.equal(
-        "ItemListedToAuction(uint256,address,address,uint256,uint256,uint256)"
-      );
-      expect(receipt.events[1].args[0]).to.equal(1);
-      expect(receipt.events[1].args[1]).to.equal(mintGoldDustERC721.address);
-      expect(receipt.events[1].args[2]).to.equal(addr1.address);
-      expect(receipt.events[1].args[3]).to.equal(toWei(price));
-      expect(receipt.events[1].args[4]).to.equal(
-        (await receipt.events[0].getBlock()).timestamp
-      );
-      expect(receipt.events[1].args[5]).to.equal(1);
+    it("Should revert with an AddressUnauthorized error if an address tries to list a quantity of a MintGoldDustERC721 itemId greater than it has.", async function () {
+      await expect(
+        mintGoldDustMarketplaceAuction
+          .connect(addr1)
+          .list(1, quantityToList * 3, mintGoldDustERC721.address, toWei(price))
+      ).to.be.revertedWith("Invalid amount");
     });
 
     it("Should revert with an InvalidAmount error if an address tries to list ZERO of a MintGoldDustERC1155 itemId.", async function () {

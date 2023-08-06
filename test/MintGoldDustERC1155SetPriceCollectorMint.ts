@@ -1,14 +1,11 @@
 require("dotenv").config();
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { expect, use } from "chai";
+import { expect } from "chai";
 import { Contract, ContractFactory, Wallet } from "ethers";
 import { ethers } from "hardhat";
 import chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import generateEIP712 from "./utils/generateEIP712";
-import generateNewEIP712 from "./utils/generateNewEIP712";
 import { encodeData, generateEIP712Hash, signData } from "./utils/eip712";
-import generateKeys from "./utils/generateWallet";
 import generateWallet from "./utils/generateWallet";
 
 chai.use(chaiAsPromised);
@@ -16,7 +13,7 @@ chai.use(chaiAsPromised);
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("MintGoldDustSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the MintGoldDustSetPrice market and the MintGoldDustERC721 tokens. \n\n", function () {
+describe("MintGoldDustSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the collectorMint feature of MintGoldDustSetPrice market for MintGoldDustERC1155 tokens. \n\n", function () {
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 
@@ -181,7 +178,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     bytesMemoir = encoder.encode(MEMOIR);
   });
 
-  describe("\n--------------- Tests related witn collector mint functionality after a MintGoldDustERC721 traditional purchase on set price ---------------\n", function () {
+  describe("\n--------------- Tests related witn collector mint functionality after a MintGoldDustERC1155 traditional purchase on set price ---------------\n", function () {
     let quantityToMint = 10;
     let quantityToBuy = 5;
 
@@ -905,7 +902,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .withArgs("SET_PRICE");
     });
 
-    it("Call the function passing everything correct. The attacker can generate the object, the EIP712 and everything using an address that is not a whitelisted artist. It MUST revert with an 'Invalid Signature' error.", async () => {
+    it("Call the function passing everything correct. The attacker can generate the object, the EIP712 and everything using an address that is not a whitelisted artist. It MUST revert with an UnauthorizedOnNFT error.", async () => {
       let collectrDTO = {
         contractAddress: mintGoldDustERC1155.address,
         tokenURI: URI,

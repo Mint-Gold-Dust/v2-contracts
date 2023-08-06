@@ -249,10 +249,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     }
 
     /// @dev in this case the item did not received any bids yet and the bid is less than the reserve price
-    if (
-      item.auctionProps.highestBid == 0 &&
-      msg.value < item.price * item.tokenAmount
-    ) {
+    if (item.auctionProps.highestBid == 0 && msg.value < item.price) {
       revert BidTooLow();
     }
 
@@ -532,6 +529,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     }
 
     item.auctionProps.ended = true;
+    uint256 auctionId = item.auctionProps.auctionId;
 
     purchaseAuctionNft(
       SaleDTO(
@@ -546,9 +544,9 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     emit AuctionWinnerCall(
       _bidDTO.tokenId,
       _bidDTO.contractAddress,
-      item.seller,
+      _bidDTO.seller,
       block.timestamp,
-      item.auctionProps.auctionId
+      auctionId
     );
   }
 
