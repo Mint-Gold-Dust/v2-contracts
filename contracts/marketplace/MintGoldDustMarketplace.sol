@@ -273,6 +273,57 @@ abstract contract MintGoldDustMarketplace is
     uint256 collectorMintId;
   }
 
+  MintGoldDustMarketplace internal mintGoldDustMarketplace;
+
+  // I need to have a function that instantiate the MintGoldDustMarketplace contract
+  function setMintGoldDustMarketplace(
+    address _mintGoldDustMarketplace
+  ) external {
+    require(mintGoldDustCompany.owner() == msg.sender, "Unauthorized");
+    mintGoldDustMarketplace = MintGoldDustMarketplace(_mintGoldDustMarketplace);
+  }
+
+  // create the function setSecondarySale
+  function setSecondarySale(
+    address _contractAddress,
+    uint256 _tokenId,
+    address _owner,
+    bool _sold,
+    uint256 _amount
+  ) external {
+    require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
+    isSecondarySale[_contractAddress][_tokenId] = ManageSecondarySale(
+      _owner,
+      _sold,
+      _amount
+    );
+  }
+
+  function updateSecondarySaleAmount(
+    address _contractAddress,
+    uint256 _tokenId,
+    uint256 _amount
+  ) external {
+    require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
+    ManageSecondarySale storage _manageSecondarySale = isSecondarySale[
+      _contractAddress
+    ][_tokenId];
+    _manageSecondarySale.amount = _manageSecondarySale.amount - _amount;
+  }
+
+  // Now one for it _manageSecondarySale.sold = true;
+  function updateSecondarySaleSold(
+    address _contractAddress,
+    uint256 _tokenId,
+    bool _sold
+  ) external {
+    require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
+    ManageSecondarySale storage _manageSecondarySale = isSecondarySale[
+      _contractAddress
+    ][_tokenId];
+    _manageSecondarySale.sold = _sold;
+  }
+
   /**
    *
    * @notice that is a general function that must be implemented by the more specif makets.
@@ -347,6 +398,21 @@ abstract contract MintGoldDustMarketplace is
       isSecondarySale[address(_mintGoldDustNFT)][
         _listDTO.tokenId
       ] = ManageSecondarySale(_sender, false, _amountMinted);
+      mintGoldDustMarketplace.setSecondarySale(
+        _listDTO.contractAddress,
+        _listDTO.tokenId,
+        _sender,
+        false,
+        _amountMinted
+      );
+    }
+
+    ManageSecondarySale memory manageSecondarySale = isSecondarySale[
+      address(_mintGoldDustNFT)
+    ][_listDTO.tokenId];
+
+    if (!manageSecondarySale.sold) {
+      require(_listDTO.amount <= manageSecondarySale.amount, "Invalid amount");
     }
 
     AuctionProps memory auctionProps = AuctionProps(
@@ -418,13 +484,23 @@ abstract contract MintGoldDustMarketplace is
   ) private {
     MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(_marketItem.isERC721);
     ManageSecondarySale storage _manageSecondarySale = isSecondarySale[
-      address(_mintGoldDustNFT)
+      _saleDTO.contractAddress
     ][_saleDTO.tokenId];
 
     _manageSecondarySale.amount = _manageSecondarySale.amount - _realAmount;
+    mintGoldDustMarketplace.updateSecondarySaleAmount(
+      _saleDTO.contractAddress,
+      _saleDTO.tokenId,
+      _realAmount
+    );
 
     if (_manageSecondarySale.amount == 0) {
       _manageSecondarySale.sold = true;
+      mintGoldDustMarketplace.updateSecondarySaleSold(
+        _saleDTO.contractAddress,
+        _saleDTO.tokenId,
+        true
+      );
     }
 
     itemsSold.increment();
