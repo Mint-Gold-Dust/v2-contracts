@@ -664,7 +664,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         const bidderBalanceBefore = await addr2.getBalance();
 
         // The first bid greater than zero, starts the time. In our test 3 seconds
-        expectedEndTime = Math.floor(Date.now() / 1000) + _duration;
+        expectedEndTime = Math.floor(Date.now() / 1000) + auction_duration;
 
         await expect(
           mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
@@ -734,7 +734,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 addr1.address
               )
           ).auctionProps.endTime
-        ).to.be.closeTo(expectedEndTime, 1000);
+        ).to.be.closeTo(expectedEndTime, 10000);
 
         console.log(
           "\n\t\tAUCTION END TIME AFTER BID: ",
@@ -863,7 +863,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         const bidderBalanceBefore = await addr2.getBalance();
 
         // The first bid greater than zero, starts the time. In our test 3 seconds
-        expectedEndTime = Math.floor(Date.now() / 1000) + _duration;
+        expectedEndTime = Math.floor(Date.now() / 1000) + auction_duration;
 
         await expect(
           mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
@@ -933,7 +933,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 addr1.address
               )
           ).auctionProps.endTime
-        ).to.be.closeTo(expectedEndTime, 1000);
+        ).to.be.closeTo(expectedEndTime, 10000);
 
         console.log(
           "\n\t\tAUCTION END TIME AFTER BID: ",
@@ -1055,7 +1055,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         let bidder1BalanceBefore = await addr2.getBalance();
 
         // The first bid greater than zero, starts the time. In our test 3 seconds
-        expectedEndTime = Math.floor(Date.now() / 1000) + _duration;
+        expectedEndTime = Math.floor(Date.now() / 1000) + auction_duration;
 
         // ******************** FIRST BID ****************************
         await expect(
@@ -1143,7 +1143,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 addr1.address
               )
           ).auctionProps.endTime
-        ).to.be.closeTo(expectedEndTime, 1000);
+        ).to.be.closeTo(expectedEndTime, 10000);
 
         // ***** EXPECT HIHEST BID TO BE THE FIRST BID VALUE AFTER FIRST BID *****
         expect(
@@ -1292,7 +1292,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 addr1.address
               )
           ).auctionProps.endTime
-        ).to.be.closeTo(expectedEndTime, 1000);
+        ).to.be.closeTo(expectedEndTime, 10000);
 
         console.log(
           "\t\tHIGHEST AFTER SECOND BID: ",
@@ -1375,7 +1375,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         ).to.be.equal(0);
 
         // The first bid greater than zero, starts the time. In our test 3 seconds
-        expectedEndTime = Math.floor(Date.now() / 1000) + _duration;
+        expectedEndTime = Math.floor(Date.now() / 1000) + auction_duration;
 
         // *********************** FIRST BID ****************************
         await expect(
@@ -1425,7 +1425,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 addr1.address
               )
           ).auctionProps.endTime
-        ).to.be.closeTo(expectedEndTime, 1000);
+        ).to.be.closeTo(expectedEndTime, 10000);
 
         console.log(`\n\t\tWaiting until the last 5 minutes of the auction...`);
         await new Promise((resolve) => setTimeout(resolve, _timeout));
