@@ -23,8 +23,6 @@ error ItemIsNotListedBySeller(
 );
 error ItemIsAlreadyListed(address _contractAddress);
 error AddressUnauthorized(string _reason);
-error FunctionForSetPriceListedNFT();
-error FunctionForAuctionListedNFT();
 error MustBeERC721OrERC1155();
 error LessItemsListedThanTheRequiredAmount();
 error InvalidAmountForThisPurchase();
@@ -1054,46 +1052,18 @@ abstract contract MintGoldDustMarketplace is
      */
     function getMarketItem(
         SaleDTO memory _saleDTO
-    ) private view returns (MarketItem memory) {
+    ) internal view returns (MarketItem memory) {
         return
             idMarketItemsByContractByOwner[_saleDTO.contractAddress][
                 _saleDTO.tokenId
             ][_saleDTO.seller];
     }
 
-    /**
-     * Acquire a listed NFT to Set Price market
-     * @notice function will fail if the market item does has the auction property to true.
-     * @notice function will fail if the token was not listed to the set price market.
-     * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
-     * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
-     * @dev This function is specific for the set price market.
-     * For the auction market we have a second purchaseAuctionNft function. See below.
-     * @param _saleDTO The SaleDTO struct parameter to use.
-     *                 It consists of the following fields:
-     *                    - tokenid: The tokenId of the marketItem.
-     *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
-     *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
-     *                    - seller: The seller of the marketItem.
-     */
-    function purchaseNft(SaleDTO memory _saleDTO) external payable {
-        executePurchaseNftFlow(_saleDTO, msg.sender, msg.value);
-    }
-
-    function collectorPurchaseNft(
-        SaleDTO memory _saleDTO,
-        address _sender,
-        uint256 _value
-    ) internal {
-        executePurchaseNftFlow(_saleDTO, _sender, _value);
-    }
-
     function executePurchaseNftFlow(
         SaleDTO memory _saleDTO,
         address _sender,
         uint256 _value
-    ) private {
+    ) internal {
         isTokenIdListed(
             _saleDTO.tokenId,
             _saleDTO.contractAddress,
@@ -1147,7 +1117,7 @@ abstract contract MintGoldDustMarketplace is
         uint256 _value,
         address _sender,
         uint256 _realAmount
-    ) private {
+    ) internal {
         ManageSecondarySale memory manageSecondarySale = isSecondarySale[
             _saleDTO.contractAddress
         ][_marketItem.tokenId];
@@ -1165,71 +1135,6 @@ abstract contract MintGoldDustMarketplace is
     }
 
     /**
-     * Acquire a listed item for the MintGoldDustMarketplaceAuction.
-     * @notice function will fail if the market item does not has the auction property to true.
-     * @notice function will fail if the token was not listed to the auction market.
-     * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
-     * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
-     * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
-     * @dev This function is specific for the auction market. Then, in this case, the function will be called
-     *      internally from the MGDAuction contract. So is not possible to get the msg.value. Then we're receiving the value by param.
-     * @param _saleDTO The SaleDTO struct parameter to use.
-     *                 It consists of the following fields:
-     *                    - tokenid: The tokenId of the marketItem.
-     *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
-     *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
-     *                    - seller: The seller of the marketItem.
-     * @param _value The value to be paid for the purchase.
-     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
-     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
-     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
-     */
-    function purchaseAuctionNft(
-        SaleDTO memory _saleDTO,
-        uint256 _value
-    ) internal {
-        isTokenIdListed(
-            _saleDTO.tokenId,
-            _saleDTO.contractAddress,
-            _saleDTO.seller
-        );
-
-        mustBeMintGoldDustERC721Or1155(_saleDTO.contractAddress);
-
-        hasEnoughAmountListed(
-            _saleDTO.tokenId,
-            _saleDTO.contractAddress,
-            address(this),
-            _saleDTO.amount,
-            _saleDTO.seller
-        );
-
-        MarketItem memory _marketItem = getMarketItem(_saleDTO);
-
-        /// @dev if the flow goes for ERC721 the amount of tokens MUST be ONE.
-        uint256 _realAmount = 1;
-
-        if (!_marketItem.isERC721) {
-            _realAmount = _saleDTO.amount;
-            isBuyingAllListedTokens(_saleDTO);
-        }
-
-        require(
-            _marketItem.price == _value,
-            "Invalid amount for this purchase"
-        );
-
-        checkIfIsPrimaryOrSecondarySaleAndCall(
-            _marketItem,
-            _saleDTO,
-            _value,
-            msg.sender,
-            _realAmount
-        );
-    }
-
-    /**
      * @dev for the auction market, when an artist or collector decides to put a MintGoldDustERC1155 for auction
      *      is necessary to inform the quantity of tokens to be listed.
      *    @notice that in this case, at the moment of the purchase, the buyer needs to buy all the tokens
@@ -1238,7 +1143,7 @@ abstract contract MintGoldDustMarketplace is
      *            of listed MintGoldDustERC1155 tokenId.
      * @param _saleDTO a parameter just like in doxygen (must be followed by parameter name)
      */
-    function isBuyingAllListedTokens(SaleDTO memory _saleDTO) private view {
+    function isBuyingAllListedTokens(SaleDTO memory _saleDTO) internal view {
         if (
             _saleDTO.amount <
             idMarketItemsByContractByOwner[_saleDTO.contractAddress][
