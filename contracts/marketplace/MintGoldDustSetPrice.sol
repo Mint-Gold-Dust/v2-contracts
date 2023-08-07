@@ -242,6 +242,34 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     }
 
     /**
+     * Acquire a listed NFT to Set Price market
+     * @notice function will fail if the market item does has the auction property to true.
+     * @notice function will fail if the token was not listed to the set price market.
+     * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
+     * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
+     * @dev This function is specific for the set price market.
+     * For the auction market we have a second purchaseAuctionNft function. See below.
+     * @param _saleDTO The SaleDTO struct parameter to use.
+     *                 It consists of the following fields:
+     *                    - tokenid: The tokenId of the marketItem.
+     *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
+     *                              MintGoldDustERC721 the amout must be always one.
+     *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+     *                    - seller: The seller of the marketItem.
+     */
+    function purchaseNft(SaleDTO memory _saleDTO) external payable {
+        executePurchaseNftFlow(_saleDTO, msg.sender, msg.value);
+    }
+
+    function collectorPurchaseNft(
+        SaleDTO memory _saleDTO,
+        address _sender,
+        uint256 _value
+    ) internal {
+        executePurchaseNftFlow(_saleDTO, _sender, _value);
+    }
+
+    /**
      * @notice that is a function responsilble by start the collector (lazy) mint process on chain.
      * @param _collectorMintDTO is the CollectorMintDTO struct
      *                It consists of the following fields:

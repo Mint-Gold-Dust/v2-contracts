@@ -180,7 +180,6 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
         uint256 _pricePerToken
     ) external override whenNotPaused {
         mustBeMintGoldDustERC721Or1155(_contractAddress);
-
         checkAmount(_amount);
         isNotListed(_tokenId, _contractAddress, msg.sender);
 
@@ -561,6 +560,71 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             _bidDTO.seller,
             block.timestamp,
             auctionId
+        );
+    }
+
+    /**
+     * Acquire a listed item for the MintGoldDustMarketplaceAuction.
+     * @notice function will fail if the market item does not has the auction property to true.
+     * @notice function will fail if the token was not listed to the auction market.
+     * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
+     * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
+     * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
+     * @dev This function is specific for the auction market. Then, in this case, the function will be called
+     *      internally from the MGDAuction contract. So is not possible to get the msg.value. Then we're receiving the value by param.
+     * @param _saleDTO The SaleDTO struct parameter to use.
+     *                 It consists of the following fields:
+     *                    - tokenid: The tokenId of the marketItem.
+     *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
+     *                              MintGoldDustERC721 the amout must be always one.
+     *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+     *                    - seller: The seller of the marketItem.
+     * @param _value The value to be paid for the purchase.
+     *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
+     *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
+     *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
+     */
+    function purchaseAuctionNft(
+        SaleDTO memory _saleDTO,
+        uint256 _value
+    ) internal {
+        isTokenIdListed(
+            _saleDTO.tokenId,
+            _saleDTO.contractAddress,
+            _saleDTO.seller
+        );
+
+        mustBeMintGoldDustERC721Or1155(_saleDTO.contractAddress);
+
+        hasEnoughAmountListed(
+            _saleDTO.tokenId,
+            _saleDTO.contractAddress,
+            address(this),
+            _saleDTO.amount,
+            _saleDTO.seller
+        );
+
+        MarketItem memory _marketItem = getMarketItem(_saleDTO);
+
+        /// @dev if the flow goes for ERC721 the amount of tokens MUST be ONE.
+        uint256 _realAmount = 1;
+
+        if (!_marketItem.isERC721) {
+            _realAmount = _saleDTO.amount;
+            isBuyingAllListedTokens(_saleDTO);
+        }
+
+        require(
+            _marketItem.price == _value,
+            "Invalid amount for this purchase"
+        );
+
+        checkIfIsPrimaryOrSecondarySaleAndCall(
+            _marketItem,
+            _saleDTO,
+            _value,
+            msg.sender,
+            _realAmount
         );
     }
 

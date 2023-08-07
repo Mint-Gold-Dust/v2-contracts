@@ -1567,22 +1567,22 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       );
     });
 
-    it("Should revert with FunctionForSetPriceListedNFT error if the purchaseNFT function is called to buy an item that is listed to Auction. For that the purchaseAuctionNft function MUST be called and its function is internal and just can be called by the childrens smart contracts like the MintGoldDustMarketplaceAuction.", async () => {
-      await mintGoldDustMarketplaceAuction
-        .connect(addr1)
-        .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
-      await mintGoldDustMarketplaceAuction.connect(addr2).purchaseNft(
-        {
-          tokenId: 1,
-          amount: quantityToList,
-          contractAddress: mintGoldDustERC721.address,
-          seller: addr1.address,
-        },
-        {
-          value: toWei(price),
-        }
-      );
-    });
+    // it("Should revert with FunctionForSetPriceListedNFT error if the purchaseNFT function is called to buy an item that is listed to Auction. For that the purchaseAuctionNft function MUST be called and its function is internal and just can be called by the childrens smart contracts like the MintGoldDustMarketplaceAuction.", async () => {
+    //   await mintGoldDustMarketplaceAuction
+    //     .connect(addr1)
+    //     .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
+    //   await mintGoldDustMarketplaceAuction.connect(addr2).purchaseNft(
+    //     {
+    //       tokenId: 1,
+    //       amount: quantityToList,
+    //       contractAddress: mintGoldDustERC721.address,
+    //       seller: addr1.address,
+    //     },
+    //     {
+    //       value: toWei(price),
+    //     }
+    //   );
+    // });
   });
 
   describe("\n \n ****************_**************** END AUCTION FOR PRIMARY SALE ****************_****************\n", function () {

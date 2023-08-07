@@ -966,8 +966,8 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
     let collFee: number;
     let primarySaleFee: number;
     let amountToMint = 10;
-    let amountToList = 5;
-    let amountToBuy = 5;
+    let amountToList = 10;
+    let amountToBuy = 10;
     let priceToList = 20;
     let priceToBuy = priceToList * amountToBuy;
 
@@ -1007,6 +1007,10 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
       await mintGoldDustSetPrice
         .connect(addr1)
         .list(1, amountToList, mintGoldDustERC1155.address, toWei(priceToList));
+    
+      expect(
+          await mintGoldDustERC1155.balanceOf(addr1.address, 1)
+        ).to.equal(amountToMint - amountToList);
 
       expect(
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
@@ -1026,7 +1030,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
 
       expect(
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
-      ).to.equal(amountToMint - amountToBuy);
+      ).to.equal(amountToList - amountToBuy);
 
       expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(
         amountToBuy
