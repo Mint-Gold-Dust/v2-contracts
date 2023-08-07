@@ -1566,9 +1566,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           bytesMemoir
         );
       // Artist approve gdMarketPlace marketplace to exchange its NFT
-    //   await mintGoldDustERC721
-    //     .connect(addr1)
-    //     .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
+      await mintGoldDustERC721
+        .connect(addr1)
+        .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
     });
 
     it("Should revert with ItemIsNotListedBySeller error if the end auction function is called and the tokenId was not listed on MintGoldDustMarketplaceAuction.", async () => {
