@@ -7,8 +7,8 @@ async function main() {
   const secondary_sale_fee_percent_initial = 5000000000000000000n;
   const collector_fee_initial = 3000000000000000000n;
   const max_royalty_initial = 20000000000000000000n;
-  const auction_duration = 5;
-  const auction_extension_duration = 1;
+  const auction_duration = 86400;
+  const auction_extension_duration = 300;
 
   console.log("Deploying contracts with the account:", deployer.address);
 
@@ -25,6 +25,8 @@ async function main() {
       secondary_sale_fee_percent_initial,
       collector_fee_initial,
       max_royalty_initial,
+      auction_duration,
+      auction_extension_duration,
     ],
     { initializer: "initialize" }
   );
@@ -79,17 +81,17 @@ async function main() {
     "MintGoldDustMemoir Proxy Admin deployed to:",
     mintGoldDustMemoirProxyAdminAddress
   );
-  /**************************************** MintGoldDustMemoir FINAL **************************************/
+  // /**************************************** MintGoldDustMemoir FINAL **************************************/
 
-  /**************************************** MGD721 INIT ***************************************/
+  // /**************************************** MGD721 INIT ***************************************/
 
-  // Deploy MintGoldDustERC721 contract
+  // // Deploy MintGoldDustERC721 contract
   const MintGoldDustERC721Factory = await ethers.getContractFactory(
     "MintGoldDustERC721"
   );
   const mintGoldDustERC721 = await upgrades.deployProxy(
     MintGoldDustERC721Factory,
-    [mintGoldDustCompany.address, mintGoldDustMemoir.address],
+    [mintGoldDustCompany.address],
     { initializer: "initializeChild" }
   );
 
@@ -112,9 +114,9 @@ async function main() {
     "MintGoldDustERC721 Proxy Admin deployed to:",
     mintGoldDustERC721ProxyAdminAddress
   );
-  /**************************************** MGD721 FINAL ***************************************/
+  // /**************************************** MGD721 FINAL ***************************************/
 
-  /**************************************** MGD1155 INIT ***************************************/
+  // /**************************************** MGD1155 INIT ***************************************/
 
   // Deploy MintGoldDustERC1155 contract
   const MintGoldDustERC1155Factory = await ethers.getContractFactory(
@@ -122,7 +124,7 @@ async function main() {
   );
   const mintGoldDustERC1155 = await upgrades.deployProxy(
     MintGoldDustERC1155Factory,
-    [mintGoldDustCompany.address, mintGoldDustMemoir.address, "www.mgd.com"],
+    [mintGoldDustCompany.address, "www.mgd.com"],
     { initializer: "initializeChild" }
   );
 
@@ -149,7 +151,7 @@ async function main() {
   );
   /**************************************** MGD1155 FINAL ***************************************/
 
-  /************************************* MintGoldDustSetPrice INIT **************************************/
+  // /************************************* MintGoldDustSetPrice INIT **************************************/
   // Deploy MintGoldDustSetPrice contract
   const MintGoldDustSetPriceFactory = await ethers.getContractFactory(
     "MintGoldDustSetPrice"
@@ -186,7 +188,7 @@ async function main() {
   );
   /************************************* MintGoldDustSetPrice FINAL *************************************/
 
-  /************************************** MintGoldDustMarketplaceAuction INIT **************************************/
+  // /************************************** MintGoldDustMarketplaceAuction INIT **************************************/
   // Deploy MintGoldDustMarketplaceAuction contract
   const MintGoldDustMarketplaceAuctionFactory = await ethers.getContractFactory(
     "MintGoldDustMarketplaceAuction"
