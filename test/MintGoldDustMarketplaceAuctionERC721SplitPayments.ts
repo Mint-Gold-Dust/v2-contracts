@@ -78,7 +78,18 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
     mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
     await mintGoldDustMemoir.deployed();
 
-    [deployer, addr1, addr2, addr3, addr4, addr5, addr6, addr7, addr8, ...addrs] = await ethers.getSigners();
+    [
+      deployer,
+      addr1,
+      addr2,
+      addr3,
+      addr4,
+      addr5,
+      addr6,
+      addr7,
+      addr8,
+      ...addrs
+    ] = await ethers.getSigners();
 
     mintGoldDustCompany = await upgrades.deployProxy(
       MintGoldDustCompany,
@@ -252,34 +263,38 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       const encode = new TextEncoder();
       const bytesMemoir = encode.encode(MEMOIR);
       expect(
-        mintGoldDustERC721
-          .connect(addr1)
-          .splitMint(
-            URI,
-            toWei(5),
-            [addr5.address, addr6.address, addr7.address, "0x0000000000000000000000000000000000000000"], // A null address is included
-            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
-            quantityToMint,
-            bytesMemoir
-          )
-      ).to.be.revertedWith("Owner address cannot be null!");  // Checks the expected error message
+        mintGoldDustERC721.connect(addr1).splitMint(
+          URI,
+          toWei(5),
+          [
+            addr5.address,
+            addr6.address,
+            addr7.address,
+            "0x0000000000000000000000000000000000000000",
+          ], // A null address is included
+          [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
+          quantityToMint,
+          bytesMemoir
+        )
+      ).to.be.revertedWith("Owner address cannot be null!"); // Checks the expected error message
     });
-    
+
     it("Should revert if total percentage is not 100", async function () {
       const encode = new TextEncoder();
       const bytesMemoir = encode.encode(MEMOIR);
       expect(
-        mintGoldDustERC721
-          .connect(addr1)
-          .splitMint(
-            URI,
-            toWei(5),
-            [addr5.address, addr6.address, addr7.address, addr8.address],
-            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(21)], // The total percentage is 101, not 100
-            quantityToMint,
-            bytesMemoir
-          )
-      ).to.be.revertedWithCustomError(mintGoldDustERC721,"TheTotalPercentageCantBeGreaterThan100");  // Checks the expected error message
+        mintGoldDustERC721.connect(addr1).splitMint(
+          URI,
+          toWei(5),
+          [addr5.address, addr6.address, addr7.address, addr8.address],
+          [toWei(20), toWei(20), toWei(20), toWei(20), toWei(21)], // The total percentage is 101, not 100
+          quantityToMint,
+          bytesMemoir
+        )
+      ).to.be.revertedWithCustomError(
+        mintGoldDustERC721,
+        "TheTotalPercentageCantBeGreaterThan100"
+      ); // Checks the expected error message
     });
 
     it("Should track a creation of an auction without a reserve price that expect the following conditions: \n \t - Expect emit the ItemListedToAuction event; \n \t - Expect auction structure attributes match with all passed to create auction function; \n \t - Auction end time should not be started yet to 24 hours and should be zero. \n \t - The auction price (initial price) should be zero. This way after any bid greater than zero the time of 24 hours should starts.", async () => {
@@ -1582,8 +1597,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           contractAddress: mintGoldDustERC721.address,
           seller: addr1.address,
         })
-      )
-        .to.be.revertedWith("Unauthorized");
+      ).to.be.revertedWith("Unauthorized");
     });
 
     it("Should revert with Unauthorized error if the end auction function is called and the auction have not received any bids yet.", async () => {
@@ -1739,7 +1753,6 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       console.log("\t\t Collector fee: ", collFee);
       console.log("\t\t Marketplace owner fee: ", primarySaleFee);
       console.log("\t\t Balance to seller: ", balance);
-      
 
       /**
        * @dev at the final of the endAuction flow the purchaseAuctionNft is called and
@@ -1756,7 +1769,6 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
       const receipt = await tx.wait();
 
-
       console.log("RECEITPPPPPPPPP: ", receipt.events);
 
       expect(receipt.events[1].event).to.be.equal(
@@ -1766,8 +1778,58 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         "NftPurchasedCollaboratorAmount(uint256,address,uint256)"
       );
       expect(receipt.events[1].args.saleId).to.be.equal(1);
-      expect(receipt.events[1].args.amount).to.be.equal(toWei((price-primarySaleFee)/5));
+      expect(receipt.events[1].args.amount).to.be.equal(
+        toWei((price - primarySaleFee) / 5)
+      );
       expect(receipt.events[1].args.collaborator).to.be.equal(addr1.address);
+
+      expect(receipt.events[2].event).to.be.equal(
+        "NftPurchasedCollaboratorAmount"
+      );
+      expect(receipt.events[2].eventSignature).to.be.equal(
+        "NftPurchasedCollaboratorAmount(uint256,address,uint256)"
+      );
+      expect(receipt.events[2].args.saleId).to.be.equal(1);
+      expect(receipt.events[2].args.amount).to.be.equal(
+        toWei((price - primarySaleFee) / 5)
+      );
+      expect(receipt.events[2].args.collaborator).to.be.equal(addr5.address);
+
+      expect(receipt.events[3].event).to.be.equal(
+        "NftPurchasedCollaboratorAmount"
+      );
+      expect(receipt.events[3].eventSignature).to.be.equal(
+        "NftPurchasedCollaboratorAmount(uint256,address,uint256)"
+      );
+      expect(receipt.events[3].args.saleId).to.be.equal(1);
+      expect(receipt.events[3].args.amount).to.be.equal(
+        toWei((price - primarySaleFee) / 5)
+      );
+      expect(receipt.events[3].args.collaborator).to.be.equal(addr6.address);
+
+      expect(receipt.events[4].event).to.be.equal(
+        "NftPurchasedCollaboratorAmount"
+      );
+      expect(receipt.events[4].eventSignature).to.be.equal(
+        "NftPurchasedCollaboratorAmount(uint256,address,uint256)"
+      );
+      expect(receipt.events[4].args.saleId).to.be.equal(1);
+      expect(receipt.events[4].args.amount).to.be.equal(
+        toWei((price - primarySaleFee) / 5)
+      );
+      expect(receipt.events[4].args.collaborator).to.be.equal(addr7.address);
+
+      expect(receipt.events[5].event).to.be.equal(
+        "NftPurchasedCollaboratorAmount"
+      );
+      expect(receipt.events[5].eventSignature).to.be.equal(
+        "NftPurchasedCollaboratorAmount(uint256,address,uint256)"
+      );
+      expect(receipt.events[5].args.saleId).to.be.equal(1);
+      expect(receipt.events[5].args.amount).to.be.equal(
+        toWei((price - primarySaleFee) / 5)
+      );
+      expect(receipt.events[5].args.collaborator).to.be.equal(addr8.address);
 
       expect(receipt.events[6].event).to.be.equal(
         "MintGoldDustNftPurchasedPrimaryMarket"
@@ -1848,7 +1910,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
       // verify if the seller received the balance
       expect(await addr1.getBalance()).to.be.equal(
-        ethers.BigNumber.from(sellerInitalEthBal).add(toWei(balance/5))
+        ethers.BigNumber.from(sellerInitalEthBal).add(toWei(balance / 5))
       );
 
       // expect item sold to be true
@@ -1998,7 +2060,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       );
       expect(receipt.events[1].args.saleId).to.be.equal(2);
       expect(receipt.events[1].args.collaborator).to.be.equal(addr1.address);
-      expect(receipt.events[1].args.amount).to.be.equal(toWei(royaltyFee/5));
+      expect(receipt.events[1].args.amount).to.be.equal(toWei(royaltyFee / 5));
 
       expect(receipt.events[6].event).to.be.equal(
         "MintGoldDustNftPurchasedSecondaryMarket"
@@ -2109,7 +2171,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
       // verify if the artist received the royalty
       expect(await provider.getBalance(artistCreatorAddress)).to.be.equal(
-        ethers.BigNumber.from(artistCreatorInitialBal).add(toWei(royaltyFee/5))
+        ethers.BigNumber.from(artistCreatorInitialBal).add(
+          toWei(royaltyFee / 5)
+        )
       );
 
       let addr3ShouldBeAfter = ethers.BigNumber.from(addr3BalanceBefore)
@@ -2125,7 +2189,3 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
     });
   });
 });
-
-
-
-

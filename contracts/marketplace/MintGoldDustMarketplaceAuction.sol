@@ -561,10 +561,8 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
 
   /**
    * Acquire a listed item for the MintGoldDustMarketplaceAuction.
-   * @notice function will fail if the market item does not has the auction property to true.
    * @notice function will fail if the token was not listed to the auction market.
    * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
-   * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
    * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
    * @dev This function is specific for the auction market. Then, in this case, the function will be called
    *      internally from the MGDAuction contract. So is not possible to get the msg.value. Then we're receiving the value by param.
