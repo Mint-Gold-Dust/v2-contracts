@@ -225,6 +225,22 @@ async function main() {
     "MintGoldDustMarketplaceAuction Proxy Admin deployed to:",
     mintGoldDustMarketplaceAuctionProxyAdminAddress
   );
+
+  await mintGoldDustMarketplaceAuction
+    .connect(deployer)
+    .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
+
+  await mintGoldDustSetPrice
+    .connect(deployer)
+    .setMintGoldDustMarketplace(mintGoldDustMarketplaceAuction.address);
+
+  await mintGoldDustERC1155
+    .connect(deployer)
+    .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+  await mintGoldDustERC721
+    .connect(deployer)
+    .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
   /************************************** MintGoldDustMarketplaceAuction FINAL *************************************/
 
   const contractAddresses = {
