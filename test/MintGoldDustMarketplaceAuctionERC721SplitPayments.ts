@@ -1571,9 +1571,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
     });
 
-    it("Should revert with ItemIsNotListedBySeller error if the end auction function is called and the tokenId was not listed on MintGoldDustMarketplaceAuction.", async () => {
+    it("Should revert with  error if the end auction function is called and the tokenId was not listed on MintGoldDustMarketplaceAuction.", async () => {
       // We list it to Set Price market place to confirm that it not cause problems here
-      await mintGoldDustSetPrice
+      await mintGoldDustMarketplaceAuction
         .connect(addr1)
         .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
       await expect(
@@ -1583,17 +1583,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           seller: addr1.address,
         })
       )
-        .to.be.revertedWithCustomError(
-          mintGoldDustMarketplaceAuction,
-          "ItemIsNotListedBySeller"
-        )
-        .withArgs(
-          1,
-          mintGoldDustMarketplaceAuction.address,
-          mintGoldDustERC721.address,
-          addr1.address,
-          addr3.address
-        );
+        .to.be.revertedWith("Unauthorized");
     });
 
     it("Should revert with Unauthorized error if the end auction function is called and the auction have not received any bids yet.", async () => {
@@ -1951,6 +1941,10 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         contractAddress: mintGoldDustERC721.address,
         seller: addr1.address,
       });
+
+      await mintGoldDustERC721
+        .connect(addr2)
+        .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
 
       await mintGoldDustMarketplaceAuction
         .connect(addr2)

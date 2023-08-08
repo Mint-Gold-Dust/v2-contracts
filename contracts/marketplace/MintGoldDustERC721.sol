@@ -33,7 +33,7 @@ contract MintGoldDustERC721 is
     }
 
     /**
-     * @dev the _transfer function is an internal function of ERC721. And because of the
+     * @dev the safeTransferFrom function is a function of ERC721. And because of the
      * necessity of call this function from other contract by composition we did need to
      * create this public function.
      * @param _from sender of the token.
@@ -47,7 +47,7 @@ contract MintGoldDustERC721 is
         uint256 _tokenId,
         uint256 _amount
     ) external override nonReentrant {
-        _safeTransfer(_from, _to, _tokenId, "");
+        safeTransferFrom(_from, _to, _tokenId, "");
     }
 
     function tokenURI(

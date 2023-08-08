@@ -13,7 +13,7 @@ chai.use(chaiAsPromised);
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("MintGoldDustSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the collectorMint feature of MintGoldDustSetPrice market for MintGoldDustERC721 tokens. \n\n", function () {
+describe("MintGoldDustSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the collectorMint feature with split Minting of MintGoldDustSetPrice market for MintGoldDustERC721 tokens. \n\n", function () {
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 
@@ -36,6 +36,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
   let addr3: SignerWithAddress;
+  let addr4: SignerWithAddress;
+  let addr5: SignerWithAddress;
+
   let addrs: SignerWithAddress[];
 
   let URI = "sample URI";
@@ -91,7 +94,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
     await mintGoldDustMemoir.deployed();
 
-    [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
+    [deployer, addr1, addr2, addr3, addr4, addr5, ...addrs] = await ethers.getSigners();
 
     mintGoldDustCompany = await upgrades.deployProxy(
       MintGoldDustCompany,
@@ -624,15 +627,17 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       mintGoldDustCompany.connect(deployer).setPublicKey(wallet.address);
     });
 
-    it('Should call the collectorMint function with an address that is not the mintGoldDustERC721 address. It MUST revert with an "UnauthorizedOnNFT" error.', async () => {
+    it('Should call the collectorMint function with an address that is not the mintGoldDustERC721 address. It MUST revert with an "Invalid contract address" error.', async () => {
       await expect(
         mintGoldDustERC721
           .connect(addr1)
-          .collectorMint(
+          .collectorSplitMint(
             URI,
             toWei(royalty),
+            [addr2.address, addr3.address, addr4.address, addr5.address],
+            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
             quantityToMint,
-            addr1.address,
+            addr4.address,
             bytesMemoir,
             1,
             mintGoldDustSetPrice.address

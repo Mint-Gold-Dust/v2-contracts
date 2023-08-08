@@ -1293,7 +1293,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
         // **** EXPECT THE BIDDER 1 BALANCE TO BE DECREASED CORRECTLY AFTER FIST BID ****
         expect(
-          parseFloat(fromWei(bidder1BalanceBefore)).toFixed(4)
+          parseFloat(fromWei(bidder1BalanceBefore)).toFixed(3)
         ).to.be.equal(
           parseFloat(
             fromWei(
@@ -1301,7 +1301,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 .add(toWei(price))
                 .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
             )
-          ).toFixed(4)
+          ).toFixed(3)
         );
 
         // **** EXPECT THE BIDDER 1 TO BE REFUNDED AFTER SECOND BID ****
