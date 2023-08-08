@@ -166,9 +166,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .connect(addr1)
         .mintNft(URI, toWei(5), quantityToMint, bytesMEMOIR);
       // Artist approve gdMarketPlace marketplace to exchange its NFT
-      await mintGoldDustERC721
-        .connect(addr1)
-        .setApprovalForAll(mintGoldDustSetPrice.address, true);
+      // await mintGoldDustERC721
+      //   .connect(addr1)
+      //   .setApprovalForAll(mintGoldDustSetPrice.address, true);
     });
 
     it("Should revert with a MustBeERC721OrERC1155 error if the contract address trying to list is neither a ERC721 nor a ERC1155.", async function () {
