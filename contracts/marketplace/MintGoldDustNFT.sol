@@ -7,32 +7,11 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
 
-error RoyaltyInvalidPercentage();
-error UnauthorizedOnNFT(string message);
-error NumberOfCollaboratorsAndPercentagesNotMatch();
-error TheTotalPercentageCantBeGreaterThan100();
-
 abstract contract MintGoldDustNFT is
     Initializable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable
 {
-    // Add your custom code and functions here
-    /**
-     *
-     * @notice that the MintGoldDustERC721 is composed by other contract.
-     * @param _mintGoldDustCompany The contract responsible to MGD management features.
-     */
-    function initialize(
-        address _mintGoldDustCompany
-    ) internal onlyInitializing isZeroAddress(_mintGoldDustCompany) {
-        __ReentrancyGuard_init();
-        __Pausable_init();
-        mintGoldDustCompany = MintGoldDustCompany(
-            payable(_mintGoldDustCompany)
-        );
-    }
-
     MintGoldDustCompany internal mintGoldDustCompany;
     address private mintGoldDustSetPriceAddress;
 
@@ -48,20 +27,6 @@ abstract contract MintGoldDustNFT is
     mapping(uint256 => uint256) public tokenIdCollaboratorsQuantity;
 
     uint256[48] __gap;
-
-    /// @notice that this function is used for the Mint Gold Dust owner
-    /// create the dependence of the Mint Gold Dust set price contract address.
-    /// @param _mintGoldDustSetPriceAddress the address to be setted.
-    function setMintGoldDustSetPriceAddress(
-        address _mintGoldDustSetPriceAddress
-    ) external {
-        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
-        require(
-            address(mintGoldDustSetPriceAddress) == address(0),
-            "Already setted!"
-        );
-        mintGoldDustSetPriceAddress = _mintGoldDustSetPriceAddress;
-    }
 
     /**
      * @notice that this is an event that contains the info for a mint.
@@ -102,53 +67,114 @@ abstract contract MintGoldDustNFT is
         address contractAddress
     );
 
+    error RoyaltyInvalidPercentage();
+    error UnauthorizedOnNFT(string message);
+    error NumberOfCollaboratorsAndPercentagesNotMatch();
+    error TheTotalPercentageCantBeGreaterThan100();
+
+    /// @notice that this modifier is used to check if the arrays length are valid
+    /// @dev the _ownersPercentage array length MUST be equals the _newOwners array length plus one
+    modifier arrayLengthCheck(
+        address[] calldata _newOwners,
+        uint256[] calldata _ownersPercentage
+    ) {
+        if (_ownersPercentage.length != _newOwners.length + 1) {
+            revert NumberOfCollaboratorsAndPercentagesNotMatch();
+        }
+        _;
+    }
+
+    /// @notice that this modifier is used to check if the address is the owner
+    modifier isowner() {
+        if (msg.sender != mintGoldDustCompany.owner()) {
+            revert UnauthorizedOnNFT("OWNER");
+        }
+        _;
+    }
+
+    /// @notice that this modifier is used to check if the percentage is not greater than the max royalty percentage
+    modifier validPercentage(uint256 percentage) {
+        if (percentage > mintGoldDustCompany.maxRoyalty()) {
+            revert RoyaltyInvalidPercentage();
+        }
+        _;
+    }
+
+    /// @notice that this modifier is used to check if the address is whitelisted
+    modifier isArtistWhitelisted(address _artistAddress) {
+        if (!mintGoldDustCompany.isArtistApproved(_artistAddress)) {
+            revert UnauthorizedOnNFT("ARTIST");
+        }
+        _;
+    }
+
+    /// @notice that this modifier do a group of verifications for the collector mint flow
+    modifier checkParameters(
+        address _sender,
+        address _artistAddress,
+        uint256 percentage
+    ) {
+        if (
+            !mintGoldDustCompany.isArtistApproved(_artistAddress) ||
+            _artistAddress == address(0)
+        ) {
+            revert UnauthorizedOnNFT("ARTIST");
+        }
+        if (msg.sender == address(0)) {
+            revert UnauthorizedOnNFT("CONTRACT");
+        }
+        if (percentage > mintGoldDustCompany.maxRoyalty()) {
+            revert RoyaltyInvalidPercentage();
+        }
+        _;
+    }
+
+    /// @notice that this modifier is used to check if the address is the Mint Gold Dust set price contract address
+    /// @dev it is used by the collectorMint flows
+    modifier onlySetPrice() {
+        if (msg.sender != mintGoldDustSetPriceAddress) {
+            revert UnauthorizedOnNFT("SET_PRICE");
+        }
+        _;
+    }
+
+    /// @notice that this modifier is used to check if the address is not zero address
+    modifier isZeroAddress(address _address) {
+        require(_address != address(0), "address is zero address");
+        _;
+    }
+
+    /**
+     *
+     * @notice that the MintGoldDustERC721 is composed by other contract.
+     * @param _mintGoldDustCompany The contract responsible to MGD management features.
+     */
+    function initialize(
+        address _mintGoldDustCompany
+    ) internal onlyInitializing isZeroAddress(_mintGoldDustCompany) {
+        __ReentrancyGuard_init();
+        __Pausable_init();
+        mintGoldDustCompany = MintGoldDustCompany(
+            payable(_mintGoldDustCompany)
+        );
+    }
+
+    /// @notice that this function is used for the Mint Gold Dust owner
+    /// create the dependence of the Mint Gold Dust set price contract address.
+    /// @param _mintGoldDustSetPriceAddress the address to be setted.
+    function setMintGoldDustSetPriceAddress(
+        address _mintGoldDustSetPriceAddress
+    ) external {
+        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
+        mintGoldDustSetPriceAddress = _mintGoldDustSetPriceAddress;
+    }
+
     function transfer(
         address from,
         address to,
         uint256 tokenId,
         uint256 amount
     ) external virtual;
-
-    function executeMintFlow(
-        string calldata _tokenURI,
-        uint256 _royaltyPercent,
-        uint256 _amount,
-        address _artistAddress,
-        uint256 _collectorMintId,
-        bytes calldata _memoir
-    ) internal virtual returns (uint256);
-
-    /**
-     * @notice that is the function responsible by the mint a new MintGoldDustNFT token.
-     * @dev that is a virtual function that MUST be implemented by the NFT contracts childrens.
-     * @param _tokenURI the URI that contains the metadata for the NFT.
-     * @param _royaltyPercent the royalty percentage to be applied for this NFT secondary sales.
-     * @param _amount the quantity to be minted for this token.
-     */
-    function mintNft(
-        string calldata _tokenURI,
-        uint256 _royaltyPercent,
-        uint256 _amount,
-        bytes calldata _memoir
-    )
-        public
-        payable
-        isArtistWhitelisted(msg.sender)
-        validPercentage(_royaltyPercent)
-        whenNotPaused
-        returns (uint256)
-    {
-        uint256 newTokenId = executeMintFlow(
-            _tokenURI,
-            _royaltyPercent,
-            _amount,
-            msg.sender,
-            0,
-            _memoir
-        );
-
-        return newTokenId;
-    }
 
     /**
      * @notice that is the function responsible by the mint and split a new MintGoldDustNFT token.
@@ -241,6 +267,57 @@ abstract contract MintGoldDustNFT is
         return _tokenId;
     }
 
+    /// @notice Pause the contract
+    function pauseContract() external isowner {
+        _pause();
+    }
+
+    /// @notice Unpause the contract
+    function unpauseContract() external isowner {
+        _unpause();
+    }
+
+    /**
+     * @notice that is the function responsible by the mint a new MintGoldDustNFT token.
+     * @dev that is a virtual function that MUST be implemented by the NFT contracts childrens.
+     * @param _tokenURI the URI that contains the metadata for the NFT.
+     * @param _royaltyPercent the royalty percentage to be applied for this NFT secondary sales.
+     * @param _amount the quantity to be minted for this token.
+     */
+    function mintNft(
+        string calldata _tokenURI,
+        uint256 _royaltyPercent,
+        uint256 _amount,
+        bytes calldata _memoir
+    )
+        public
+        payable
+        isArtistWhitelisted(msg.sender)
+        validPercentage(_royaltyPercent)
+        whenNotPaused
+        returns (uint256)
+    {
+        uint256 newTokenId = executeMintFlow(
+            _tokenURI,
+            _royaltyPercent,
+            _amount,
+            msg.sender,
+            0,
+            _memoir
+        );
+
+        return newTokenId;
+    }
+
+    function executeMintFlow(
+        string calldata _tokenURI,
+        uint256 _royaltyPercent,
+        uint256 _amount,
+        address _artistAddress,
+        uint256 _collectorMintId,
+        bytes calldata _memoir
+    ) internal virtual returns (uint256);
+
     function executeSplitMintFlow(
         uint256 _tokenId,
         address[] calldata _newOwners,
@@ -290,87 +367,5 @@ abstract contract MintGoldDustNFT is
             _ownersPercentage,
             address(this)
         );
-    }
-
-    /// @notice Pause the contract
-    function pauseContract() external isowner {
-        _pause();
-    }
-
-    /// @notice Unpause the contract
-    function unpauseContract() external isowner {
-        _unpause();
-    }
-
-    /// @notice that this modifier is used to check if the arrays length are valid
-    /// @dev the _ownersPercentage array length MUST be equals the _newOwners array length plus one
-    modifier arrayLengthCheck(
-        address[] calldata _newOwners,
-        uint256[] calldata _ownersPercentage
-    ) {
-        if (_ownersPercentage.length != _newOwners.length + 1) {
-            revert NumberOfCollaboratorsAndPercentagesNotMatch();
-        }
-        _;
-    }
-
-    /// @notice that this modifier is used to check if the address is the owner
-    modifier isowner() {
-        if (msg.sender != mintGoldDustCompany.owner()) {
-            revert UnauthorizedOnNFT("OWNER");
-        }
-        _;
-    }
-
-    /// @notice that this modifier is used to check if the percentage is not greater than the max royalty percentage
-    modifier validPercentage(uint256 percentage) {
-        if (percentage > mintGoldDustCompany.maxRoyalty()) {
-            revert RoyaltyInvalidPercentage();
-        }
-        _;
-    }
-
-    /// @notice that this modifier is used to check if the address is whitelisted
-    modifier isArtistWhitelisted(address _artistAddress) {
-        if (!mintGoldDustCompany.isArtistApproved(_artistAddress)) {
-            revert UnauthorizedOnNFT("ARTIST");
-        }
-        _;
-    }
-
-    /// @notice that this modifier do a group of verifications for the collector mint flow
-    modifier checkParameters(
-        address _sender,
-        address _artistAddress,
-        uint256 percentage
-    ) {
-        if (
-            !mintGoldDustCompany.isArtistApproved(_artistAddress) ||
-            _artistAddress == address(0)
-        ) {
-            revert UnauthorizedOnNFT("ARTIST");
-        }
-        if (msg.sender == address(0)) {
-            revert UnauthorizedOnNFT("CONTRACT");
-        }
-        if (percentage > mintGoldDustCompany.maxRoyalty()) {
-            revert RoyaltyInvalidPercentage();
-        }
-        _;
-    }
-
-    /// @notice that this modifier is used to check if the address is the Mint Gold Dust set price contract address
-    /// @dev it is used by the collectorMint flows
-    modifier onlySetPrice() {
-        if (msg.sender != mintGoldDustSetPriceAddress) {
-            revert UnauthorizedOnNFT("SET_PRICE");
-        }
-        _;
-    }
-
-    /// @notice that this modifier is used to check if the address is not zero address
-    modifier isZeroAddress(address _address) {
-        require(_address != address(0), "address is zero address");
-        _;
     }
 }

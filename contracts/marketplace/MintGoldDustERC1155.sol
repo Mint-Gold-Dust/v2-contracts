@@ -13,7 +13,9 @@ contract MintGoldDustERC1155 is
     ERC1155URIStorageUpgradeable,
     MintGoldDustNFT
 {
-    // Add your custom code and functions here
+    using Counters for Counters.Counter;
+    Counters.Counter public _tokenIds;
+
     /**
      *
      * @notice that the MintGoldDustERC1155 is composed by other contract.
@@ -26,23 +28,6 @@ contract MintGoldDustERC1155 is
         __ERC1155_init(baseURI);
         __ERC1155URIStorage_init();
         MintGoldDustNFT.initialize(_mintGoldDustCompany);
-    }
-
-    using Counters for Counters.Counter;
-    Counters.Counter public _tokenIds;
-
-    /// @notice that this mapping will return the uri for the respective token id.
-    /// @param tokenId is the id of the token.
-    function uri(
-        uint256 tokenId
-    )
-        public
-        view
-        virtual
-        override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable)
-        returns (string memory)
-    {
-        return super.uri(tokenId);
     }
 
     /**
@@ -59,6 +44,20 @@ contract MintGoldDustERC1155 is
         uint256 amount
     ) external override nonReentrant {
         safeTransferFrom(from, to, tokenId, amount, "");
+    }
+
+    /// @notice that this mapping will return the uri for the respective token id.
+    /// @param tokenId is the id of the token.
+    function uri(
+        uint256 tokenId
+    )
+        public
+        view
+        virtual
+        override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable)
+        returns (string memory)
+    {
+        return super.uri(tokenId);
     }
 
     /**
