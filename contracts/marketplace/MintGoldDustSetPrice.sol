@@ -8,42 +8,13 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-error Log(bytes32 domain, bytes encoded, bytes32 _eip712Hash);
-error ListPriceMustBeGreaterThanZero();
-
 contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     using ECDSA for bytes32;
-
-    function supportsInterface(
-        bytes4 interfaceId
-    ) external pure returns (bool) {
-        return interfaceId == type(IERC165).interfaceId;
-    }
 
     struct DelistDTO {
         uint256 tokenId;
         uint256 amount;
         address contractAddress;
-    }
-
-    /**
-     *
-     * @notice MGDAuction is a children of MintGoldDustMarketplace and this one is
-     * composed by other two contracts.
-     * @param _mintGoldDustCompany The contract responsible to MGD management features.
-     * @param _mintGoldDustERC721Address The MGD ERC721.
-     * @param _mintGoldDustERC1155Address The MGD ERC721.
-     */
-    function initializeChild(
-        address _mintGoldDustCompany,
-        address payable _mintGoldDustERC721Address,
-        address payable _mintGoldDustERC1155Address
-    ) external initializer {
-        MintGoldDustMarketplace.initialize(
-            _mintGoldDustCompany,
-            _mintGoldDustERC721Address,
-            _mintGoldDustERC1155Address
-        );
     }
 
     /**
@@ -93,6 +64,53 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         address seller,
         address contractAddress
     );
+
+    error RoyaltyInvalidPercentage();
+    error UnauthorizedOnNFT(string message);
+    error Log(bytes32 domain, bytes encoded, bytes32 _eip712Hash);
+    error ListPriceMustBeGreaterThanZero();
+
+    /// @notice that his function will check if the parameters for the collector mint flow are valid.
+    /// @param _artistAddress is the artist address that used collector mint.
+    /// @param percentage is the percentage chosen by the artist for its royalty.
+    modifier checkParameters(address _artistAddress, uint256 percentage) {
+        if (
+            !mintGoldDustCompany.isArtistApproved(_artistAddress) ||
+            _artistAddress == address(0)
+        ) {
+            revert UnauthorizedOnNFT("ARTIST");
+        }
+        if (percentage > mintGoldDustCompany.maxRoyalty()) {
+            revert RoyaltyInvalidPercentage();
+        }
+        _;
+    }
+
+    /**
+     *
+     * @notice MGDAuction is a children of MintGoldDustMarketplace and this one is
+     * composed by other two contracts.
+     * @param _mintGoldDustCompany The contract responsible to MGD management features.
+     * @param _mintGoldDustERC721Address The MGD ERC721.
+     * @param _mintGoldDustERC1155Address The MGD ERC721.
+     */
+    function initializeChild(
+        address _mintGoldDustCompany,
+        address payable _mintGoldDustERC721Address,
+        address payable _mintGoldDustERC1155Address
+    ) external initializer {
+        MintGoldDustMarketplace.initialize(
+            _mintGoldDustCompany,
+            _mintGoldDustERC721Address,
+            _mintGoldDustERC1155Address
+        );
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) external pure returns (bool) {
+        return interfaceId == type(IERC165).interfaceId;
+    }
 
     /**
      *
@@ -242,34 +260,6 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     }
 
     /**
-     * Acquire a listed NFT to Set Price market
-     * @notice function will fail if the market item does has the auction property to true.
-     * @notice function will fail if the token was not listed to the set price market.
-     * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
-     * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
-     * @dev This function is specific for the set price market.
-     * For the auction market we have a second purchaseAuctionNft function. See below.
-     * @param _saleDTO The SaleDTO struct parameter to use.
-     *                 It consists of the following fields:
-     *                    - tokenid: The tokenId of the marketItem.
-     *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
-     *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
-     *                    - seller: The seller of the marketItem.
-     */
-    function purchaseNft(SaleDTO memory _saleDTO) external payable {
-        executePurchaseNftFlow(_saleDTO, msg.sender, msg.value);
-    }
-
-    function collectorPurchaseNft(
-        SaleDTO memory _saleDTO,
-        address _sender,
-        uint256 _value
-    ) internal {
-        executePurchaseNftFlow(_saleDTO, _sender, _value);
-    }
-
-    /**
      * @notice that is a function responsilble by start the collector (lazy) mint process on chain.
      * @param _collectorMintDTO is the CollectorMintDTO struct
      *                It consists of the following fields:
@@ -402,6 +392,26 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         );
     }
 
+    /**
+     * Acquire a listed NFT to Set Price market
+     * @notice function will fail if the market item does has the auction property to true.
+     * @notice function will fail if the token was not listed to the set price market.
+     * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
+     * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
+     * @dev This function is specific for the set price market.
+     * For the auction market we have a second purchaseAuctionNft function. See below.
+     * @param _saleDTO The SaleDTO struct parameter to use.
+     *                 It consists of the following fields:
+     *                    - tokenid: The tokenId of the marketItem.
+     *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
+     *                              MintGoldDustERC721 the amout must be always one.
+     *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+     *                    - seller: The seller of the marketItem.
+     */
+    function purchaseNft(SaleDTO memory _saleDTO) external payable {
+        executePurchaseNftFlow(_saleDTO, msg.sender, msg.value);
+    }
+
     /// @notice that is a function responsible by handling the call to the purchase function.
     function callPurchase(
         uint256 _tokenId,
@@ -416,8 +426,6 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
             _contractAddress,
             _artistSigner
         );
-
-        //collectorPurchaseNft(_saleDTO, msg.sender, _value);
         executePurchaseNftFlow(_saleDTO, msg.sender, _value);
     }
 
@@ -548,21 +556,5 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         );
 
         return encodedData;
-    }
-
-    /// @notice that his function will check if the parameters for the collector mint flow are valid.
-    /// @param _artistAddress is the artist address that used collector mint.
-    /// @param percentage is the percentage chosen by the artist for its royalty.
-    modifier checkParameters(address _artistAddress, uint256 percentage) {
-        if (
-            !mintGoldDustCompany.isArtistApproved(_artistAddress) ||
-            _artistAddress == address(0)
-        ) {
-            revert UnauthorizedOnNFT("ARTIST");
-        }
-        if (percentage > mintGoldDustCompany.maxRoyalty()) {
-            revert RoyaltyInvalidPercentage();
-        }
-        _;
     }
 }

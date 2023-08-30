@@ -4,9 +4,6 @@ pragma solidity 0.8.18;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-error UseThisFunctionForEOA();
-error YouCannotUpdateThisMemoir();
-
 /// @title A contract responsible by allow External Owned Accounts to create one or more memoirs.
 /// A memoir is a form of expression that the artist or any user of the platform can use
 /// to show your feelings related to art or the current moment.
@@ -16,15 +13,18 @@ contract MintGoldDustMemoir is Initializable {
     mapping(address => mapping(uint256 => bytes)) public userCounterMemoirs;
     mapping(address => uint256) public userCounter;
 
-    function initialize() external initializer {
-        // Empty initializer function for the upgrade proxy pattern
-    }
-
     event EOAMemoirCreated(
         address indexed externallyOwnedAccount,
         uint256 counter,
         bytes memoir
     );
+
+    error UseThisFunctionForEOA();
+    error YouCannotUpdateThisMemoir();
+
+    function initialize() external initializer {
+        // Empty initializer function for the upgrade proxy pattern
+    }
 
     /**
      *

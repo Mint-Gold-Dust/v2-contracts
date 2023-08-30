@@ -5,8 +5,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-error Unauthorized();
-
 /// @title A contract responsible by Mint Gold Dust management.
 /// @notice Contains functions for access levels management.
 /// @author Mint Gold Dust LLC
@@ -23,23 +21,29 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
     uint256 public auctionDuration;
     uint256 public auctionFinalMinutes;
     address public publicKey;
+    bytes4 private constant ERC165_ID = 0x01ffc9a7; //ERC165
     mapping(address => bool) public isArtistApproved;
     mapping(address => bool) public isAddressValidator;
 
-    bytes4 private constant ERC165_ID = 0x01ffc9a7; //ERC165
+    event ArtistWhitelisted(address indexed artistAddress, bool state);
 
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override returns (bool) {
-        return interfaceId == ERC165_ID;
+    event ValidatorAdded(address indexed validatorAddress, bool state);
+
+    error Unauthorized();
+
+    /// @notice that this modifier is used to check if the address is a validator or the owner
+    modifier isValidatorOrOwner() {
+        if (isAddressValidator[msg.sender] || msg.sender == owner()) {
+            _;
+        } else {
+            revert Unauthorized();
+        }
     }
 
-    /// @notice Set the public key to be used by the Mint Gold Dust Company
-    /// @param _mintGoldDustPublicKey is the public key to be used by the Mint Gold Dust Company
-    function setPublicKey(
-        address _mintGoldDustPublicKey
-    ) external onlyOwner isZeroAddress(_mintGoldDustPublicKey) {
-        publicKey = _mintGoldDustPublicKey;
+    /// @notice that this modifier is used to check if the address is not zero address
+    modifier isZeroAddress(address _address) {
+        require(_address != address(0), "address is zero address");
+        _;
     }
 
     /**
@@ -71,9 +75,13 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
         auctionFinalMinutes = _auctionFinalMinutes * 1 seconds;
     }
 
-    event ArtistWhitelisted(address indexed artistAddress, bool state);
-
-    event ValidatorAdded(address indexed validatorAddress, bool state);
+    /// @notice Set the public key to be used by the Mint Gold Dust Company
+    /// @param _mintGoldDustPublicKey is the public key to be used by the Mint Gold Dust Company
+    function setPublicKey(
+        address _mintGoldDustPublicKey
+    ) external onlyOwner isZeroAddress(_mintGoldDustPublicKey) {
+        publicKey = _mintGoldDustPublicKey;
+    }
 
     /// @notice Add new validators to Mint Gold Dust Company
     function setValidator(
@@ -93,18 +101,9 @@ contract MintGoldDustCompany is Initializable, IERC165, OwnableUpgradeable {
         emit ArtistWhitelisted(_address, _state);
     }
 
-    /// @notice that this modifier is used to check if the address is a validator or the owner
-    modifier isValidatorOrOwner() {
-        if (isAddressValidator[msg.sender] || msg.sender == owner()) {
-            _;
-        } else {
-            revert Unauthorized();
-        }
-    }
-
-    /// @notice that this modifier is used to check if the address is not zero address
-    modifier isZeroAddress(address _address) {
-        require(_address != address(0), "address is zero address");
-        _;
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
+        return interfaceId == ERC165_ID;
     }
 }
