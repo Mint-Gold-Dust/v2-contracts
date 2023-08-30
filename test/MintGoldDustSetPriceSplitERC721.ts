@@ -172,6 +172,75 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
     beforeEach(async () => {
       // MGD owner whitelist the artist
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+    });
+
+    it("Should revert with a MustBeERC721OrERC1155 error if the contract address trying to list is neither a ERC721 nor a ERC1155.", async function () {
+      const encode = new TextEncoder();
+      const bytesMemoir = encode.encode(MEMOIR);
+
+      // addr1 mints a nft
+      const tx = await mintGoldDustERC721
+        .connect(addr1)
+        .splitMint(
+          URI,
+          toWei(5),
+          [addr5.address],
+          [toWei(20), toWei(80)],
+          quantityToMint,
+          bytesMemoir
+        );
+
+      const receipt = await tx.wait();
+      console.log(receipt.events[3]);
+
+      expect(receipt.events[0].event).to.be.equal("Transfer");
+      expect(receipt.events[0].eventSignature).to.be.equal(
+        "Transfer(address,address,uint256)"
+      );
+      expect(receipt.events[0].args[0]).to.be.equal(
+        ethers.constants.AddressZero
+      );
+      expect(receipt.events[0].args[1]).to.be.equal(addr1.address);
+      expect(receipt.events[0].args[2]).to.be.equal(1);
+
+      // MintGoldDustNFTMinted
+      expect(receipt.events[2].event).to.be.equal("MintGoldDustNFTMinted");
+      expect(receipt.events[2].eventSignature).to.be.equal(
+        "MintGoldDustNFTMinted(uint256,string,address,uint256,uint256,bool,uint256,bytes)"
+      );
+      expect(receipt.events[2].args[0]).to.be.equal(1);
+      expect(receipt.events[2].args[1]).to.be.equal(URI);
+      expect(receipt.events[2].args[2]).to.be.equal(addr1.address);
+      expect(receipt.events[2].args[3]).to.be.equal(toWei(5));
+      expect(receipt.events[2].args[4]).to.be.equal(1);
+      expect(receipt.events[2].args[5]).to.be.equal(true);
+      expect(receipt.events[2].args[6]).to.be.equal(0);
+      //expect(receipt.events[2].args[7]).to.be.equal(bytesMemoir);
+
+      expect(receipt.events[3].event).to.be.equal(
+        "MintGoldDustNftMintedAndSplitted"
+      );
+      expect(receipt.events[3].eventSignature).to.be.equal(
+        "MintGoldDustNftMintedAndSplitted(uint256,address[],uint256[],address)"
+      );
+      expect(receipt.events[3].args[0]).to.be.equal(1);
+      expect(receipt.events[3].args[1][0]).to.be.equal(addr5.address);
+      expect(receipt.events[3].args[2][0]).to.be.equal(toWei(20));
+      expect(receipt.events[3].args[2][1]).to.be.equal(toWei(80));
+      expect(receipt.events[3].args[3]).to.be.equal(mintGoldDustERC721.address);
+    });
+  });
+
+  describe("\n--------------- Tests related witn the list NFT functionality ---------------\n", function () {
+    let price = 1;
+    let quantityToMint = 1;
+    let quantityToList = 1;
+
+    // Create an instance of the ListDTO struct
+
+    beforeEach(async () => {
+      // MGD owner whitelist the artist
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
       const encode = new TextEncoder();
       const bytesMemoir = encode.encode(MEMOIR);
