@@ -10,7 +10,7 @@ import "./MintGoldDustCompany.sol";
 error RoyaltyInvalidPercentage();
 error UnauthorizedOnNFT(string message);
 error NumberOfCollaboratorsAndPercentagesNotMatch();
-error TheTotalPercentageCantBeGreaterThan100();
+error TheTotalPercentageCantBeGreaterOrLessThan100();
 
 abstract contract MintGoldDustNFT is
   Initializable,
@@ -261,6 +261,11 @@ abstract contract MintGoldDustNFT is
       tokenIdCollaboratorsPercentage[_tokenId][i] = _ownersPercentage[i];
     }
 
+    require(
+      _ownersPercentage[ownersCount] > 0,
+      "Owner percentage must be greater than zero!"
+    );
+
     require(ownersCount >= 1, "Add more than 1 owner!");
 
     require(ownersCount < 5, "Add max 4!");
@@ -270,7 +275,7 @@ abstract contract MintGoldDustNFT is
     totalPercentage += _ownersPercentage[ownersCount];
 
     if (totalPercentage != 100e18) {
-      revert TheTotalPercentageCantBeGreaterThan100();
+      revert TheTotalPercentageCantBeGreaterOrLessThan100();
     }
 
     tokenIdCollaboratorsQuantity[_tokenId] = ownersCount + 1;

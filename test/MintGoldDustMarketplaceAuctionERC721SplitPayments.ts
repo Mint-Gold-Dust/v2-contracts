@@ -293,7 +293,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         )
       ).to.be.revertedWithCustomError(
         mintGoldDustERC721,
-        "TheTotalPercentageCantBeGreaterThan100"
+        "TheTotalPercentageCantBeGreaterOrLessThan100"
       ); // Checks the expected error message
     });
 
