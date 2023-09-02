@@ -30,6 +30,8 @@ contract MintGoldDustERC721 is
     MintGoldDustNFT.initialize(_mintGoldDustCompany);
   }
 
+  mapping(uint256 => bool) private _wasSold;
+
   /**
    * @dev the safeTransferFrom function is a function of ERC721. And because of the
    * necessity of call this function from other contract by composition we did need to
@@ -86,7 +88,8 @@ contract MintGoldDustERC721 is
   function burnToken(uint256 tokenId) public {
     require(
       _isApprovedOrOwner(msg.sender, tokenId) ||
-        msg.sender == mintGoldDustCompany.owner(),
+        msg.sender == mintGoldDustCompany.owner() ||
+        mintGoldDustCompany.isAddressValidator(msg.sender),
       "Only owner or approved"
     );
 
