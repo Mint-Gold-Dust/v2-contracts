@@ -86,6 +86,8 @@ contract MintGoldDustERC1155 is
     tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
     tokenIdMemoir[newTokenId] = _memoir;
 
+    primarySaleQuantityToSold[newTokenId] = _amount;
+
     emit MintGoldDustNFTMinted(
       newTokenId,
       _tokenURI,
@@ -100,14 +102,34 @@ contract MintGoldDustERC1155 is
     return newTokenId;
   }
 
-  function burn(address tokenOwner, uint256 tokenId, uint256 amount) public {
+  /**
+   * @dev Allows specified roles to burn a specific amount of a specific token ID.
+   *
+   * @param tokenId The ID of the token to be burned.
+   * @param amount The amount of tokens to be burned.
+   *
+   * Requirements:
+   *
+   * - Caller must be either the owner or have been approved to manage the owner's tokens, or be the Mint Gold Dust Owner.
+   * - The balance of the `tokenOwner` for the specific `tokenId` should be greater than or equal to the `amount` to be burned.
+   * - The token specified by `tokenId` must not have been sold yet.
+   *
+   * Emits a {TokenBurned} event.
+   */
+  function burnToken(uint256 tokenId, uint256 amount) external whenNotPaused {
     require(
       // Ensure the caller is either (approved or is the owner) or is the Mint Gold Dust Owner
-      isApprovedForAll(tokenOwner, msg.sender) ||
-        tokenOwner == msg.sender ||
-        msg.sender == mintGoldDustCompany.owner(),
-      "Only owner or approved"
+      isApprovedForAll(tokenIdArtist[tokenId], msg.sender) ||
+        tokenIdArtist[tokenId] == msg.sender ||
+        msg.sender == mintGoldDustCompany.owner() ||
+        mintGoldDustCompany.isAddressValidator(msg.sender),
+      "Only creator or allowed"
     );
+
+    address tokenOwner = msg.sender;
+    if (msg.sender != tokenIdArtist[tokenId]) {
+      tokenOwner = tokenIdArtist[tokenId];
+    }
 
     require(
       // Ensure the owner has enough tokens to burn
@@ -115,10 +137,27 @@ contract MintGoldDustERC1155 is
       "Insufficient balance to burn"
     );
 
+    require(
+      // Ensure the owner has enough tokens to burn
+      primarySaleQuantityToSold[tokenId] >= amount,
+      "Items sold not possible to burn"
+    );
+
+    require(tokenWasSold[tokenId] == false, "Token already sold");
+
     _burn(tokenOwner, tokenId, amount);
-    emit TokenBurned(tokenId, true, msg.sender, amount);
+    emit TokenBurned(tokenId, true, tokenIdArtist[tokenId], msg.sender, amount);
   }
 
+  /**
+   * @dev Overrides the ERC1155's `_burn` internal function to extend its functionalities.
+   *
+   * @param account The address of the token owner.
+   * @param id The ID of the token to be burned.
+   * @param amount The amount of tokens to be burned.
+   *
+   * Note: This internal function is called by the `burn` function, which takes care of validations like owner checks and sufficient balance checks.
+   */
   function _burn(
     address account,
     uint256 id,

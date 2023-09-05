@@ -94,7 +94,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
     await mintGoldDustMemoir.deployed();
 
-    [deployer, addr1, addr2, addr3, addr4, addr5, ...addrs] = await ethers.getSigners();
+    [deployer, addr1, addr2, addr3, addr4, addr5, ...addrs] =
+      await ethers.getSigners();
 
     mintGoldDustCompany = await upgrades.deployProxy(
       MintGoldDustCompany,
@@ -161,6 +162,18 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     await mintGoldDustERC721
       .connect(deployer)
       .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
 
     await mintGoldDustMarketplaceAuction
       .connect(deployer)

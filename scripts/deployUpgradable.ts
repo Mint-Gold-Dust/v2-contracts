@@ -241,6 +241,18 @@ async function main() {
   await mintGoldDustERC721
     .connect(deployer)
     .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+  await mintGoldDustERC1155
+    .connect(deployer)
+    .setMintGoldDustMarketplaceAuctionAddress(
+      mintGoldDustMarketplaceAuction.address
+    );
+
+  await mintGoldDustERC721
+    .connect(deployer)
+    .setMintGoldDustMarketplaceAuctionAddress(
+      mintGoldDustMarketplaceAuction.address
+    );
   /************************************** MintGoldDustMarketplaceAuction FINAL *************************************/
 
   const contractAddresses = {

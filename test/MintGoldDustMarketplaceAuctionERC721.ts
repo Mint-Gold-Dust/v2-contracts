@@ -133,6 +133,26 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       .connect(deployer)
       .setValidator(deployer.address, true);
 
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
     await mintGoldDustMarketplaceAuction
       .connect(deployer)
       .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
@@ -1514,8 +1534,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           contractAddress: mintGoldDustERC721.address,
           seller: addr1.address,
         })
-      )
-        .to.be.revertedWith("Unauthorized");
+      ).to.be.revertedWith("Unauthorized");
     });
 
     it("Should revert with Unauthorized error if the end auction function is called and the auction have not received any bids yet.", async () => {

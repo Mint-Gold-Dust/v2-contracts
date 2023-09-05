@@ -126,6 +126,26 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       .connect(deployer)
       .setValidator(deployer.address, true);
 
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
     await mintGoldDustMarketplaceAuction
       .connect(deployer)
       .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);

@@ -142,6 +142,26 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
     await mintGoldDustCompany
       .connect(deployer)
       .setValidator(deployer.address, true);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
   });
 
   describe("\n\t------------------ TESTS RELATED WITH PLACE BID ------------------\n", () => {

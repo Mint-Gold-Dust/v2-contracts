@@ -138,6 +138,26 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
 
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
     await mintGoldDustMarketplaceAuction
       .connect(deployer)
       .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
@@ -246,7 +266,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       // Attempt to burn the token using a non-owner (addr3) should fail
       await expect(
         mintGoldDustERC721.connect(addr3).burnToken(1)
-      ).to.be.revertedWith("Only owner or approved");
+      ).to.be.revertedWith("Only creator or allowed");
     });
 
     it("should not allow non-contract owner to burn token they don't own", async function () {
@@ -270,7 +290,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       // Attempt to burn the token using addr2 (who doesn't own the token)
       await expect(
         mintGoldDustERC721.connect(addr2).burnToken(1)
-      ).to.be.revertedWith("Only owner or approved");
+      ).to.be.revertedWith("Only creator or allowed");
     });
 
     it("should not allow burning a non-existent token", async function () {
@@ -359,7 +379,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       // Attempt to re-burn the already burned token should fail
       await expect(
         mintGoldDustERC721.connect(addr1).burnToken(1)
-      ).to.be.revertedWith("Only owner or approved"); // Replace with your actual error message
+      ).to.be.revertedWith("Only creator or allowed"); // Replace with your actual error message
     });
 
     it("should allow burn an delisted token from set price market", async function () {
@@ -430,7 +450,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       // Attempt to re-burn the already burned token should fail
       await expect(
         mintGoldDustERC721.connect(addr1).burnToken(1)
-      ).to.be.revertedWith("Only owner or approved"); // Replace with your actual error message
+      ).to.be.revertedWith("Only creator or allowed"); // Replace with your actual error message
     });
 
     it("should not allow burn an listed token for auction", async function () {
@@ -520,7 +540,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       // Capture the event in a transaction
       await expect(mintGoldDustERC721.connect(addr1).burnToken(1))
         .to.emit(mintGoldDustERC721, "TokenBurned")
-        .withArgs(1, true, addr1.address, 1);
+        .withArgs(1, true, addr1.address, addr1.address, 1);
     });
 
     // it("should decrease total supply correctly", async function () {

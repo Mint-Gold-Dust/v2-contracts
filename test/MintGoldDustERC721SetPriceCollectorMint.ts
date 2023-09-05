@@ -159,6 +159,18 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       .connect(deployer)
       .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
 
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
     await mintGoldDustMarketplaceAuction
       .connect(deployer)
       .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);

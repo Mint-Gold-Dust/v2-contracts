@@ -30,8 +30,6 @@ contract MintGoldDustERC721 is
     MintGoldDustNFT.initialize(_mintGoldDustCompany);
   }
 
-  mapping(uint256 => bool) private _wasSold;
-
   /**
    * @dev the safeTransferFrom function is a function of ERC721. And because of the
    * necessity of call this function from other contract by composition we did need to
@@ -56,6 +54,24 @@ contract MintGoldDustERC721 is
     return super.tokenURI(tokenId);
   }
 
+  /**
+   * @dev Internal function to handle the complete flow for minting a new token.
+   *
+   * @param _tokenURI The URI of the minted token, storing metadata off-chain.
+   * @param _royaltyPercent The royalty percentage for the artist.
+   * @param _amount The amount of tokens to be minted (for ERC1155 compatibility, set to 1 for ERC721).
+   * @param _sender The address of the user who initiates the minting process.
+   * @param _collectorMintId The ID associated with the collector mint.
+   * @param _memoir Extra data associated with the token.
+   *
+   * @return newTokenId Returns the newly minted token's ID.
+   *
+   * Requirements:
+   *
+   * - `_sender` must not be the zero address.
+   *
+   * Emits a {MintGoldDustNFTMinted} event.
+   */
   function executeMintFlow(
     string calldata _tokenURI,
     uint256 _royaltyPercent,
@@ -85,18 +101,49 @@ contract MintGoldDustERC721 is
     return newTokenId;
   }
 
-  function burnToken(uint256 tokenId) public {
+  /// @dev Allows an approved address or token owner to burn a token.
+  /// The function also checks if the token has been previously sold before allowing it to be burned.
+  /// Emits a `TokenBurned` event upon successful burn.
+  ///
+  /// @param tokenId The unique identifier for the token.
+  ///
+  /// Requirements:
+  ///
+  /// - `tokenId` must exist.
+  /// - The caller must be the owner of `tokenId`, or an approved address for `tokenId`,
+  ///   or the owner of the contract, or a validated MintGoldDust address.
+  /// - The token specified by `tokenId` must not have been sold previously.
+  ///
+  /// Events:
+  ///
+  /// - Emits a `TokenBurned` event containing the tokenId, burn status, sender, and amount.
+  function burnToken(uint256 tokenId) external whenNotPaused {
     require(
       _isApprovedOrOwner(msg.sender, tokenId) ||
         msg.sender == mintGoldDustCompany.owner() ||
         mintGoldDustCompany.isAddressValidator(msg.sender),
-      "Only owner or approved"
+      "Only creator or allowed"
     );
 
+    require(tokenWasSold[tokenId] == false, "Token already sold");
+
     _burn(tokenId);
-    emit TokenBurned(tokenId, true, msg.sender, 1);
+    emit TokenBurned(tokenId, true, tokenIdArtist[tokenId], msg.sender, 1);
   }
 
+  /// @dev Overrides the `_burn` function from `ERC721URIStorageUpgradeable` to perform custom logic, if any.
+  /// This is an internal function that is only accessible from within this contract or derived contracts.
+  ///
+  /// @param tokenId The unique identifier for the token.
+  ///
+  /// Requirements:
+  ///
+  /// - `tokenId` must exist.
+  ///
+  /// Note:
+  ///
+  /// - As this is an internal function, additional requirements may be imposed by public/external functions
+  ///   that call this function. Refer to those for more details.
   function _burn(
     uint256 tokenId
   ) internal override(ERC721URIStorageUpgradeable) {

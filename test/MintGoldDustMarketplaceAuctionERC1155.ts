@@ -133,6 +133,26 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       .connect(deployer)
       .setValidator(deployer.address, true);
 
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
     await mintGoldDustMarketplaceAuction
       .connect(deployer)
       .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
@@ -189,7 +209,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       expect(receipt.events[1].event).to.equal("ItemListedToAuction");
       expect(receipt.events[1].args.length).to.equal(6);
       expect(receipt.events[1].args[0]).to.be.equal(1);
-      expect(receipt.events[1].args[1]).to.be.equal(mintGoldDustERC1155.address);
+      expect(receipt.events[1].args[1]).to.be.equal(
+        mintGoldDustERC1155.address
+      );
       expect(receipt.events[1].args[2]).to.be.equal(addr1.address);
       expect(receipt.events[1].args[3]).to.be.equal(toWei(price));
       expect(receipt.events[1].args[4]).to.be.equal(timestamp);
@@ -217,9 +239,12 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       /**
        * @dev owner should be the mintGoldDustMarketplaceAuction
        * */
-      expect(await mintGoldDustERC1155.balanceOf(mintGoldDustMarketplaceAuction.address, 1)).to.equal(
-        quantityToList
-      );
+      expect(
+        await mintGoldDustERC1155.balanceOf(
+          mintGoldDustMarketplaceAuction.address,
+          1
+        )
+      ).to.equal(quantityToList);
     });
 
     it("Should revert the transaction if an artist is not the owner of the token and try to list on the gold dust marketplace.", async function () {
@@ -255,7 +280,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       expect(receipt.events[1].event).to.equal("ItemListedToAuction");
       expect(receipt.events[1].args.length).to.equal(6);
       expect(receipt.events[1].args[0]).to.be.equal(1);
-      expect(receipt.events[1].args[1]).to.be.equal(mintGoldDustERC1155.address);
+      expect(receipt.events[1].args[1]).to.be.equal(
+        mintGoldDustERC1155.address
+      );
       expect(receipt.events[1].args[2]).to.be.equal(addr1.address);
       expect(receipt.events[1].args[3]).to.be.equal(toWei(0));
       expect(receipt.events[1].args[4]).to.be.equal(timestamp);
@@ -296,7 +323,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       expect(receipt.events[1].event).to.equal("ItemListedToAuction");
       expect(receipt.events[1].args.length).to.equal(6);
       expect(receipt.events[1].args[0]).to.be.equal(1);
-      expect(receipt.events[1].args[1]).to.be.equal(mintGoldDustERC1155.address);
+      expect(receipt.events[1].args[1]).to.be.equal(
+        mintGoldDustERC1155.address
+      );
       expect(receipt.events[1].args[2]).to.be.equal(addr1.address);
       expect(receipt.events[1].args[3]).to.be.equal(toWei(price));
       expect(receipt.events[1].args[4]).to.be.equal(timestamp);
@@ -1483,7 +1512,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
     const _timeout = 3 * 1000; // seconds
     const quantityToList = 5;
     const quantityToMint = 10;
-    const quantityToPay = quantityToList*price;
+    const quantityToPay = quantityToList * price;
 
     beforeEach(async () => {
       // MGD owner whitelist the artist
@@ -1515,8 +1544,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
           contractAddress: mintGoldDustERC1155.address,
           seller: addr1.address,
         })
-      )
-        .to.be.revertedWith("Unauthorized");
+      ).to.be.revertedWith("Unauthorized");
     });
 
     it("Should revert with Unauthorized error if the end auction function is called and the auction have not received any bids yet.", async () => {
@@ -1699,7 +1727,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       expect(receipt.events[1].args.collectorFeeAmount).to.be.equal(
         toWei(collFee)
       );
-      expect(receipt.events[1].args.tokenAmountSold).to.be.equal(quantityToList);
+      expect(receipt.events[1].args.tokenAmountSold).to.be.equal(
+        quantityToList
+      );
       expect(receipt.events[1].args.hasCollaborators).to.be.equal(false);
       expect(receipt.events[1].args.isERC721).to.be.equal(false);
 
@@ -1746,7 +1776,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       );
 
       // verify if the owner of the NFT changed for the buyer
-      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(quantityToList);
+      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(
+        quantityToList
+      );
 
       //verify if the marketplace owner's balance increased the fee
       expect(
@@ -1919,7 +1951,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       expect(receipt.events[1].args.feeAmount).to.be.equal(
         toWei(secondarySaleFee)
       );
-      expect(receipt.events[1].args.tokenAmountSold).to.be.equal(quantityToList);
+      expect(receipt.events[1].args.tokenAmountSold).to.be.equal(
+        quantityToList
+      );
       expect(receipt.events[1].args.hasCollaborators).to.be.equal(false);
       expect(receipt.events[1].args.isERC721).to.be.equal(false);
 
@@ -1949,7 +1983,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       ).add(toWei(secondarySaleFee));
 
       // verify if the owner of the mintGoldDustERC1155 changed for the buyer
-      expect(await mintGoldDustERC1155.balanceOf(addr3.address, 1)).to.equal(quantityToList);
+      expect(await mintGoldDustERC1155.balanceOf(addr3.address, 1)).to.equal(
+        quantityToList
+      );
 
       console.log("\n\t\t ITEM PRICE: ", price);
       console.log("\t\t Secondary Market fee: ", secondarySaleFee);

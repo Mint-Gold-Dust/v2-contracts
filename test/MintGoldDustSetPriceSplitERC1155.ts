@@ -152,6 +152,26 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
 
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
 
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
     await mintGoldDustMarketplaceAuction
       .connect(deployer)
       .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
@@ -1007,10 +1027,10 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
       await mintGoldDustSetPrice
         .connect(addr1)
         .list(1, amountToList, mintGoldDustERC1155.address, toWei(priceToList));
-    
-      expect(
-          await mintGoldDustERC1155.balanceOf(addr1.address, 1)
-        ).to.equal(amountToMint - amountToList);
+
+      expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(
+        amountToMint - amountToList
+      );
 
       expect(
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
