@@ -50,10 +50,20 @@ abstract contract MintGoldDustNFT is
 
   mapping(uint256 => uint256) internal primarySaleQuantityToSold;
 
+  /// @notice Reduces the quantity of remaining items available for primary sale for a specific token.
+  ///         Only executes the update if there is a non-zero quantity of the token remaining for primary sale.
+  /// @dev This function should only be called by authorized addresses.
+  /// @param _tokenId The ID of the token whose primary sale quantity needs to be updated.
+  /// @param _amountSold The amount sold that needs to be subtracted from the remaining quantity.
   function updatePrimarySaleQuantityToSold(
     uint256 _tokenId,
     uint256 _amountSold
   ) external {
+    require(
+      msg.sender == mintGoldDustMarketplaceAuctionAddress ||
+        msg.sender == mintGoldDustSetPriceAddress,
+      "Unauthorized on NFT"
+    );
     if (primarySaleQuantityToSold[_tokenId] > 0) {
       primarySaleQuantityToSold[_tokenId] =
         primarySaleQuantityToSold[_tokenId] -

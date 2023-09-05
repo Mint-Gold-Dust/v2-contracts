@@ -613,6 +613,88 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr2.address);
     });
+
+    it("Should revert with a 'Collector Mint Id already used' if some user try to call collector mint using a collector mint id that was already used before.", async function () {
+      let collectrDTO = {
+        contractAddress: mintGoldDustERC721.address,
+        tokenURI: URI,
+        royalty: toWei(royalty),
+        memoir: bytesMemoir,
+        collaborators: [],
+        ownersPercentage: [],
+        amount: quantityToMint,
+        artistSigner: addr1.address,
+        price: toWei(price),
+        collectorMintId: 1,
+      };
+
+      const signer = ethers.provider.getSigner(1);
+
+      // Generate the encoded data
+      const encodedData = encodeData(collectrDTO);
+
+      // Generate the EIP712 hash
+      const hash = generateEIP712Hash(encodedData, domainSeparator);
+
+      // Sign the hash
+      const signature = await signData(hash, signer);
+
+      const wallet = await generateWallet();
+
+      // Sign the hash
+      const mintGoldDustSignature = await wallet.signMessage(hash);
+
+      mintGoldDustCompany.connect(deployer).setPublicKey(wallet.address);
+
+      const signer1After = ethers.utils.verifyMessage(
+        hash,
+        mintGoldDustSignature
+      );
+
+      // Check if the signer address matches Hardhat address 1
+      if (signer1After === wallet.address) {
+        console.log("Signature is from MintGoldDust Private Key");
+      } else {
+        console.log("Signature is not from MintGoldDust Private Key");
+      }
+
+      const signerAfter = ethers.utils.verifyMessage(hash, signature);
+
+      // Check if the signer address matches Hardhat address 1
+      if (signerAfter === addr1.address) {
+        console.log("Signature is from Hardhat address 1");
+      } else {
+        console.log("Signature is not from Hardhat address 1");
+      }
+
+      await mintGoldDustSetPrice
+        .connect(addr2)
+        .collectorMintPurchase(
+          collectrDTO,
+          hash,
+          signature,
+          mintGoldDustSignature,
+          quantityToBuy,
+          {
+            value: toWei(price * quantityToBuy),
+          }
+        );
+
+      await expect(
+        mintGoldDustSetPrice
+          .connect(addr2)
+          .collectorMintPurchase(
+            collectrDTO,
+            hash,
+            signature,
+            mintGoldDustSignature,
+            quantityToBuy,
+            {
+              value: toWei(price * quantityToBuy),
+            }
+          )
+      ).to.be.rejectedWith("Collector Mint Id already used");
+    });
   });
 
   describe("Bad path tests", function () {
