@@ -1203,7 +1203,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         mintGoldDustSetPrice
           .connect(addr1)
           .list(1, 10, mintGoldDustERC1155.address, toWei(priceToList))
-      ).to.be.revertedWith("Invalid amount");
+      ).to.be.revertedWith("Invalid amount for primary sale");
     });
   });
 

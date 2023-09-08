@@ -226,7 +226,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         mintGoldDustMarketplaceAuction
           .connect(addr1)
           .list(1, quantityToList * 3, mintGoldDustERC721.address, toWei(price))
-      ).to.be.revertedWith("Invalid amount");
+      ).to.be.revertedWith("Invalid amount for primary sale");
     });
 
     it("Should revert with an InvalidAmount error if an address tries to list ZERO of a MintGoldDustERC1155 itemId.", async function () {

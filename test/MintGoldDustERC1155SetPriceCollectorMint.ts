@@ -605,13 +605,13 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         mintGoldDustMarketplaceAuction
           .connect(addr1)
           .list(1, 10, mintGoldDustERC1155.address, toWei(price))
-      ).to.be.revertedWith("Invalid amount");
+      ).to.be.revertedWith("Invalid amount for primary sale");
 
       await expect(
         mintGoldDustSetPrice
           .connect(addr1)
           .list(1, 10, mintGoldDustERC1155.address, toWei(price))
-      ).to.be.revertedWith("Invalid amount");
+      ).to.be.revertedWith("Invalid amount for primary sale");
 
       const txList3 = await mintGoldDustSetPrice
         .connect(addr1)
