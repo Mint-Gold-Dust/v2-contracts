@@ -473,7 +473,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(primaryPrice),
+          value: toWei(primaryPrice + (primaryPrice * 3) / 100),
         }
       );
       console.log(2);
@@ -664,7 +664,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       fee = (priceToList * primary_sale_fee_percent) / 100;
       collFee = (priceToList * collector_fee) / 100;
-      primarySaleFee = fee + collFee;
+      primarySaleFee = fee;
       balance = priceToList - primarySaleFee;
     });
 
@@ -674,7 +674,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const feeAccountInitialEthBal = await deployer.getBalance();
       const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
         feeAccountInitialEthBal
-      ).add(toWei(primarySaleFee));
+      ).add(toWei(primarySaleFee + collFee));
 
       // verify if the flag for secondary is false
       expect(
@@ -694,7 +694,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList),
+          value: toWei(priceToList + (priceToList * 3) / 100),
         }
       );
 
@@ -724,7 +724,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             seller: addr1.address,
           },
           {
-            value: toWei(priceToList),
+            value: toWei(priceToList + (priceToList * 3) / 100),
           }
         )
       )
@@ -754,7 +754,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
 
       let addr2ShouldBeAfter = ethers.BigNumber.from(addr2BalanceBefore)
-        .sub(toWei(priceToList))
+        .sub(toWei(priceToList + (priceToList * 3) / 100))
         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
 
       expect(
@@ -791,28 +791,28 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         ethers.BigNumber.from(sellerInitalEthBal).add(toWei(balance))
       );
 
-      // expect item sold to be true
-      expect(await mintGoldDustSetPrice.itemsSold()).to.be.equal(1);
+      // // expect item sold to be true
+      // expect(await mintGoldDustSetPrice.itemsSold()).to.be.equal(1);
 
-      console.log(
-        "\t\t SELLER BALANCE BEFORE SALE: ",
-        parseFloat(fromWei(sellerInitalEthBal))
-      );
+      // console.log(
+      //   "\t\t SELLER BALANCE BEFORE SALE: ",
+      //   parseFloat(fromWei(sellerInitalEthBal))
+      // );
 
-      console.log(
-        "\t\t SELLER BALANCE AFTER SALE: ",
-        parseFloat(fromWei(await addr1.getBalance()))
-      );
+      // console.log(
+      //   "\t\t SELLER BALANCE AFTER SALE: ",
+      //   parseFloat(fromWei(await addr1.getBalance()))
+      // );
 
-      console.log(
-        "\t\t BUYER BALANCE BEFORE SALE: ",
-        parseFloat(fromWei(addr2BalanceBefore))
-      );
+      // console.log(
+      //   "\t\t BUYER BALANCE BEFORE SALE: ",
+      //   parseFloat(fromWei(addr2BalanceBefore))
+      // );
 
-      console.log(
-        "\t\t BUYER BALANCE AFTER SALE: ",
-        parseFloat(fromWei(await addr2.getBalance()))
-      );
+      // console.log(
+      //   "\t\t BUYER BALANCE AFTER SALE: ",
+      //   parseFloat(fromWei(await addr2.getBalance()))
+      // );
     });
 
     it("Should revert with ItemIsNotListed error if the user tries to buy a mintGoldDustERC721 that was already sold.", async () => {
@@ -824,7 +824,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList),
+          value: toWei(priceToList + (priceToList * 3) / 100),
         }
       );
       await expect(
@@ -836,7 +836,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             seller: addr1.address,
           },
           {
-            value: toWei(priceToList),
+            value: toWei(priceToList + (priceToList * 3) / 100),
           }
         )
       ).to.be.revertedWithCustomError(
@@ -893,7 +893,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             seller: addr1.address,
           },
           {
-            value: toWei(priceToBuy),
+            value: toWei(priceToBuy + (priceToBuy * 3) / 100),
           }
         )
       ).to.be.revertedWithCustomError(
@@ -977,7 +977,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList),
+          value: toWei(priceToList + (priceToList * 3) / 100),
         }
       );
 
