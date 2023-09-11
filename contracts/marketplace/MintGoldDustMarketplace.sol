@@ -659,13 +659,22 @@ abstract contract MintGoldDustMarketplace is
         manageSecondarySale.sold) ||
       (manageSecondarySale.owner != _saleDTO.seller)
     ) {
-      isMsgValueEnough(_marketItem.price, _realAmount, _value);
+      isMsgValueEnough(
+        _marketItem.price,
+        _realAmount,
+        _value,
+        _marketItem.auctionProps.auctionId
+      );
       secondarySale(_marketItem, _saleDTO, _value, _sender);
-      return;
+    } else {
+      isMsgValueEnoughPrimarySale(
+        _marketItem.price,
+        _realAmount,
+        _value,
+        _marketItem.auctionProps.auctionId
+      );
+      primarySale(_marketItem, _saleDTO, _value, _sender, _realAmount);
     }
-
-    isMsgValueEnoughPrimarySale(_marketItem.price, _realAmount, _value);
-    primarySale(_marketItem, _saleDTO, _value, _sender, _realAmount);
   }
 
   /**
@@ -1438,9 +1447,15 @@ abstract contract MintGoldDustMarketplace is
   function isMsgValueEnough(
     uint256 _price,
     uint256 _amount,
-    uint256 _value
+    uint256 _value,
+    uint256 _auctionId
   ) private pure {
-    if (_value != (_price * (_amount * (1e18))) / (1e18)) {
+    uint256 realAmount = _amount;
+    if (_auctionId != 0) {
+      realAmount = 1;
+    }
+
+    if (_value != (_price * (realAmount * (1e18))) / (1e18)) {
       revert InvalidAmountForThisPurchase();
     }
   }
@@ -1455,17 +1470,21 @@ abstract contract MintGoldDustMarketplace is
   function isMsgValueEnoughPrimarySale(
     uint256 _price,
     uint256 _amount,
-    uint256 _value
-  ) private view {
+    uint256 _value,
+    uint256 _auctionId
+  ) private pure {
+    uint256 realAmount = _amount;
+    if (_auctionId != 0) {
+      realAmount = 1;
+    }
     // Calculate total price for the _amount
-    uint256 totalPrice = (_price * (_amount * (1e18))) / (1e18);
+    uint256 totalPrice = (_price * (realAmount * (1e18))) / (1e18);
 
-    // Calculate 3% of totalPrice
-    uint256 threePercentValue = (totalPrice *
-      mintGoldDustCompany.collectorFee()) / (100e18);
+    // Calculate the real price withou the collector fee
+    uint256 realPrice = (_value * 100) / (103);
 
-    // Check if _value is equal to totalPrice + threePercentValue
-    if (_value != totalPrice + threePercentValue) {
+    // Check if _value is equal to totalPrice + realPrice
+    if (totalPrice != realPrice) {
       revert InvalidAmountForThisPurchase();
     }
   }

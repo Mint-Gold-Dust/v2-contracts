@@ -496,6 +496,8 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
     });
 
     it("Should revert the transaction with an ItemIsNotListed error if some user tries to update an item that is not on sale.", async function () {
+      let totalAmount = primaryPrice * quantityToList;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -504,7 +506,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           seller: addr1.address,
         },
         {
-          value: toWei(primaryPrice * quantityToList),
+          value: toWei(totalAmount),
         }
       );
       await expect(
@@ -707,11 +709,13 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
 
       fee = (priceToBuy * primary_sale_fee_percent) / 100;
       collFee = (priceToBuy * collector_fee) / 100;
-      primarySaleFee = fee + collFee;
+      primarySaleFee = fee;
       balance = priceToBuy - primarySaleFee;
     });
 
     it("Shoud revert with a LessItemsListedThanTheRequiredAmount error if some collector tries to buy an amount greater than the number of tokens listed for an ERC1155.", async () => {
+      let totalAmount = priceToBuy * amountToList + 1;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each
       await expect(
         mintGoldDustSetPrice.connect(addr2).purchaseNft(
           {
@@ -721,7 +725,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
             seller: addr1.address,
           },
           {
-            value: toWei(priceToBuy),
+            value: toWei(totalAmount),
           }
         )
       ).to.be.revertedWithCustomError(
@@ -740,7 +744,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
       const feeAccountInitialEthBal = await deployer.getBalance();
       const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
         feeAccountInitialEthBal
-      ).add(toWei(primarySaleFee));
+      ).add(toWei(primarySaleFee + collFee));
 
       // verify if the flag for secondary is false
       expect(
@@ -760,7 +764,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           seller: addr1.address,
         },
         {
-          value: toWei(priceToBuy),
+          value: toWei(priceToBuy + (priceToBuy * 3) / 100),
         }
       );
 
@@ -791,7 +795,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
             seller: addr1.address,
           },
           {
-            value: toWei(priceToBuy),
+            value: toWei(priceToBuy + (priceToBuy * 3) / 100),
           }
         )
       )
@@ -821,7 +825,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
       );
 
       let addr2ShouldBeAfter = ethers.BigNumber.from(addr2BalanceBefore)
-        .sub(toWei(priceToBuy))
+        .sub(toWei(priceToBuy + (priceToBuy * 3) / 100))
         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
 
       expect(
@@ -916,7 +920,9 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * amountToList),
+          value: toWei(
+            priceToList * amountToList + (priceToList * amountToList * 3) / 100
+          ),
         }
       );
       await expect(
@@ -1044,7 +1050,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           seller: addr1.address,
         },
         {
-          value: toWei(priceToBuy),
+          value: toWei(priceToBuy + (priceToBuy * 3) / 100),
         }
       );
 

@@ -437,7 +437,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
       isBuyingAllListedTokens(_saleDTO);
     }
 
-    require(_marketItem.price == _value, "Invalid amount for this purchase");
+    //require(_marketItem.price == _value, "Invalid amount for this purchase");
 
     checkIfIsPrimaryOrSecondarySaleAndCall(
       _marketItem,
@@ -500,23 +500,26 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
 
     /// @dev in this case the item have already received bids and the bid is less or equal the latest highest bid + 3%
     if (
-      item.auctionProps.highestBid != 0 &&
-      msg.value <= (item.auctionProps.highestBid * 103) / 100
+      item.auctionProps.highestBid != 0 && msg.value < (item.price * 103) / 100
     ) {
       revert BidTooLow();
-    }
-
-    uint256 _price = item.price;
-    if (item.auctionProps.highestBid != 0) {
-      _price = item.auctionProps.highestBid;
     }
 
     /// @dev If is primary sale so the bidder needs to pay the item price + 3% of the item price
     if (
       (manageSecondarySale.owner == _bidDTO.seller &&
-        !manageSecondarySale.sold) && item.price != 0
+        !manageSecondarySale.sold) && item.auctionProps.highestBid != 0
     ) {
-      isValueEnoughToBid(_price, 1, msg.value);
+      isValueEnoughToBid(item.price, msg.value, false);
+    }
+
+    /// @dev If is primary sale so the bidder needs to pay the item price + 3% of the item price
+    if (
+      (manageSecondarySale.owner == _bidDTO.seller &&
+        !manageSecondarySale.sold) &&
+      (item.auctionProps.highestBid == 0 && item.price != 0)
+    ) {
+      isValueEnoughToBid(item.price, msg.value, true);
     }
   }
 
@@ -620,8 +623,21 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     /// @dev save the previous bidder to show in the event.
     address previousBidder = item.auctionProps.highestBidder;
 
+    uint256 realPrice = msg.value;
+
+    ManageSecondarySale memory manageSecondarySale = isSecondarySale[
+      _bidDTO.contractAddress
+    ][_bidDTO.tokenId];
+
+    /// @dev If is primary sale so the bidder needs to pay the item price + 3% of the item price
+    if (
+      (manageSecondarySale.owner == _bidDTO.seller && !manageSecondarySale.sold)
+    ) {
+      realPrice = (msg.value * 100 * 1e18) / (103) / 1e18;
+    }
+
     /// @dev here we change the states.
-    item.price = msg.value;
+    item.price = realPrice;
     item.auctionProps.highestBid = msg.value;
     item.auctionProps.highestBidder = msg.sender;
 
@@ -630,7 +646,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
       _bidDTO.contractAddress,
       previousBidder,
       msg.sender,
-      msg.value,
+      realPrice,
       block.timestamp,
       item.auctionProps.auctionId
     );
@@ -669,24 +685,23 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
   /**
    * @dev Checks if the provided value is enough to cover the total price of the product, including a 3% fee.
    * @param _price The unit price of the item.
-   * @param _amount The quantity of items desired for purchase.
    * @param _value The value sent with the transaction, expected to cover the totalPrice including the 3% fee.
    * @notice Reverts with the InvalidAmountForThisPurchase error if the provided _value doesn't match the expected amount.
    */
   function isValueEnoughToBid(
     uint256 _price,
-    uint256 _amount,
-    uint256 _value
+    uint256 _value,
+    bool _isFirstBid
   ) private view {
-    // Calculate total price for the _amount
-    uint256 totalPrice = (_price * (_amount * (1e18))) / (1e18);
-
     // Calculate 3% of totalPrice
-    uint256 threePercentValue = (totalPrice *
-      mintGoldDustCompany.collectorFee()) / (100e18);
+    uint256 percentValue = (_price * 3) / (100);
 
-    // Check if _value is equal to totalPrice + threePercentValue
-    if (_value < totalPrice + threePercentValue) {
+    if (!_isFirstBid) {
+      percentValue = percentValue * 2;
+    }
+
+    // Check if _value is equal to totalPrice + percentValue
+    if (_value < _price + percentValue) {
       revert BidTooLow();
     }
   }

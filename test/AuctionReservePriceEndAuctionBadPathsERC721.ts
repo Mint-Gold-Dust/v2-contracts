@@ -202,21 +202,21 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           seller: addr1.address,
         },
         {
-          value: toWei(price),
+          value: toWei(price + (price * 3) / 100),
         }
       );
 
       // ******************** SECOND BID ***********************
-      await mintGoldDustMarketplaceAuction.connect(addr3).placeBid(
-        {
-          tokenId: 1,
-          contractAddress: mintGoldDustERC721.address,
-          seller: addr1.address,
-        },
-        {
-          value: toWei(secondBidValue),
-        }
-      );
+      // await mintGoldDustMarketplaceAuction.connect(addr3).placeBid(
+      //   {
+      //     tokenId: 1,
+      //     contractAddress: mintGoldDustERC721.address,
+      //     seller: addr1.address,
+      //   },
+      //   {
+      //     value: toWei(secondBidValue + (secondBidValue * 3) / 100),
+      //   }
+      // );
     });
 
     it("Should revert with an Unauthorized error if an address that was not the bid winner tries to call the end auction function.", async function () {

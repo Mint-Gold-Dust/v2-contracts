@@ -463,6 +463,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Should revert the transaction with an MGDMarketplaceItemIsNotListed error if some user tries to update an item that is not on sale.", async function () {
+      let totalAmount = primaryPrice * quantityToList;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -471,7 +474,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(primaryPrice * quantityToList),
+          value: toWei(totalAmount),
         }
       );
       await expect(
@@ -660,7 +663,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       fee = (priceToBuy * primary_sale_fee_percent) / 100;
       collFee = (priceToBuy * collector_fee) / 100;
-      primarySaleFee = fee + collFee;
+      primarySaleFee = fee;
       balance = priceToBuy - primarySaleFee;
     });
 
@@ -689,7 +692,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const feeAccountInitialEthBal = await deployer.getBalance();
       const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
         feeAccountInitialEthBal
-      ).add(toWei(primarySaleFee));
+      ).add(toWei(primarySaleFee + collFee));
 
       // verify if the flag for secondary is false
       expect(
@@ -709,7 +712,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToBuy),
+          value: toWei(priceToBuy + (priceToBuy * 3) / 100),
         }
       );
 
@@ -739,7 +742,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             seller: addr1.address,
           },
           {
-            value: toWei(priceToBuy),
+            value: toWei(priceToBuy + (priceToBuy * 3) / 100),
           }
         )
       )
@@ -769,15 +772,15 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
 
       let addr2ShouldBeAfter = ethers.BigNumber.from(addr2BalanceBefore)
-        .sub(toWei(priceToBuy))
+        .sub(toWei(priceToBuy + (priceToBuy * 3) / 100))
         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
 
       expect(
         parseFloat(
-          (parseFloat(fromWei(await addr2.getBalance())) * 2500).toFixed(2)
+          (parseFloat(fromWei(await addr2.getBalance())) * 2500).toFixed(5)
         )
       ).to.be.closeTo(
-        parseFloat((parseFloat(fromWei(addr2ShouldBeAfter)) * 2500).toFixed(2)),
+        parseFloat((parseFloat(fromWei(addr2ShouldBeAfter)) * 2500).toFixed(5)),
         1
       );
 
@@ -840,6 +843,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Should revert with ItemIsNotListed error if the user tries to buy a MintGoldDustERC1155 that was already sold.", async () => {
+      let totalAmount = priceToList * amountToList;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -848,7 +853,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * amountToList),
+          value: toWei(totalAmount),
         }
       );
       await expect(
@@ -964,6 +969,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Should decrease the amount correctly after part of the listed items are sold, and sold status should remain false", async () => {
+      let totalAmount = priceToList * amountToBuy;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -972,7 +979,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * amountToBuy),
+          value: toWei(totalAmount),
         }
       );
 
@@ -1004,6 +1011,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .connect(addr1)
         .list(1, amountToMint, mintGoldDustERC1155.address, toWei(priceToList));
 
+      let totalAmount = priceToList * amountToMint;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -1012,7 +1022,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * amountToMint),
+          value: toWei(totalAmount),
         }
       );
 
@@ -1034,6 +1044,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Mint 10 - List 5 - Sell 5 - Then buy 3 more of those 5 - Then sell 5 more - Verify that the amount zeroed correctly, sold true, and mapping deleted", async () => {
+      let totalAmount = priceToList * 5;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -1042,7 +1054,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * 5),
+          value: toWei(totalAmount),
         }
       );
       console.log("1");
@@ -1079,7 +1091,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * 5),
+          value: toWei(totalAmount),
         }
       );
 
@@ -1101,6 +1113,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Mint 10 - List 5 - Sell 5 - Buy 5 - Sell 3 - Check if the amount is 2, sold false still and the mapping is not deleted", async () => {
+      let totalAmount = priceToList * 5;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -1109,7 +1123,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * 5),
+          value: toWei(totalAmount),
         }
       );
 
@@ -1137,6 +1151,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .connect(addr1)
         .list(1, 5, mintGoldDustERC1155.address, toWei(priceToList));
 
+      totalAmount = priceToList * 3;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -1145,7 +1162,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * 3),
+          value: toWei(totalAmount),
         }
       );
 
@@ -1167,6 +1184,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Mint 10 - List 5 - Sell 5 - Buy the 5 again - List 10 - Sell 6 - Check if the amount zeroed, sold is true and mapping is not deleted", async () => {
+      let totalAmount = priceToList * 5;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -1175,7 +1194,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * 5),
+          value: toWei(totalAmount),
         }
       );
 
@@ -1256,6 +1275,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
       ).to.equal(amountToList);
 
+      let totalAmount = priceToList * amountToBuy;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -1264,7 +1286,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToBuy),
+          value: toWei(totalAmount),
         }
       );
 

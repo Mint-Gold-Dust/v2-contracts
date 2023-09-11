@@ -233,7 +233,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
           seller: addr1.address,
         },
         {
-          value: toWei(price),
+          value: toWei(price + (price * 3) / 100),
         }
       );
 

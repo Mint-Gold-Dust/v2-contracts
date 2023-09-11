@@ -166,7 +166,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
   describe("\n\t------------------ WAIT UNTIL THE END OF TIME AND WINNER CALL END AUCTION TO GET THE TOKEN ------------------\n", () => {
     let price = 4;
-    const secondBidValue = price + 2;
+    let secondBidValue = price + 2;
     const _timeout = 3 * 1000;
     let expectedEndTime;
     let quantityToMint = 10;
@@ -202,12 +202,13 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           seller: addr1.address,
         },
         {
-          value: toWei(price),
+          value: toWei(price + (price * 3) / 100),
         }
       );
 
-      // ******************** SECOND BID ***********************
-      await mintGoldDustMarketplaceAuction.connect(addr3).placeBid(
+      secondBidValue = secondBidValue + (secondBidValue * 3) / 100;
+
+      const tx = await mintGoldDustMarketplaceAuction.connect(addr3).placeBid(
         {
           tokenId: 1,
           contractAddress: mintGoldDustERC1155.address,
@@ -217,6 +218,40 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           value: toWei(secondBidValue),
         }
       );
+
+      const receipt = await tx.wait();
+
+      console.log(
+        "LastBidderRefunded amount: ",
+        receipt.events[0].args[1].toString()
+      );
+
+      console.log("AuctionNewBid bid: ", receipt.events[1].args[4].toString());
+
+      // ******************** SECOND BID ***********************
+      let percent = (secondBidValue * 2) / 100;
+      let newBid = secondBidValue + percent + percent;
+      //newBid = newBid + (newBid * 3) / 100;
+
+      const tx2 = await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
+        {
+          tokenId: 1,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(newBid),
+        }
+      );
+
+      const receipt2 = await tx2.wait();
+
+      console.log(
+        "LastBidderRefunded amount: ",
+        receipt2.events[0].args[1].toString()
+      );
+
+      console.log("AuctionNewBid bid: ", receipt2.events[1].args[4].toString());
     });
 
     it("Should revert with an Unauthorized error if an address that was not the bid winner tries to call the end auction function.", async function () {
@@ -244,7 +279,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
     it("Should revert with an AuctionCannotBeEndedYet error if the highest bidder tries to call the end auction function before it ends.", async function () {
       await expect(
-        mintGoldDustMarketplaceAuction.connect(addr3).endAuction({
+        mintGoldDustMarketplaceAuction.connect(addr2).endAuction({
           tokenId: 1,
           contractAddress: mintGoldDustERC1155.address,
           seller: addr1.address,
@@ -259,14 +294,14 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       console.log(`\n\t\tWaiting until the final of the auction...`);
       await new Promise((resolve) => setTimeout(resolve, _timeout * 2));
 
-      await mintGoldDustMarketplaceAuction.connect(addr3).endAuction({
+      await mintGoldDustMarketplaceAuction.connect(addr2).endAuction({
         tokenId: 1,
         contractAddress: mintGoldDustERC1155.address,
         seller: addr1.address,
       });
 
       await expect(
-        mintGoldDustMarketplaceAuction.connect(addr3).endAuction({
+        mintGoldDustMarketplaceAuction.connect(addr2).endAuction({
           tokenId: 1,
           contractAddress: mintGoldDustERC1155.address,
           seller: addr1.address,
@@ -281,7 +316,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           mintGoldDustMarketplaceAuction.address,
           mintGoldDustERC1155.address,
           addr1.address,
-          addr3.address
+          addr2.address
         );
     });
   });
