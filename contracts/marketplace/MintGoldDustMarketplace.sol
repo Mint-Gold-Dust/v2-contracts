@@ -182,7 +182,6 @@ abstract contract MintGoldDustMarketplace is
    * @param hasCollaborators a parameter that indicate if the item has or not collaborators.
    * @param isERC721 a parameter that indicate if the item is an ERC721 or not.
    */
-
   event MintGoldDustNftPurchasedPrimaryMarket(
     uint256 indexed saleId,
     uint256 indexed tokenId,
@@ -271,9 +270,9 @@ abstract contract MintGoldDustMarketplace is
   /**
    *
    * @notice MintGoldDustMarketplace is composed by other two contracts.
-   * @param _mintGoldDustCompany The contract responsible to MGD management features.
-   * @param _mintGoldDustERC721Address The MGD ERC721 address.
-   * @param _mintGoldDustERC1155Address The MGD ERC1155 address.
+   * @param _mintGoldDustCompany The contract responsible to Mint Gold Dust management features.
+   * @param _mintGoldDustERC721Address The Mint Gold Dust ERC721 address.
+   * @param _mintGoldDustERC1155Address The Mint Gold Dust ERC1155 address.
    */
   function initialize(
     address _mintGoldDustCompany,
@@ -659,13 +658,22 @@ abstract contract MintGoldDustMarketplace is
         manageSecondarySale.sold) ||
       (manageSecondarySale.owner != _saleDTO.seller)
     ) {
-      isMsgValueEnough(_marketItem.price, _realAmount, _value);
+      isMsgValueEnough(
+        _marketItem.price,
+        _realAmount,
+        _value,
+        _marketItem.auctionProps.auctionId
+      );
       secondarySale(_marketItem, _saleDTO, _value, _sender);
-      return;
+    } else {
+      isMsgValueEnoughPrimarySale(
+        _marketItem.price,
+        _realAmount,
+        _value,
+        _marketItem.auctionProps.auctionId
+      );
+      primarySale(_marketItem, _saleDTO, _value, _sender, _realAmount);
     }
-
-    isMsgValueEnoughPrimarySale(_marketItem.price, _realAmount, _value);
-    primarySale(_marketItem, _saleDTO, _value, _sender, _realAmount);
   }
 
   /**
@@ -1438,9 +1446,15 @@ abstract contract MintGoldDustMarketplace is
   function isMsgValueEnough(
     uint256 _price,
     uint256 _amount,
-    uint256 _value
+    uint256 _value,
+    uint256 _auctionId
   ) private pure {
-    if (_value != (_price * (_amount * (1e18))) / (1e18)) {
+    uint256 realAmount = _amount;
+    if (_auctionId != 0) {
+      realAmount = 1;
+    }
+
+    if (_value != _price * realAmount) {
       revert InvalidAmountForThisPurchase();
     }
   }
@@ -1455,17 +1469,28 @@ abstract contract MintGoldDustMarketplace is
   function isMsgValueEnoughPrimarySale(
     uint256 _price,
     uint256 _amount,
-    uint256 _value
-  ) private view {
+    uint256 _value,
+    uint256 _auctionId
+  ) private pure {
+    uint256 realAmount = _amount;
+    if (_auctionId != 0) {
+      realAmount = 1;
+    }
+
     // Calculate total price for the _amount
-    uint256 totalPrice = (_price * (_amount * (1e18))) / (1e18);
+    uint256 totalPrice = _price * realAmount;
 
-    // Calculate 3% of totalPrice
-    uint256 threePercentValue = (totalPrice *
-      mintGoldDustCompany.collectorFee()) / (100e18);
+    // Calculate the increase using higher precision
+    uint256 increase = (totalPrice * 3) / 100;
 
-    // Check if _value is equal to totalPrice + threePercentValue
-    if (_value != totalPrice + threePercentValue) {
+    uint256 realPrice = totalPrice + increase;
+
+    // Check if _value is equal to totalPrice + realPrice
+    if (_value != realPrice && _auctionId == 0) {
+      revert InvalidAmountForThisPurchase();
+    }
+
+    if (_value < realPrice && _auctionId > 0) {
       revert InvalidAmountForThisPurchase();
     }
   }

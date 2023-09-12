@@ -64,7 +64,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
   fee = (price * primary_sale_fee_percent) / 100;
   collFee = (price * collector_fee) / 100;
-  primarySaleFee = fee + collFee;
+  primarySaleFee = fee;
   balance = price - primarySaleFee;
 
   let domainSeparator: any;
@@ -269,6 +269,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         console.log("Signature is not from Hardhat address 1");
       }
 
+      let tokenAmount =
+        price * quantityToBuy + (price * quantityToBuy * 3) / 100;
+
       const tx = await mintGoldDustSetPrice
         .connect(addr2)
         .collectorMintPurchase(
@@ -278,7 +281,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           mintGoldDustSignature,
           quantityToBuy,
           {
-            value: toWei(price * quantityToBuy),
+            value: toWei(tokenAmount),
           }
         );
 
@@ -387,8 +390,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       const primarySaleFee = (price * quantityToBuy * 100 * 0.15) / 100;
       const collectorFee = price * quantityToBuy * 0.03;
-      const sellerAmount =
-        price * quantityToBuy - primarySaleFee - collectorFee;
+      const sellerAmount = price * quantityToBuy - primarySaleFee;
 
       console.log("primarySaleFee: ", primarySaleFee);
       console.log("collectorFee: ", collectorFee);
@@ -407,7 +409,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const buyerBalanceAfter = await addr2.getBalance();
 
       expect(buyerBalanceBefore).to.be.equal(
-        buyerBalanceAfter.add(toWei(price * quantityToBuy).add(totalGas))
+        buyerBalanceAfter.add(toWei(tokenAmount).add(totalGas))
       );
 
       expect(await deployer.getBalance()).to.be.closeTo(
@@ -620,6 +622,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const receiptList3 = await txList3.wait();
       const totalGasList3 = receiptList3.gasUsed.mul(await txList3.gasPrice);
 
+      tokenAmount = price * quantityToBuy + (price * quantityToBuy * 3) / 100;
+
       const txPurchase2 = await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -628,7 +632,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(price * 5),
+          value: toWei(tokenAmount),
         }
       );
 
@@ -646,9 +650,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
 
       expect(await addr2.getBalance()).to.be.equal(
-        buyerBalanceBeforeThirdTx
-          .sub(toWei(price * quantityToBuy))
-          .sub(totalGasPurchase2)
+        buyerBalanceBeforeThirdTx.sub(toWei(tokenAmount)).sub(totalGasPurchase2)
       );
 
       expect(await deployer.getBalance()).to.be.equal(
@@ -683,6 +685,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       // Now let's do the process again that the addr1 buys the addr2 NFTs
       // But now we'll list all tokens and it should work well. Now all sales are secondary for the artist for this NFT
+
       const artistBalanceBeforeFourthTx = await addr1.getBalance();
       const buyerBalanceBeforeFourthTx = await addr2.getBalance();
       const deployerBeforeFourthTx = await deployer.getBalance();
@@ -754,7 +757,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
       ).to.equal(0);
 
-      // Now we'll list the 10 items. And all sales now MUST be secondary sales.
+      // // Now we'll list the 10 items. And all sales now MUST be secondary sales.
       const artistBalanceBeforeFifthTx = await addr1.getBalance();
       const buyerBalanceBeforeFifthTx = await addr2.getBalance();
       const deployerBeforeFifthTx = await deployer.getBalance();
@@ -991,6 +994,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       // Sign the hash
       const mintGoldDustSignature = await wallet.signMessage(hash);
 
+      let tokenAmount = price * quantityToBuy;
+      tokenAmount = tokenAmount + (tokenAmount * 3) / 100;
       await mintGoldDustSetPrice
         .connect(addr2)
         .collectorMintPurchase(
@@ -1000,7 +1005,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           mintGoldDustSignature,
           quantityToBuy,
           {
-            value: toWei(price * quantityToBuy),
+            value: toWei(tokenAmount),
           }
         );
     });
@@ -1034,6 +1039,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const signerWrong = ethers.provider.getSigner(2);
       const signatureWrong = await signData(hash, signerWrong);
 
+      let tokenAmount = price * quantityToBuy;
+      tokenAmount = tokenAmount - (tokenAmount * 3) / 100;
+
       await expect(
         mintGoldDustSetPrice
           .connect(addr2)
@@ -1044,7 +1052,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             signatureWrong,
             quantityToBuy,
             {
-              value: toWei(price * quantityToBuy),
+              value: toWei(tokenAmount),
             }
           )
       ).to.be.revertedWith("Invalid signature");

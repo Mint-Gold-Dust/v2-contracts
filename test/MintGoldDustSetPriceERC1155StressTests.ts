@@ -205,7 +205,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       fee = (priceToBuy * primary_sale_fee_percent) / 100;
       collFee = (priceToBuy * collector_fee) / 100;
-      primarySaleFee = fee + collFee;
+      primarySaleFee = fee;
       balance = priceToBuy - primarySaleFee;
     });
 
@@ -214,7 +214,11 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       let feeAccountInitialEthBal = await deployer.getBalance();
       let feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
         feeAccountInitialEthBal
-      ).add(toWei(primarySaleFee));
+      ).add(toWei(primarySaleFee + collFee));
+
+      let totalAmount = priceToList * 3;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+
       // First Buyer tries to buy 3 NFTs
       const firstBuyerTx = mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
@@ -224,7 +228,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * 3),
+          value: toWei(totalAmount),
         }
       );
 
@@ -237,7 +241,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * 3),
+          value: toWei(totalAmount),
         }
       );
 
@@ -535,10 +539,12 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
 
       const priceToListForAuction = 10;
+      totalAmount = (priceToListForAuction * 3) / 100;
+      totalAmount = totalAmount + priceToListForAuction;
 
       await mintGoldDustMarketplaceAuction
         .connect(addr1)
-        .list(1, 3, mintGoldDustERC1155.address, priceToListForAuction);
+        .list(1, 3, mintGoldDustERC1155.address, toWei(priceToListForAuction));
 
       expect(
         await mintGoldDustERC1155.balanceOf(
@@ -583,7 +589,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       fee = (priceToListForAuction * primary_sale_fee_percent) / 100;
       collFee = (priceToListForAuction * collector_fee) / 100;
-      primarySaleFee = fee + collFee;
+      primarySaleFee = fee;
       balance = priceToListForAuction - primarySaleFee;
 
       const _timeout = 5 * 1000; // seconds
@@ -595,7 +601,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToListForAuction),
+          value: toWei(totalAmount),
         }
       );
 
@@ -646,7 +652,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       fee = (priceToBuy * primary_sale_fee_percent) / 100;
       collFee = (priceToBuy * collector_fee) / 100;
-      primarySaleFee = fee + collFee;
+      primarySaleFee = fee;
       balance = priceToBuy - primarySaleFee;
 
       sellerInitalEthBal = await addr1.getBalance();
@@ -657,7 +663,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       feeAccountInitialEthBal = await deployer.getBalance();
       feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
         feeAccountInitialEthBal
-      ).add(toWei(primarySaleFee));
+      ).add(toWei(primarySaleFee + collFee));
 
       expect(
         (
@@ -675,6 +681,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         ).amount
       ).to.be.equal(4);
 
+      totalAmount = priceToList * 4;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+
       await mintGoldDustSetPrice.connect(addr3).purchaseNft(
         {
           tokenId: 1,
@@ -683,7 +692,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * 4),
+          value: toWei(totalAmount),
         }
       );
 
@@ -714,12 +723,12 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
 
       addr3ShouldBeAfter = ethers.BigNumber.from(addr3BalanceBefore)
-        .sub(toWei(priceToBuy))
+        .sub(toWei(totalAmount))
         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
       expect(
-        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(3))
+        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(4))
       ).to.be.equal(
-        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(3))
+        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(4))
       );
 
       // Validate the final balances, NFT ownerships, etc.

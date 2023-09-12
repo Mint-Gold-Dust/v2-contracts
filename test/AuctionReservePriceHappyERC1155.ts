@@ -263,7 +263,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             seller: addr1.address,
           },
           {
-            value: toWei(price),
+            value: toWei(price + (price * 3) / 100),
           }
         );
 
@@ -351,7 +351,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           parseFloat(
             fromWei(
               ethers.BigNumber.from(bidderBalanceAfter)
-                .add(toWei(price))
+                .add(toWei(price + (price * 3) / 100))
                 .add(ethers.BigNumber.from(totalGas))
             )
           )
@@ -360,7 +360,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         expect(fromWei(bidderBalanceBefore)).to.be.equal(
           fromWei(
             ethers.BigNumber.from(bidderBalanceAfter)
-              .add(toWei(price))
+              .add(toWei(price + (price * 3) / 100))
               .add(ethers.BigNumber.from(totalGas))
           )
         );
@@ -431,7 +431,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 addr1.address
               )
           ).auctionProps.highestBid
-        ).to.be.equal(toWei(price));
+        ).to.be.equal(toWei(price + (price * 3) / 100));
       });
     });
 
@@ -509,7 +509,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             seller: addr1.address,
           },
           {
-            value: toWei(price),
+            value: toWei(price + (price * 3) / 100),
           }
         );
 
@@ -650,7 +650,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 addr1.address
               )
           ).auctionProps.highestBid
-        ).to.be.equal(toWei(price));
+        ).to.be.equal(toWei(price + (price * 3) / 100));
 
         // ******************** SECOND BID ***********************
         const tx2 = await mintGoldDustMarketplaceAuction
@@ -662,7 +662,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
               seller: addr1.address,
             },
             {
-              value: toWei(secondBidValue),
+              value: toWei(secondBidValue + (secondBidValue * 3) / 100),
             }
           );
 
@@ -765,21 +765,23 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         expect(fromWei(bidder1BalanceBefore)).to.be.equal(
           fromWei(
             ethers.BigNumber.from(bidder1BalanceAfter)
-              .add(toWei(price))
+              .add(toWei(price + (price * 3) / 100))
               .add(ethers.BigNumber.from(totalGas))
           )
         );
 
         // **** EXPECT THE BIDDER 1 TO BE REFUNDED AFTER SECOND BID ****
         expect(bidder1BalanceAfterSecondBid).to.be.equal(
-          ethers.BigNumber.from(bidder1BalanceAfter).add(toWei(price))
+          ethers.BigNumber.from(bidder1BalanceAfter).add(
+            toWei(price + (price * 3) / 100)
+          )
         );
         // IMPORTANT: This test is done in the CancelMarketPlaceAuctionWithERC*.ts files
 
         expect(fromWei(bidder2BalanceBefore)).to.be.equal(
           fromWei(
             ethers.BigNumber.from(bidder2BalanceAfter)
-              .add(toWei(secondBidValue))
+              .add(toWei(secondBidValue + (secondBidValue * 3) / 100))
               .add(ethers.BigNumber.from(totalGas2))
           )
         );
@@ -856,7 +858,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 addr1.address
               )
           ).auctionProps.highestBid
-        ).to.be.equal(toWei(secondBidValue));
+        ).to.be.equal(toWei(secondBidValue + (secondBidValue * 3) / 100));
       });
     });
 
@@ -907,7 +909,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             seller: addr1.address,
           },
           {
-            value: toWei(price),
+            value: toWei(price + (price * 3) / 100),
           }
         );
 
@@ -1014,7 +1016,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
               seller: addr1.address,
             },
             {
-              value: toWei(secondBidValue),
+              value: toWei(secondBidValue + (secondBidValue * 3) / 100),
             }
           );
 
@@ -1056,7 +1058,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           "LastBidderRefunded(address,uint256)"
         );
         expect(receipt2.events[1].args.recipient).to.be.equal(addr2.address); // The previous bidder
-        expect(receipt2.events[1].args.amount).to.be.equal(toWei(price)); // The previous bid value
+        expect(receipt2.events[1].args.amount).to.be.equal(
+          toWei(price + (price * 3) / 100)
+        ); // The previous bid value
 
         expect(receipt2.events[2].event).to.be.equal("AuctionNewBid");
         expect(receipt2.events[2].eventSignature).to.be.equal(

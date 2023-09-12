@@ -568,7 +568,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           seller: addr1.address,
         },
         {
-          value: toWei(primaryPrice),
+          value: toWei(primaryPrice + (primaryPrice * 3) / 100),
         }
       );
       await expect(
@@ -771,7 +771,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
 
       fee = (priceToList * primary_sale_fee_percent) / 100;
       collFee = (priceToList * collector_fee) / 100;
-      primarySaleFee = fee + collFee;
+      primarySaleFee = fee;
       balance = priceToList - primarySaleFee;
     });
 
@@ -785,7 +785,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       const feeAccountInitialEthBal = await deployer.getBalance();
       const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
         feeAccountInitialEthBal
-      ).add(toWei(primarySaleFee));
+      ).add(toWei(primarySaleFee + collFee));
 
       // verify if the flag for secondary is false
       expect(
@@ -805,7 +805,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList),
+          value: toWei(priceToList + (priceToList * 3) / 100),
         }
       );
 
@@ -835,7 +835,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
             seller: addr1.address,
           },
           {
-            value: toWei(priceToList),
+            value: toWei(priceToList + (priceToList * 3) / 100),
           }
         )
       )
@@ -865,7 +865,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       );
 
       let addr2ShouldBeAfter = ethers.BigNumber.from(addr2BalanceBefore)
-        .sub(toWei(priceToList))
+        .sub(toWei(priceToList + (priceToList * 3) / 100))
         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
 
       expect(
@@ -971,7 +971,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList),
+          value: toWei(priceToList + (priceToList * 3) / 100),
         }
       );
       await expect(
@@ -983,7 +983,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
             seller: addr2.address,
           },
           {
-            value: toWei(priceToList),
+            value: toWei(priceToList + (priceToList * 3) / 100),
           }
         )
       ).to.be.revertedWithCustomError(
@@ -1093,7 +1093,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToBuy),
+          value: toWei(priceToList + (priceToList * 3) / 100),
         }
       );
 

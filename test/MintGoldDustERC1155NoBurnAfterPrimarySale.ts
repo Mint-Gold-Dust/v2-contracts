@@ -203,7 +203,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       fee = (priceToList * primary_sale_fee_percent) / 100;
       collFee = (priceToList * collector_fee) / 100;
-      primarySaleFee = fee + collFee;
+      primarySaleFee = fee;
       balance = priceToList - primarySaleFee;
     });
 
@@ -226,7 +226,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToBuy),
+          value: toWei(priceToBuy + (priceToBuy * 3) / 100),
         }
       );
 
