@@ -352,14 +352,17 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price));
     });
 
-    it("Should revert with an Unauthorized error if an address tries to call the end auction function before it have not received any bid.", async function () {
+    it("Should revert with an AuctionTimeNotStartedYet error if an address tries to call the end auction function before it have not received any bid.", async function () {
       await expect(
         mintGoldDustMarketplaceAuction.connect(addr1).endAuction({
           tokenId: 1,
           contractAddress: mintGoldDustERC1155.address,
           seller: addr1.address,
         })
-      ).to.be.revertedWith("Unauthorized");
+      ).to.be.revertedWithCustomError(
+        mintGoldDustMarketplaceAuction,
+        "AuctionTimeNotStartedYet"
+      );
     });
   });
 });

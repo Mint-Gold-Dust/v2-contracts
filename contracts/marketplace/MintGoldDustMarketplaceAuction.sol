@@ -291,7 +291,10 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
    * @notice that this function is responsible to finalize the flow of the auciton
    * that must be a purchaseNFT sale.
    * @dev this function must be called from the frontend only when the time of the auction is ended.
-   *      Also is important to make possible only for the winner call this function.
+   *      Who can call this function?
+   *        - The highest bidder;
+   *        - The seller;
+   *        - The MintGoldDustCompany owner.
    * @dev some verifications are done before finalize the auction.
    *            - The item must be listed.
    *            - The highest bidder must be the msg.sender.
@@ -309,7 +312,12 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     MarketItem storage item = idMarketItemsByContractByOwner[
       _bidDTO.contractAddress
     ][_bidDTO.tokenId][_bidDTO.seller];
-    require(item.auctionProps.highestBidder == msg.sender, "Unauthorized");
+    require(
+      item.auctionProps.highestBidder == msg.sender ||
+        item.seller == msg.sender ||
+        mintGoldDustCompany.owner() == msg.sender,
+      "Unauthorized"
+    );
 
     if (block.timestamp < item.auctionProps.endTime) {
       revert AuctionCannotBeEndedYet();
@@ -494,32 +502,26 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
       revert BidTooLow();
     }
 
-    ManageSecondarySale memory manageSecondarySale = isSecondarySale[
-      _bidDTO.contractAddress
-    ][_bidDTO.tokenId];
-
     /// @dev in this case the item have already received bids and the bid is less or equal the latest highest bid + 3%
     if (
-      item.auctionProps.highestBid != 0 && msg.value < (item.price * 103) / 100
+      item.auctionProps.highestBid != 0 &&
+      msg.value < (item.auctionProps.highestBid * 103) / 100
     ) {
       revert BidTooLow();
     }
 
-    /// @dev If is primary sale so the bidder needs to pay the item price + 3% of the item price
-    if (
-      (manageSecondarySale.owner == _bidDTO.seller &&
-        !manageSecondarySale.sold) && item.auctionProps.highestBid != 0
-    ) {
-      isValueEnoughToBid(item.price, msg.value, false);
-    }
+    ManageSecondarySale memory manageSecondarySale = isSecondarySale[
+      _bidDTO.contractAddress
+    ][_bidDTO.tokenId];
 
-    /// @dev If is primary sale so the bidder needs to pay the item price + 3% of the item price
     if (
       (manageSecondarySale.owner == _bidDTO.seller &&
         !manageSecondarySale.sold) &&
-      (item.auctionProps.highestBid == 0 && item.price != 0)
+      item.auctionProps.highestBid == 0 &&
+      item.price > 0 &&
+      msg.value < (item.price * 103) / 100
     ) {
-      isValueEnoughToBid(item.price, msg.value, true);
+      revert BidTooLow();
     }
   }
 
@@ -679,30 +681,6 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
       ].auctionProps.highestBidder == msg.sender
     ) {
       revert LastBidderCannotPlaceNextBid();
-    }
-  }
-
-  /**
-   * @dev Checks if the provided value is enough to cover the total price of the product, including a 3% fee.
-   * @param _price The unit price of the item.
-   * @param _value The value sent with the transaction, expected to cover the totalPrice including the 3% fee.
-   * @notice Reverts with the InvalidAmountForThisPurchase error if the provided _value doesn't match the expected amount.
-   */
-  function isValueEnoughToBid(
-    uint256 _price,
-    uint256 _value,
-    bool _isFirstBid
-  ) private view {
-    // Calculate 3% of totalPrice
-    uint256 percentValue = (_price * 3) / (100);
-
-    if (!_isFirstBid) {
-      percentValue = percentValue * 2;
-    }
-
-    // Check if _value is equal to totalPrice + percentValue
-    if (_value < _price + percentValue) {
-      revert BidTooLow();
     }
   }
 }

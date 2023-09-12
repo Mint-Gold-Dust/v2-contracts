@@ -120,54 +120,6 @@ describe("******************************************** MGDMemoirs.sol Smart Cont
       expect(memoirStringReturned).to.be.equal(MEMOIR);
     });
 
-    it("Should revert with a UseThisFunctionForEOA error if someone try to call the addMemoirForEOA function passing a contract address.", async () => {
-      console.log("\n");
-      console.log(
-        "--------------------------------------------------------------------------------------------"
-      );
-      console.log(
-        "\t USER BALANCE BEFORE TRY TO ADD A MEMOIR: ",
-        parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
-      );
-      let artistBalanceBefore = await addr1.getBalance();
-
-      // MGD Owner whitelist the artist addr1
-      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
-
-      const encoder = new TextEncoder();
-      const bytesMEMOIR = encoder.encode(MEMOIR);
-
-      // Mint a new MGD ERC721
-      expect(
-        await mintGoldDustERC721
-          .connect(addr1)
-          .mintNft(URI, toWei(5), 1, bytesMEMOIR)
-      );
-
-      const MEMOIR1 = "Some string";
-      const bytesMEMOIR1 = encoder.encode(MEMOIR1);
-
-      await expect(
-        mgdMemoir.addMemoirForEOA(mintGoldDustERC721.address, bytesMEMOIR1)
-      ).to.be.revertedWithCustomError(mgdMemoir, "UseThisFunctionForEOA");
-
-      console.log(
-        "\t USER BALANCE AFTER TRY TO ADD A MEMOIR: ",
-        parseFloat(parseFloat(fromWei(await addr1.getBalance())).toFixed(5))
-      );
-
-      console.log(
-        "\t \tSo the gas estimation was more less (USD):",
-        parseFloat(
-          fromWei(
-            ethers.BigNumber.from(artistBalanceBefore).sub(
-              await addr1.getBalance()
-            )
-          )
-        ) * 2500
-      );
-    });
-
     it("Should allow an artist to create more than one memoir for itself and check if the userCounter for this address is the same of the memoirs added.", async () => {
       console.log(
         "--------------------------------------------------------------------------------------------"

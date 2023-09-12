@@ -67,7 +67,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
   fee = (price * primary_sale_fee_percent) / 100;
   collFee = (price * collector_fee) / 100;
-  primarySaleFee = fee + collFee;
+  primarySaleFee = fee;
   balance = price - primarySaleFee;
 
   let domainSeparator: any;
@@ -282,7 +282,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           mintGoldDustSignature,
           quantityToBuy,
           {
-            value: toWei(price * quantityToBuy),
+            value: toWei(price + (price * 3) / 100),
           }
         );
 
@@ -386,8 +386,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       const primarySaleFee = (price * quantityToBuy * 100 * 0.15) / 100;
       const collectorFee = price * quantityToBuy * 0.03;
-      const sellerAmount =
-        price * quantityToBuy - primarySaleFee - collectorFee;
+      const sellerAmount = price * quantityToBuy - primarySaleFee;
 
       console.log("primarySaleFee: ", primarySaleFee);
       console.log("collectorFee: ", collectorFee);
@@ -406,7 +405,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const buyerBalanceAfter = await addr2.getBalance();
 
       expect(buyerBalanceBefore).to.be.equal(
-        buyerBalanceAfter.add(toWei(price * quantityToBuy).add(totalGas))
+        buyerBalanceAfter.add(toWei(price + (price * 3) / 100).add(totalGas))
       );
 
       expect(await deployer.getBalance()).to.be.closeTo(
@@ -746,7 +745,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           mintGoldDustSignature,
           quantityToBuy,
           {
-            value: toWei(price * quantityToBuy),
+            value: toWei(price + (price * 3) / 100),
           }
         );
     });

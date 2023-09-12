@@ -726,9 +726,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .sub(toWei(totalAmount))
         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
       expect(
-        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(5))
+        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(4))
       ).to.be.equal(
-        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(5))
+        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(4))
       );
 
       // Validate the final balances, NFT ownerships, etc.

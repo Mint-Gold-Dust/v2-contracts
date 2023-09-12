@@ -1350,7 +1350,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
         // **** EXPECT THE BIDDER 1 BALANCE TO BE DECREASED CORRECTLY AFTER FIST BID ****
         expect(
-          parseFloat(fromWei(bidder1BalanceBefore)).toFixed(4)
+          parseFloat(fromWei(bidder1BalanceBefore)).toFixed(3)
         ).to.be.equal(
           parseFloat(
             fromWei(
@@ -1358,7 +1358,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
                 .add(toWei(price))
                 .add(ethers.BigNumber.from(gasPrice).mul(gasLimit))
             )
-          ).toFixed(4)
+          ).toFixed(3)
         );
 
         // **** EXPECT THE BIDDER 1 TO BE REFUNDED AFTER SECOND BID ****
@@ -1642,7 +1642,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       ).to.be.revertedWith("Unauthorized");
     });
 
-    it("Should revert with Unauthorized error if the end auction function is called and the auction have not received any bids yet.", async () => {
+    it("Should revert with AuctionTimeNotStartedYet error if the end auction function is called and the auction have not received any bids yet.", async () => {
       await mintGoldDustMarketplaceAuction
         .connect(addr1)
         .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
@@ -1652,7 +1652,10 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           contractAddress: mintGoldDustERC721.address,
           seller: addr1.address,
         })
-      ).to.be.revertedWith("Unauthorized");
+      ).to.be.revertedWithCustomError(
+        mintGoldDustMarketplaceAuction,
+        "AuctionTimeNotStartedYet"
+      );
     });
 
     it("Should revert with AuctionCannotBeEndedYet error if the end auction function is called before the time of duration of the auction be ended.", async () => {

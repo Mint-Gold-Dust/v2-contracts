@@ -212,7 +212,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           seller: addr1.address,
         },
         {
-          value: toWei(price),
+          value: toWei(price + (price * 3) / 100),
         }
       );
 
@@ -230,7 +230,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
             seller: addr1.address,
           },
           {
-            value: toWei(secondBidValue),
+            value: toWei(secondBidValue + (secondBidValue * 3) / 100),
           }
         );
       const winnerBalanceAfterBid = await addr3.getBalance();
@@ -261,7 +261,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
       const primarySaleFee = (secondBidValue * 100 * 0.15) / 100;
       const collectorFee = secondBidValue * 0.03;
-      const sellerAmount = secondBidValue - primarySaleFee - collectorFee;
+      const sellerAmount = secondBidValue - primarySaleFee;
 
       console.log("primarySaleFee: ", primarySaleFee);
       console.log("collectorFee: ", collectorFee);
@@ -301,7 +301,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       expect(fromWei(winnerBalanceBeforeBid)).to.be.equal(
         fromWei(
           ethers.BigNumber.from(winnerAfterEndAuction)
-            .add(toWei(secondBidValue))
+            .add(toWei(secondBidValue + (secondBidValue * 3) / 100))
             .add(ethers.BigNumber.from(totalGasBid))
             .add(ethers.BigNumber.from(totalGas))
         )

@@ -182,7 +182,6 @@ abstract contract MintGoldDustMarketplace is
    * @param hasCollaborators a parameter that indicate if the item has or not collaborators.
    * @param isERC721 a parameter that indicate if the item is an ERC721 or not.
    */
-
   event MintGoldDustNftPurchasedPrimaryMarket(
     uint256 indexed saleId,
     uint256 indexed tokenId,
@@ -271,9 +270,9 @@ abstract contract MintGoldDustMarketplace is
   /**
    *
    * @notice MintGoldDustMarketplace is composed by other two contracts.
-   * @param _mintGoldDustCompany The contract responsible to MGD management features.
-   * @param _mintGoldDustERC721Address The MGD ERC721 address.
-   * @param _mintGoldDustERC1155Address The MGD ERC1155 address.
+   * @param _mintGoldDustCompany The contract responsible to Mint Gold Dust management features.
+   * @param _mintGoldDustERC721Address The Mint Gold Dust ERC721 address.
+   * @param _mintGoldDustERC1155Address The Mint Gold Dust ERC1155 address.
    */
   function initialize(
     address _mintGoldDustCompany,
@@ -1455,7 +1454,7 @@ abstract contract MintGoldDustMarketplace is
       realAmount = 1;
     }
 
-    if (_value != (_price * (realAmount * (1e18))) / (1e18)) {
+    if (_value != _price * realAmount) {
       revert InvalidAmountForThisPurchase();
     }
   }
@@ -1477,14 +1476,21 @@ abstract contract MintGoldDustMarketplace is
     if (_auctionId != 0) {
       realAmount = 1;
     }
-    // Calculate total price for the _amount
-    uint256 totalPrice = (_price * (realAmount * (1e18))) / (1e18);
 
-    // Calculate the real price withou the collector fee
-    uint256 realPrice = (_value * 100) / (103);
+    // Calculate total price for the _amount
+    uint256 totalPrice = _price * realAmount;
+
+    // Calculate the increase using higher precision
+    uint256 increase = (totalPrice * 3) / 100;
+
+    uint256 realPrice = totalPrice + increase;
 
     // Check if _value is equal to totalPrice + realPrice
-    if (totalPrice != realPrice) {
+    if (_value != realPrice && _auctionId == 0) {
+      revert InvalidAmountForThisPurchase();
+    }
+
+    if (_value < realPrice && _auctionId > 0) {
       revert InvalidAmountForThisPurchase();
     }
   }

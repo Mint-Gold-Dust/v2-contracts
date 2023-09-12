@@ -206,17 +206,17 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         }
       );
 
-      // ******************** SECOND BID ***********************
-      // await mintGoldDustMarketplaceAuction.connect(addr3).placeBid(
-      //   {
-      //     tokenId: 1,
-      //     contractAddress: mintGoldDustERC721.address,
-      //     seller: addr1.address,
-      //   },
-      //   {
-      //     value: toWei(secondBidValue + (secondBidValue * 3) / 100),
-      //   }
-      // );
+      //******************** SECOND BID ***********************
+      await mintGoldDustMarketplaceAuction.connect(addr3).placeBid(
+        {
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(secondBidValue + (secondBidValue * 3) / 100),
+        }
+      );
     });
 
     it("Should revert with an Unauthorized error if an address that was not the bid winner tries to call the end auction function.", async function () {
@@ -317,14 +317,17 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         .list(1, 1, mintGoldDustERC721.address, toWei(price));
     });
 
-    it("Should revert with an Unauthorized error if an address tries to call the end auction function before it have not received any bid.", async function () {
+    it("Should revert with an AuctionTimeNotStartedYet error if an address tries to call the end auction function before it have not received any bid.", async function () {
       await expect(
         mintGoldDustMarketplaceAuction.connect(addr1).endAuction({
           tokenId: 1,
           contractAddress: mintGoldDustERC721.address,
           seller: addr1.address,
         })
-      ).to.be.revertedWith("Unauthorized");
+      ).to.be.revertedWithCustomError(
+        mintGoldDustMarketplaceAuction,
+        "AuctionTimeNotStartedYet"
+      );
     });
   });
 });
