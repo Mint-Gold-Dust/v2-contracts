@@ -451,7 +451,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
       _marketItem,
       _saleDTO,
       _value,
-      msg.sender,
+      _marketItem.auctionProps.highestBidder,
       _realAmount
     );
   }

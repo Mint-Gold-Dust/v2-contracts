@@ -191,7 +191,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
     });
 
-    it("Should simulate a completed auction flow", async function () {
+    it("Should simulate a completed auction flow with the winner calling the end function", async function () {
       const sellerBalanceBefore = await addr1.getBalance();
 
       const ownerBalanceBefore = await deployer.getBalance();
@@ -320,6 +320,276 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           ethers.BigNumber.from(ownerBalanceBefore)
             .add(toWei(primarySaleFee))
             .add(toWei(collectorFee))
+        )
+      );
+    });
+
+    it("Should simulate a completed auction flow with the artist seller calling the end function", async function () {
+      const sellerBalanceBefore = await addr1.getBalance();
+
+      const ownerBalanceBefore = await deployer.getBalance();
+
+      const txList = await mintGoldDustMarketplaceAuction
+        .connect(addr1)
+        .list(1, 1, mintGoldDustERC721.address, toWei(price));
+
+      const receiptList = await txList.wait();
+
+      const totalGasList = receiptList.gasUsed.mul(await txList.gasPrice);
+
+      // *********************** FIRST BID ****************************
+      await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
+        {
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(price + (price * 3) / 100),
+        }
+      );
+
+      console.log(`\n\t\tWaiting until the last 5 minutes of the auction...`);
+      await new Promise((resolve) => setTimeout(resolve, _timeout));
+
+      // ******************** SECOND BID ***********************
+      const winnerBalanceBeforeBid = await addr3.getBalance();
+      const txBid = await mintGoldDustMarketplaceAuction
+        .connect(addr3)
+        .placeBid(
+          {
+            tokenId: 1,
+            contractAddress: mintGoldDustERC721.address,
+            seller: addr1.address,
+          },
+          {
+            value: toWei(secondBidValue + (secondBidValue * 3) / 100),
+          }
+        );
+      const winnerBalanceAfterBid = await addr3.getBalance();
+      const receiptBid = await txBid.wait();
+
+      const totalGasBid = receiptBid.gasUsed.mul(await txBid.gasPrice);
+
+      console.log(`\n\t\tWaiting until the final of the auction...`);
+      await new Promise((resolve) => setTimeout(resolve, _timeout * 2));
+
+      const tx = await mintGoldDustMarketplaceAuction
+        .connect(addr1)
+        .endAuction({
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        });
+
+      const winnerAfterEndAuction = await addr3.getBalance();
+
+      const receipt = await tx.wait();
+
+      const totalGas = receipt.gasUsed.mul(await tx.gasPrice);
+
+      const etherValue = ethers.utils.formatEther(totalGas);
+
+      console.log(`GAS USED: ${etherValue} ETH`);
+
+      const primarySaleFee = (secondBidValue * 100 * 0.15) / 100;
+      const collectorFee = secondBidValue * 0.03;
+      const sellerAmount = secondBidValue - primarySaleFee;
+
+      console.log("primarySaleFee: ", primarySaleFee);
+      console.log("collectorFee: ", collectorFee);
+      console.log("sellerAmount: ", sellerAmount);
+
+      expect(receipt.events[1].event).to.be.equal(
+        "MintGoldDustNftPurchasedPrimaryMarket"
+      );
+      expect(receipt.events[1].eventSignature).to.be.equal(
+        "MintGoldDustNftPurchasedPrimaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,uint256,uint256,bool,bool)"
+      );
+      expect(receipt.events[1].args.saleId).to.be.equal(1);
+      expect(receipt.events[1].args.tokenId).to.be.equal(1);
+      expect(receipt.events[1].args.seller).to.be.equal(addr1.address);
+      expect(receipt.events[1].args.newOwner).to.be.equal(addr3.address);
+      expect(receipt.events[1].args.buyPrice).to.be.equal(
+        toWei(secondBidValue)
+      );
+      // seller amount should be the second bid value minus the fee + collector fee
+      expect(receipt.events[1].args.sellerAmount).to.be.equal(
+        toWei(sellerAmount)
+      );
+      expect(receipt.events[1].args.feeAmount).to.be.equal(
+        toWei(primarySaleFee)
+      );
+      expect(receipt.events[1].args.collectorFeeAmount).to.be.equal(
+        toWei(collectorFee)
+      );
+      expect(receipt.events[1].args.tokenAmountSold).to.be.equal(1);
+      expect(receipt.events[1].args.hasCollaborators).to.be.equal(false);
+      expect(receipt.events[1].args.isERC721).to.be.equal(true);
+
+      const sellerBalanceAfter = await addr1.getBalance();
+
+      const ownerBalanceAfter = await deployer.getBalance();
+
+      expect(fromWei(winnerBalanceBeforeBid)).to.be.equal(
+        fromWei(
+          ethers.BigNumber.from(winnerAfterEndAuction).add(
+            toWei(secondBidValue + (secondBidValue * 3) / 100).add(
+              ethers.BigNumber.from(totalGasBid)
+            )
+          )
+        )
+      );
+
+      expect(fromWei(sellerBalanceAfter)).to.be.equal(
+        fromWei(
+          ethers.BigNumber.from(sellerBalanceBefore)
+            .add(toWei(sellerAmount))
+            .sub(ethers.BigNumber.from(totalGasList))
+            .sub(ethers.BigNumber.from(totalGas))
+        )
+      );
+
+      expect(fromWei(ownerBalanceAfter)).to.be.equal(
+        fromWei(
+          ethers.BigNumber.from(ownerBalanceBefore)
+            .add(toWei(primarySaleFee))
+            .add(toWei(collectorFee))
+        )
+      );
+    });
+
+    it("Should simulate a completed auction flow with Mint Gold Dust owner ending", async function () {
+      const sellerBalanceBefore = await addr1.getBalance();
+
+      const ownerBalanceBefore = await deployer.getBalance();
+
+      const txList = await mintGoldDustMarketplaceAuction
+        .connect(addr1)
+        .list(1, 1, mintGoldDustERC721.address, toWei(price));
+
+      const receiptList = await txList.wait();
+
+      const totalGasList = receiptList.gasUsed.mul(await txList.gasPrice);
+
+      // *********************** FIRST BID ****************************
+      await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
+        {
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(price + (price * 3) / 100),
+        }
+      );
+
+      console.log(`\n\t\tWaiting until the last 5 minutes of the auction...`);
+      await new Promise((resolve) => setTimeout(resolve, _timeout));
+
+      // ******************** SECOND BID ***********************
+      const winnerBalanceBeforeBid = await addr3.getBalance();
+      const txBid = await mintGoldDustMarketplaceAuction
+        .connect(addr3)
+        .placeBid(
+          {
+            tokenId: 1,
+            contractAddress: mintGoldDustERC721.address,
+            seller: addr1.address,
+          },
+          {
+            value: toWei(secondBidValue + (secondBidValue * 3) / 100),
+          }
+        );
+      const winnerBalanceAfterBid = await addr3.getBalance();
+      const receiptBid = await txBid.wait();
+
+      const totalGasBid = receiptBid.gasUsed.mul(await txBid.gasPrice);
+
+      console.log(`\n\t\tWaiting until the final of the auction...`);
+      await new Promise((resolve) => setTimeout(resolve, _timeout * 2));
+
+      const tx = await mintGoldDustMarketplaceAuction
+        .connect(deployer)
+        .endAuction({
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        });
+
+      const winnerAfterEndAuction = await addr3.getBalance();
+
+      const receipt = await tx.wait();
+
+      const totalGas = receipt.gasUsed.mul(await tx.gasPrice);
+
+      const etherValue = ethers.utils.formatEther(totalGas);
+
+      console.log(`GAS USED: ${etherValue} ETH`);
+
+      const primarySaleFee = (secondBidValue * 100 * 0.15) / 100;
+      const collectorFee = secondBidValue * 0.03;
+      const sellerAmount = secondBidValue - primarySaleFee;
+
+      console.log("primarySaleFee: ", primarySaleFee);
+      console.log("collectorFee: ", collectorFee);
+      console.log("sellerAmount: ", sellerAmount);
+
+      expect(receipt.events[1].event).to.be.equal(
+        "MintGoldDustNftPurchasedPrimaryMarket"
+      );
+      expect(receipt.events[1].eventSignature).to.be.equal(
+        "MintGoldDustNftPurchasedPrimaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,uint256,uint256,bool,bool)"
+      );
+      expect(receipt.events[1].args.saleId).to.be.equal(1);
+      expect(receipt.events[1].args.tokenId).to.be.equal(1);
+      expect(receipt.events[1].args.seller).to.be.equal(addr1.address);
+      expect(receipt.events[1].args.newOwner).to.be.equal(addr3.address);
+      expect(receipt.events[1].args.buyPrice).to.be.equal(
+        toWei(secondBidValue)
+      );
+      // seller amount should be the second bid value minus the fee + collector fee
+      expect(receipt.events[1].args.sellerAmount).to.be.equal(
+        toWei(sellerAmount)
+      );
+      expect(receipt.events[1].args.feeAmount).to.be.equal(
+        toWei(primarySaleFee)
+      );
+      expect(receipt.events[1].args.collectorFeeAmount).to.be.equal(
+        toWei(collectorFee)
+      );
+      expect(receipt.events[1].args.tokenAmountSold).to.be.equal(1);
+      expect(receipt.events[1].args.hasCollaborators).to.be.equal(false);
+      expect(receipt.events[1].args.isERC721).to.be.equal(true);
+
+      const sellerBalanceAfter = await addr1.getBalance();
+
+      const ownerBalanceAfter = await deployer.getBalance();
+
+      expect(fromWei(winnerBalanceBeforeBid)).to.be.equal(
+        fromWei(
+          ethers.BigNumber.from(winnerAfterEndAuction).add(
+            toWei(secondBidValue + (secondBidValue * 3) / 100).add(
+              ethers.BigNumber.from(totalGasBid)
+            )
+          )
+        )
+      );
+
+      expect(fromWei(sellerBalanceAfter)).to.be.equal(
+        fromWei(
+          ethers.BigNumber.from(sellerBalanceBefore)
+            .add(toWei(sellerAmount))
+            .sub(ethers.BigNumber.from(totalGasList))
+        )
+      );
+
+      expect(fromWei(ownerBalanceAfter)).to.be.equal(
+        fromWei(
+          ethers.BigNumber.from(ownerBalanceBefore)
+            .add(toWei(primarySaleFee))
+            .add(toWei(collectorFee))
+            .sub(ethers.BigNumber.from(totalGas))
         )
       );
     });
