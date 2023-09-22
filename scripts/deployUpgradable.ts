@@ -1,14 +1,21 @@
+/**
+ * @dev This one will deploy all the contracts first time with the upgrade proxy pattern
+ *      So for each contract we'll have 3 addresses:
+ *        - The proxy address: The one that will always be used to interact with the contract
+ *        - The implementation address: The one that will be upgraded
+ *        - The proxy admin address: The one that will be used to upgrade the proxy
+ */
 const { ethers, upgrades } = require("hardhat");
 const fs = require("fs");
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
-  const primary_sale_fee_percent_initial = 15000000000000000000n;
-  const secondary_sale_fee_percent_initial = 5000000000000000000n;
-  const collector_fee_initial = 3000000000000000000n;
-  const max_royalty_initial = 20000000000000000000n;
-  const auction_duration = 5;
-  const auction_extension_duration = 1;
+  const [deployer] = await ethers.getSigners(); // The metamask account
+  const primary_sale_fee_percent_initial = 15000000000000000000n; // 15%
+  const secondary_sale_fee_percent_initial = 5000000000000000000n; // 5%
+  const collector_fee_initial = 3000000000000000000n; // 3%
+  const max_royalty_initial = 20000000000000000000n; // 20%
+  const auction_duration = 86400; // 1 day or 24 hours
+  const auction_extension_duration = 300; // 5 minutes
 
   console.log("Deploying contracts with the account:", deployer.address);
 
@@ -25,6 +32,8 @@ async function main() {
       secondary_sale_fee_percent_initial,
       collector_fee_initial,
       max_royalty_initial,
+      auction_duration,
+      auction_extension_duration,
     ],
     { initializer: "initialize" }
   );
@@ -79,17 +88,17 @@ async function main() {
     "MintGoldDustMemoir Proxy Admin deployed to:",
     mintGoldDustMemoirProxyAdminAddress
   );
-  /**************************************** MintGoldDustMemoir FINAL **************************************/
+  // /**************************************** MintGoldDustMemoir FINAL **************************************/
 
-  /**************************************** MGD721 INIT ***************************************/
+  // /**************************************** MGD721 INIT ***************************************/
 
-  // Deploy MintGoldDustERC721 contract
+  // // Deploy MintGoldDustERC721 contract
   const MintGoldDustERC721Factory = await ethers.getContractFactory(
     "MintGoldDustERC721"
   );
   const mintGoldDustERC721 = await upgrades.deployProxy(
     MintGoldDustERC721Factory,
-    [mintGoldDustCompany.address, mintGoldDustMemoir.address],
+    [mintGoldDustCompany.address],
     { initializer: "initializeChild" }
   );
 
@@ -112,9 +121,9 @@ async function main() {
     "MintGoldDustERC721 Proxy Admin deployed to:",
     mintGoldDustERC721ProxyAdminAddress
   );
-  /**************************************** MGD721 FINAL ***************************************/
+  // /**************************************** MGD721 FINAL ***************************************/
 
-  /**************************************** MGD1155 INIT ***************************************/
+  // /**************************************** MGD1155 INIT ***************************************/
 
   // Deploy MintGoldDustERC1155 contract
   const MintGoldDustERC1155Factory = await ethers.getContractFactory(
@@ -122,7 +131,7 @@ async function main() {
   );
   const mintGoldDustERC1155 = await upgrades.deployProxy(
     MintGoldDustERC1155Factory,
-    [mintGoldDustCompany.address, mintGoldDustMemoir.address, "www.mgd.com"],
+    [mintGoldDustCompany.address, "www.mgd.com"],
     { initializer: "initializeChild" }
   );
 
@@ -149,7 +158,7 @@ async function main() {
   );
   /**************************************** MGD1155 FINAL ***************************************/
 
-  /************************************* MintGoldDustSetPrice INIT **************************************/
+  // /************************************* MintGoldDustSetPrice INIT **************************************/
   // Deploy MintGoldDustSetPrice contract
   const MintGoldDustSetPriceFactory = await ethers.getContractFactory(
     "MintGoldDustSetPrice"
@@ -186,7 +195,7 @@ async function main() {
   );
   /************************************* MintGoldDustSetPrice FINAL *************************************/
 
-  /************************************** MintGoldDustMarketplaceAuction INIT **************************************/
+  // /************************************** MintGoldDustMarketplaceAuction INIT **************************************/
   // Deploy MintGoldDustMarketplaceAuction contract
   const MintGoldDustMarketplaceAuctionFactory = await ethers.getContractFactory(
     "MintGoldDustMarketplaceAuction"
@@ -223,6 +232,34 @@ async function main() {
     "MintGoldDustMarketplaceAuction Proxy Admin deployed to:",
     mintGoldDustMarketplaceAuctionProxyAdminAddress
   );
+
+  await mintGoldDustMarketplaceAuction
+    .connect(deployer)
+    .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
+
+  await mintGoldDustSetPrice
+    .connect(deployer)
+    .setMintGoldDustMarketplace(mintGoldDustMarketplaceAuction.address);
+
+  await mintGoldDustERC1155
+    .connect(deployer)
+    .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+  await mintGoldDustERC721
+    .connect(deployer)
+    .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+  await mintGoldDustERC1155
+    .connect(deployer)
+    .setMintGoldDustMarketplaceAuctionAddress(
+      mintGoldDustMarketplaceAuction.address
+    );
+
+  await mintGoldDustERC721
+    .connect(deployer)
+    .setMintGoldDustMarketplaceAuctionAddress(
+      mintGoldDustMarketplaceAuction.address
+    );
   /************************************** MintGoldDustMarketplaceAuction FINAL *************************************/
 
   const contractAddresses = {
@@ -272,3 +309,5 @@ main()
     console.error(error);
     process.exit(1);
   });
+
+export {};

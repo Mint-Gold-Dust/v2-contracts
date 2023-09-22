@@ -27,6 +27,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   let MintGoldDustMemoir: ContractFactory;
   let mintGoldDustMemoir: Contract;
 
+  let MintGoldDustMarketplaceAuction: ContractFactory;
+  let mintGoldDustMarketplaceAuction: Contract;
+
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
@@ -61,6 +64,10 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     MintGoldDustSetPrice = await ethers.getContractFactory(
       "MintGoldDustSetPrice"
     );
+    MintGoldDustMarketplaceAuction = await ethers.getContractFactory(
+      "MintGoldDustMarketplaceAuction"
+    );
+
     MintGoldDustERC1155 = await ethers.getContractFactory(
       "MintGoldDustERC1155"
     );
@@ -114,7 +121,46 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     );
     await mintGoldDustSetPrice.deployed();
 
+    mintGoldDustMarketplaceAuction = await upgrades.deployProxy(
+      MintGoldDustMarketplaceAuction,
+      [
+        mgdCompany.address,
+        mintGoldDustERC721.address,
+        mintGoldDustERC1155.address,
+      ],
+      { initializer: "initializeChild" }
+    );
+    await mintGoldDustMarketplaceAuction.deployed();
+
     await mgdCompany.connect(deployer).setValidator(deployer.address, true);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustMarketplaceAuction
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
+
+    await mintGoldDustSetPrice
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustMarketplaceAuction.address);
   });
 
   describe("\n--------------- Tests related witn the list NFT functionality ---------------\n", function () {
@@ -219,22 +265,18 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price));
       await mintGoldDustSetPrice.connect(addr1).delistNft({
         tokenId: 1,
+        amount: quantityToList,
         contractAddress: mintGoldDustERC1155.address,
       });
       await mintGoldDustSetPrice
         .connect(addr1)
         .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price));
-
       expect(
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .idMarketItemsByContractByOwner(
-              mintGoldDustERC1155.address,
-              1,
-              addr1.address
-            )
-        ).isSecondarySale
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).sold
       ).to.be.equal(false);
     });
 
@@ -410,7 +452,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             1,
             toWei(newPrice),
             mintGoldDustERC1155.address,
-            addr2.address
+            addr1.address
           )
       )
         .to.be.revertedWithCustomError(
@@ -421,6 +463,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Should revert the transaction with an MGDMarketplaceItemIsNotListed error if some user tries to update an item that is not on sale.", async function () {
+      let totalAmount = primaryPrice * quantityToList;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -429,7 +474,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(primaryPrice * quantityToList),
+          value: toWei(totalAmount),
         }
       );
       await expect(
@@ -442,8 +487,17 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             addr2.address
           )
       )
-        .to.be.revertedWithCustomError(mintGoldDustSetPrice, "ItemIsNotListed")
-        .withArgs(mintGoldDustERC1155.address);
+        .to.be.revertedWithCustomError(
+          mintGoldDustSetPrice,
+          "ItemIsNotListedBySeller"
+        )
+        .withArgs(
+          1,
+          mintGoldDustSetPrice.address,
+          mintGoldDustERC1155.address,
+          addr2.address,
+          addr2.address
+        );
     });
   });
 
@@ -478,7 +532,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         );
     });
 
-    it("Should delist a NFT from the marketplace and emit the MintGoldDustNftRemovedFromMarketplace event.", async function () {
+    it("Should delist a NFT from the marketplace and emit the NftQuantityDelisted event.", async function () {
       console.log(
         "\t ARTIST BALANCE BEFORE DELIST (ETH): ",
         parseFloat(fromWei(await addr1.getBalance()))
@@ -494,18 +548,19 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
               1,
               addr1.address
             )
-        ).sold
-      ).to.be.equal(false);
+        ).tokenAmount
+      ).to.be.equal(quantityToList);
       // addr2 relist a purchased NFT
       await expect(
         mintGoldDustSetPrice.connect(addr1).delistNft({
           tokenId: 1,
+          amount: quantityToList,
           contractAddress: mintGoldDustERC1155.address,
         })
       )
-        .to.emit(mintGoldDustSetPrice, "MintGoldDustNftRemovedFromMarketplace")
+        .to.emit(mintGoldDustSetPrice, "NftQuantityDelisted")
         .withArgs(1, addr1.address, mintGoldDustERC1155.address);
-      // the market item should be sold
+      // the market item tokenAmount listed should be zero
       expect(
         (
           await mintGoldDustSetPrice
@@ -515,8 +570,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
               1,
               addr1.address
             )
-        ).sold
-      ).to.be.equal(true);
+        ).tokenAmount
+      ).to.be.equal(0);
 
       console.log(
         "\t ARTIST BALANCE AFTER DELIST (ETH): ",
@@ -535,7 +590,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
     });
 
-    it("Should revert with a MGDMarketplaceUnauthorized error if some address that is not the item seller try to delist its NFT from marketplace.", async function () {
+    it("Should revert with a ItemIsNotListedBySeller error if some address that is not the item seller try to delist its NFT from marketplace.", async function () {
       // the market item should be not sold
       expect(
         (
@@ -546,17 +601,18 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
               1,
               addr1.address
             )
-        ).sold
-      ).to.be.equal(false);
+        ).tokenAmount
+      ).to.be.equal(quantityToList);
       // addr2 relist a purchased NFT
       await expect(
         mintGoldDustSetPrice.connect(addr2).delistNft({
           tokenId: 1,
+          amount: quantityToList,
           contractAddress: mintGoldDustERC1155.address,
         })
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "AddressUnauthorized"
+        "ItemIsNotListedBySeller"
       );
       // the market item should still be not sold
       expect(
@@ -568,8 +624,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
               1,
               addr1.address
             )
-        ).sold
-      ).to.be.equal(false);
+        ).tokenAmount
+      ).to.be.equal(quantityToList);
     });
   });
 
@@ -607,11 +663,11 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       fee = (priceToBuy * primary_sale_fee_percent) / 100;
       collFee = (priceToBuy * collector_fee) / 100;
-      primarySaleFee = fee + collFee;
+      primarySaleFee = fee;
       balance = priceToBuy - primarySaleFee;
     });
 
-    it("Shoud revert with a LessItemsListedThanThePurchaseAmount error if some collector tries to buy an amount greater than the number of tokens listed for an ERC1155.", async () => {
+    it("Shoud revert with a LessItemsListedThanTheRequiredAmount error if some collector tries to buy an amount greater than the number of tokens listed for an ERC1155.", async () => {
       await expect(
         mintGoldDustSetPrice.connect(addr2).purchaseNft(
           {
@@ -626,7 +682,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         )
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
-        "LessItemsListedThanThePurchaseAmount"
+        "LessItemsListedThanTheRequiredAmount"
       );
     });
 
@@ -636,19 +692,15 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const feeAccountInitialEthBal = await deployer.getBalance();
       const feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(
         feeAccountInitialEthBal
-      ).add(toWei(primarySaleFee));
+      ).add(toWei(primarySaleFee + collFee));
 
       // verify if the flag for secondary is false
       expect(
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .idMarketItemsByContractByOwner(
-              mintGoldDustERC1155.address,
-              1,
-              addr1.address
-            )
-        ).isSecondarySale
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).sold
       ).to.be.equal(false);
 
       let gasPrice = await mintGoldDustSetPrice.signer.getGasPrice();
@@ -660,7 +712,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToBuy),
+          value: toWei(priceToBuy + (priceToBuy * 3) / 100),
         }
       );
 
@@ -690,7 +742,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             seller: addr1.address,
           },
           {
-            value: toWei(priceToBuy),
+            value: toWei(priceToBuy + (priceToBuy * 3) / 100),
           }
         )
       )
@@ -706,7 +758,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           toWei(collFee),
           amountToBuy,
           false,
-          false,
           false
         );
 
@@ -721,15 +772,15 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
 
       let addr2ShouldBeAfter = ethers.BigNumber.from(addr2BalanceBefore)
-        .sub(toWei(priceToBuy))
+        .sub(toWei(priceToBuy + (priceToBuy * 3) / 100))
         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
 
       expect(
         parseFloat(
-          (parseFloat(fromWei(await addr2.getBalance())) * 2500).toFixed(2)
+          (parseFloat(fromWei(await addr2.getBalance())) * 2500).toFixed(5)
         )
       ).to.be.closeTo(
-        parseFloat((parseFloat(fromWei(addr2ShouldBeAfter)) * 2500).toFixed(2)),
+        parseFloat((parseFloat(fromWei(addr2ShouldBeAfter)) * 2500).toFixed(5)),
         1
       );
 
@@ -738,18 +789,14 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         amountToBuy
       );
 
-      // verify if the flag for secondary market changed for true
+      // verify if the amount is the difference of the list and buy
       expect(
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .idMarketItemsByContractByOwner(
-              mintGoldDustERC1155.address,
-              1,
-              addr2.address
-            )
-        ).isSecondarySale
-      ).to.be.equal(true);
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).amount
+      ).to.be.equal(amountToMint - amountToBuy);
 
       // verify if the marketplace owner's balance increased the fee
       expect(await deployer.getBalance()).to.be.equal(
@@ -768,8 +815,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             1,
             addr2.address
           )
-        ).sold
-      ).to.be.equal(true);
+        ).tokenAmount
+      ).to.be.equal(0);
 
       // expect item sold to be true
       expect(await mintGoldDustSetPrice.itemsSold()).to.be.equal(1);
@@ -796,6 +843,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Should revert with ItemIsNotListed error if the user tries to buy a MintGoldDustERC1155 that was already sold.", async () => {
+      let totalAmount = priceToList * amountToList;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -804,7 +853,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToList * amountToList),
+          value: toWei(totalAmount),
         }
       );
       await expect(
@@ -819,7 +868,10 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             value: toWei(priceToBuy),
           }
         )
-      ).to.be.revertedWithCustomError(mintGoldDustSetPrice, "ItemIsNotListed");
+      ).to.be.revertedWithCustomError(
+        mintGoldDustSetPrice,
+        "ItemIsNotListedBySeller"
+      );
     });
 
     it("Should revert with InvalidAmountForThisPurchase if the user tries to buy an itemId with an amount greater than the item's price.", async () => {
@@ -859,6 +911,319 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         "InvalidAmountForThisPurchase"
       );
     });
+
+    it("Should revert with a LessItemsListedThanTheRequiredAmount error if the amount requested for purchase is more than the amount listed on the contract for ERC1155.", async () => {
+      await expect(
+        mintGoldDustSetPrice.connect(addr2).purchaseNft(
+          {
+            tokenId: 1,
+            amount: amountToList + 1,
+            contractAddress: mintGoldDustERC1155.address,
+            seller: addr1.address,
+          },
+          {
+            value: toWei(priceToBuy),
+          }
+        )
+      ).to.be.revertedWithCustomError(
+        mintGoldDustSetPrice,
+        "LessItemsListedThanTheRequiredAmount"
+      );
+    });
+
+    it("Should revert with a LessItemsListedThanTheRequiredAmount error if the amount requested for purchase is more than the amount available in the idMarketItemsByContractByOwner mapping for ERC1155.", async () => {
+      await expect(
+        mintGoldDustSetPrice.connect(addr2).purchaseNft(
+          {
+            tokenId: 1,
+            amount: amountToList + 1,
+            contractAddress: mintGoldDustERC1155.address,
+            seller: addr1.address,
+          },
+          {
+            value: toWei(priceToBuy),
+          }
+        )
+      ).to.be.revertedWithCustomError(
+        mintGoldDustSetPrice,
+        "LessItemsListedThanTheRequiredAmount"
+      );
+    });
+
+    it("Should verify that the amount of ManageSecondarySale is equal to the balance in ERC1155, and the sold status is false and the address is the artist's address", async () => {
+      expect(
+        (
+          await mintGoldDustSetPrice
+            .connect(addr1)
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).amount
+      ).to.be.equal(amountToMint);
+
+      expect(
+        (
+          await mintGoldDustSetPrice
+            .connect(addr1)
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).sold
+      ).to.be.equal(false);
+    });
+
+    it("Should decrease the amount correctly after part of the listed items are sold, and sold status should remain false", async () => {
+      let totalAmount = priceToList * amountToBuy;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+      await mintGoldDustSetPrice.connect(addr2).purchaseNft(
+        {
+          tokenId: 1,
+          amount: amountToBuy,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(totalAmount),
+        }
+      );
+
+      expect(
+        (
+          await mintGoldDustSetPrice
+            .connect(addr1)
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).amount
+      ).to.be.equal(amountToMint - amountToBuy);
+
+      expect(
+        (
+          await mintGoldDustSetPrice
+            .connect(addr1)
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).sold
+      ).to.be.equal(false);
+    });
+
+    it("Should set amount to zero, sold status to true and delete the mapping for the idMarketItem when all the listed items are sold", async () => {
+      await mintGoldDustSetPrice.connect(addr1).delistNft({
+        tokenId: 1,
+        amount: amountToList,
+        contractAddress: mintGoldDustERC1155.address,
+      });
+
+      await mintGoldDustSetPrice
+        .connect(addr1)
+        .list(1, amountToMint, mintGoldDustERC1155.address, toWei(priceToList));
+
+      let totalAmount = priceToList * amountToMint;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+
+      await mintGoldDustSetPrice.connect(addr2).purchaseNft(
+        {
+          tokenId: 1,
+          amount: amountToMint,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(totalAmount),
+        }
+      );
+
+      expect(
+        (
+          await mintGoldDustSetPrice
+            .connect(addr1)
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).amount
+      ).to.be.equal(0);
+
+      expect(
+        (
+          await mintGoldDustSetPrice
+            .connect(addr1)
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).sold
+      ).to.be.equal(true);
+    });
+
+    it("Mint 10 - List 5 - Sell 5 - Then buy 3 more of those 5 - Then sell 5 more - Verify that the amount zeroed correctly, sold true, and mapping deleted", async () => {
+      let totalAmount = priceToList * 5;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+      await mintGoldDustSetPrice.connect(addr2).purchaseNft(
+        {
+          tokenId: 1,
+          amount: 5,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(totalAmount),
+        }
+      );
+      console.log("1");
+      await mintGoldDustERC1155
+        .connect(addr2)
+        .setApprovalForAll(mintGoldDustSetPrice.address, true);
+
+      await mintGoldDustSetPrice
+        .connect(addr2)
+        .list(1, 5, mintGoldDustERC1155.address, toWei(priceToList));
+      console.log("1");
+
+      await mintGoldDustSetPrice.connect(addr1).purchaseNft(
+        {
+          tokenId: 1,
+          amount: 5,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr2.address,
+        },
+        {
+          value: toWei(priceToList * 5),
+        }
+      );
+
+      await mintGoldDustSetPrice
+        .connect(addr1)
+        .list(1, 5, mintGoldDustERC1155.address, toWei(priceToList));
+
+      await mintGoldDustSetPrice.connect(addr2).purchaseNft(
+        {
+          tokenId: 1,
+          amount: 5,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(totalAmount),
+        }
+      );
+
+      expect(
+        (
+          await mintGoldDustSetPrice
+            .connect(addr1)
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).amount
+      ).to.be.equal(0);
+
+      expect(
+        (
+          await mintGoldDustSetPrice
+            .connect(addr1)
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).sold
+      ).to.be.equal(true);
+    });
+
+    it("Mint 10 - List 5 - Sell 5 - Buy 5 - Sell 3 - Check if the amount is 2, sold false still and the mapping is not deleted", async () => {
+      let totalAmount = priceToList * 5;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+      await mintGoldDustSetPrice.connect(addr2).purchaseNft(
+        {
+          tokenId: 1,
+          amount: 5,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(totalAmount),
+        }
+      );
+
+      await mintGoldDustERC1155
+        .connect(addr2)
+        .setApprovalForAll(mintGoldDustSetPrice.address, true);
+
+      await mintGoldDustSetPrice
+        .connect(addr2)
+        .list(1, 5, mintGoldDustERC1155.address, toWei(priceToList));
+
+      await mintGoldDustSetPrice.connect(addr1).purchaseNft(
+        {
+          tokenId: 1,
+          amount: 5,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr2.address,
+        },
+        {
+          value: toWei(priceToList * 5),
+        }
+      );
+
+      await mintGoldDustSetPrice
+        .connect(addr1)
+        .list(1, 5, mintGoldDustERC1155.address, toWei(priceToList));
+
+      totalAmount = priceToList * 3;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+
+      await mintGoldDustSetPrice.connect(addr2).purchaseNft(
+        {
+          tokenId: 1,
+          amount: 3,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(totalAmount),
+        }
+      );
+
+      expect(
+        (
+          await mintGoldDustSetPrice
+            .connect(addr1)
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).amount
+      ).to.be.equal(2);
+
+      expect(
+        (
+          await mintGoldDustSetPrice
+            .connect(addr1)
+            .isSecondarySale(mintGoldDustERC1155.address, 1)
+        ).sold
+      ).to.be.equal(false);
+    });
+
+    it("Mint 10 - List 5 - Sell 5 - Buy the 5 again - List 10 - Sell 6 - Check if the amount zeroed, sold is true and mapping is not deleted", async () => {
+      let totalAmount = priceToList * 5;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+      await mintGoldDustSetPrice.connect(addr2).purchaseNft(
+        {
+          tokenId: 1,
+          amount: 5,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(totalAmount),
+        }
+      );
+
+      await mintGoldDustERC1155
+        .connect(addr2)
+        .setApprovalForAll(mintGoldDustSetPrice.address, true);
+
+      await mintGoldDustSetPrice
+        .connect(addr2)
+        .list(1, 5, mintGoldDustERC1155.address, toWei(priceToList));
+
+      await mintGoldDustSetPrice.connect(addr1).purchaseNft(
+        {
+          tokenId: 1,
+          amount: 5,
+          contractAddress: mintGoldDustERC1155.address,
+          seller: addr2.address,
+        },
+        {
+          value: toWei(priceToList * 5),
+        }
+      );
+
+      await expect(
+        mintGoldDustSetPrice
+          .connect(addr1)
+          .list(1, 10, mintGoldDustERC1155.address, toWei(priceToList))
+      ).to.be.revertedWith("Invalid amount for primary sale");
+    });
   });
 
   describe("\n--------------- Purchase NFT on secondary market ---------------\n", function () {
@@ -871,8 +1236,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     let collFee: number;
     let primarySaleFee: number;
     let amountToMint = 10;
-    let amountToList = 5;
-    let amountToBuy = 4;
+    let amountToList = 10;
+    let amountToBuy = 10;
     let priceToList = 20;
     let priceToBuy = priceToList * amountToBuy;
 
@@ -910,6 +1275,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
       ).to.equal(amountToList);
 
+      let totalAmount = priceToList * amountToBuy;
+      totalAmount = totalAmount + (totalAmount * 3) / 100; // 3 ETH for each token
+
       await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -918,13 +1286,13 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           seller: addr1.address,
         },
         {
-          value: toWei(priceToBuy),
+          value: toWei(totalAmount),
         }
       );
 
       expect(
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
-      ).to.equal(amountToList - amountToBuy);
+      ).to.equal(amountToMint - amountToBuy);
 
       expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(
         amountToBuy
@@ -954,13 +1322,12 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       // verify if the isSecondarySale sale attribute is true
       expect(
         (
-          await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
+          await mintGoldDustSetPrice.isSecondarySale(
             mintGoldDustERC1155.address,
-            1,
-            addr2.address
+            1
           )
-        ).isSecondarySale
-      ).to.equal(true);
+        ).sold
+      ).to.be.equal(true);
       // get the balances for the seller and the owner of the marketplace.
       const feeAccountInitialEthBal = await deployer.getBalance();
       let addr3BalanceBefore = await addr3.getBalance();
@@ -1022,7 +1389,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           artistCreatorAddress,
           toWei(secondarySaleFee),
           amountToBuyForSecondary,
-          false,
           false,
           false
         );
@@ -1097,8 +1463,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             1,
             addr3.address
           )
-        ).sold
-      ).to.be.equal(true);
+        ).tokenAmount
+      ).to.be.equal(0);
     });
   });
 });

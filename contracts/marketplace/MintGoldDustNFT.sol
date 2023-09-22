@@ -3,16 +3,20 @@ pragma solidity 0.8.18;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./MintGoldDustCompany.sol";
-import "./MintGoldDustCollectorMintControl.sol";
 
 error RoyaltyInvalidPercentage();
 error UnauthorizedOnNFT(string message);
 error NumberOfCollaboratorsAndPercentagesNotMatch();
-error TheTotalPercentageCantBeGreaterThan100();
+error TheTotalPercentageCantBeGreaterOrLessThan100();
 
-abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
+abstract contract MintGoldDustNFT is
+    Initializable,
+    PausableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     // Add your custom code and functions here
     /**
      *
@@ -21,14 +25,17 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
      */
     function initialize(
         address _mintGoldDustCompany
-    ) internal onlyInitializing {
+    ) internal onlyInitializing isZeroAddress(_mintGoldDustCompany) {
+        __ReentrancyGuard_init();
+        __Pausable_init();
         mintGoldDustCompany = MintGoldDustCompany(
             payable(_mintGoldDustCompany)
         );
     }
 
     MintGoldDustCompany internal mintGoldDustCompany;
-    address private mintGoldDustSetPrice;
+    address private mintGoldDustSetPriceAddress;
+    address private mintGoldDustMarketplaceAuctionAddress;
 
     mapping(uint256 => address) public tokenIdArtist;
     mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
@@ -41,21 +48,68 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
     mapping(uint256 => bool) public hasTokenCollaborators;
     mapping(uint256 => uint256) public tokenIdCollaboratorsQuantity;
 
+    mapping(uint256 => bool) internal tokenWasSold;
+
+    mapping(uint256 => uint256) internal primarySaleQuantityToSold;
+
+    /// @notice Reduces the quantity of remaining items available for primary sale for a specific token.
+    ///         Only executes the update if there is a non-zero quantity of the token remaining for primary sale.
+    /// @dev This function should only be called by authorized addresses.
+    /// @param _tokenId The ID of the token whose primary sale quantity needs to be updated.
+    /// @param _amountSold The amount sold that needs to be subtracted from the remaining quantity.
+    function updatePrimarySaleQuantityToSold(
+        uint256 _tokenId,
+        uint256 _amountSold
+    ) external {
+        require(
+            msg.sender == mintGoldDustMarketplaceAuctionAddress ||
+                msg.sender == mintGoldDustSetPriceAddress,
+            "Unauthorized on NFT"
+        );
+        if (primarySaleQuantityToSold[_tokenId] > 0) {
+            primarySaleQuantityToSold[_tokenId] =
+                primarySaleQuantityToSold[_tokenId] -
+                _amountSold;
+        }
+    }
+
     uint256[48] __gap;
 
-    MintGoldDustCollectorMintControl private mintGoldDustCollectorMintControl;
-
-    function setMintGoldDustCollectorMintControl(
-        address _mintGoldDustCollectorMintControl
+    /// @notice that this function is used for the Mint Gold Dust owner
+    /// create the dependence of the Mint Gold Dust set price contract address.
+    /// @param _mintGoldDustSetPriceAddress the address to be setted.
+    function setMintGoldDustSetPriceAddress(
+        address _mintGoldDustSetPriceAddress
     ) external {
-        require(msg.sender == mintGoldDustCompany.owner(), "UnauthorizedOnNFT");
+        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
         require(
-            address(mintGoldDustCollectorMintControl) == address(0),
+            address(mintGoldDustSetPriceAddress) == address(0),
             "Already setted!"
         );
-        mintGoldDustCollectorMintControl = MintGoldDustCollectorMintControl(
-            _mintGoldDustCollectorMintControl
+        mintGoldDustSetPriceAddress = _mintGoldDustSetPriceAddress;
+    }
+
+    /// @notice that this function is used for the Mint Gold Dust owner
+    /// create the dependence of the Mint Gold Dust Marketplace Auction address.
+    /// @param _mintGoldDustMarketplaceAuctionAddress the address to be setted.
+    function setMintGoldDustMarketplaceAuctionAddress(
+        address _mintGoldDustMarketplaceAuctionAddress
+    ) external {
+        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
+        require(
+            address(mintGoldDustMarketplaceAuctionAddress) == address(0),
+            "Already setted!"
         );
+        mintGoldDustMarketplaceAuctionAddress = _mintGoldDustMarketplaceAuctionAddress;
+    }
+
+    function setTokenWasSold(uint256 _tokenId) public {
+        require(
+            msg.sender == mintGoldDustMarketplaceAuctionAddress ||
+                msg.sender == mintGoldDustSetPriceAddress,
+            "Unauthorized on NFT"
+        );
+        tokenWasSold[_tokenId] = true;
     }
 
     /**
@@ -88,11 +142,21 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
      * @param tokenId the uint256 generated for this token.
      * @param collaborators an array of address that can be a number of maximum 4 collaborators.
      * @param ownersPercentage an array of uint256 that are the percetages for the artist and for each one of the collaborators.
+     * @param contractAddress the address of the contract that minted this token.
      */
     event MintGoldDustNftMintedAndSplitted(
         uint256 indexed tokenId,
         address[] collaborators,
-        uint256[] ownersPercentage
+        uint256[] ownersPercentage,
+        address contractAddress
+    );
+
+    event TokenBurned(
+        uint256 indexed tokenId,
+        bool isERC721,
+        address owner,
+        address burner,
+        uint256 amount
     );
 
     function transfer(
@@ -176,8 +240,6 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         return _tokenId;
     }
 
-    error Teste(address aadd);
-
     function collectorMint(
         string calldata _tokenURI,
         uint256 _royaltyPercent,
@@ -188,13 +250,11 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         address _sender
     )
         external
-        isTransactionOpened(_sender)
+        onlySetPrice
         checkParameters(_sender, _artistAddress, _royaltyPercent)
         whenNotPaused
         returns (uint256)
     {
-        mintGoldDustCollectorMintControl.closeCollectorMintTransaction(_sender);
-
         uint256 newTokenId = executeMintFlow(
             _tokenURI,
             _royaltyPercent,
@@ -219,14 +279,12 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         address _sender
     )
         external
-        isTransactionOpened(_sender)
+        onlySetPrice
         checkParameters(_sender, _artistAddress, _royalty)
         whenNotPaused
         arrayLengthCheck(_newOwners, _ownersPercentage)
         returns (uint256)
     {
-        mintGoldDustCollectorMintControl.closeCollectorMintTransaction(_sender);
-
         uint256 _tokenId = executeMintFlow(
             _tokenURI,
             _royalty,
@@ -265,7 +323,12 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
             tokenIdCollaboratorsPercentage[_tokenId][i] = _ownersPercentage[i];
         }
 
-        require(ownersCount > 1, "Add more than 1 owner!");
+        require(
+            _ownersPercentage[ownersCount] > 0,
+            "Owner percentage must be greater than zero!"
+        );
+
+        require(ownersCount >= 1, "Add more than 1 owner!");
 
         require(ownersCount < 5, "Add max 4!");
 
@@ -273,8 +336,8 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         /// So is necessary do one more addition here.
         totalPercentage += _ownersPercentage[ownersCount];
 
-        if (totalPercentage != 100000000000000000000) {
-            revert TheTotalPercentageCantBeGreaterThan100();
+        if (totalPercentage != 100e18) {
+            revert TheTotalPercentageCantBeGreaterOrLessThan100();
         }
 
         tokenIdCollaboratorsQuantity[_tokenId] = ownersCount + 1;
@@ -286,20 +349,23 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         emit MintGoldDustNftMintedAndSplitted(
             _tokenId,
             _newOwners,
-            _ownersPercentage
+            _ownersPercentage,
+            address(this)
         );
     }
 
     /// @notice Pause the contract
-    function pauseContract() public isowner {
+    function pauseContract() external isowner {
         _pause();
     }
 
     /// @notice Unpause the contract
-    function unpauseContract() public isowner {
+    function unpauseContract() external isowner {
         _unpause();
     }
 
+    /// @notice that this modifier is used to check if the arrays length are valid
+    /// @dev the _ownersPercentage array length MUST be equals the _newOwners array length plus one
     modifier arrayLengthCheck(
         address[] calldata _newOwners,
         uint256[] calldata _ownersPercentage
@@ -310,6 +376,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         _;
     }
 
+    /// @notice that this modifier is used to check if the address is the owner
     modifier isowner() {
         if (msg.sender != mintGoldDustCompany.owner()) {
             revert UnauthorizedOnNFT("OWNER");
@@ -317,6 +384,7 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         _;
     }
 
+    /// @notice that this modifier is used to check if the percentage is not greater than the max royalty percentage
     modifier validPercentage(uint256 percentage) {
         if (percentage > mintGoldDustCompany.maxRoyalty()) {
             revert RoyaltyInvalidPercentage();
@@ -324,37 +392,23 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         _;
     }
 
+    /// @notice that this modifier is used to check if the address is whitelisted
     modifier isArtistWhitelisted(address _artistAddress) {
-        if (mintGoldDustCompany.isArtistApproved(_artistAddress) == false) {
+        if (!mintGoldDustCompany.isArtistApproved(_artistAddress)) {
             revert UnauthorizedOnNFT("ARTIST");
         }
         _;
     }
 
-    modifier isTransactionOpened(address _sender) {
-        require(
-            mintGoldDustCollectorMintControl.collectorMintWithOpenedTransaction(
-                _sender
-            ) == true,
-            "Collector Mint tx is closed!"
-        );
-        _;
-    }
-
+    /// @notice that this modifier do a group of verifications for the collector mint flow
     modifier checkParameters(
         address _sender,
         address _artistAddress,
         uint256 percentage
     ) {
         if (
-            mintGoldDustCompany.isCollectorMint(_sender) == false ||
-            _sender != address(0)
-        ) {
-            revert UnauthorizedOnNFT("COLLECTOR_MINT");
-        }
-        if (
-            mintGoldDustCompany.isArtistApproved(_artistAddress) == false ||
-            _artistAddress != address(0)
+            !mintGoldDustCompany.isArtistApproved(_artistAddress) ||
+            _artistAddress == address(0)
         ) {
             revert UnauthorizedOnNFT("ARTIST");
         }
@@ -364,6 +418,21 @@ abstract contract MintGoldDustNFT is Initializable, PausableUpgradeable {
         if (percentage > mintGoldDustCompany.maxRoyalty()) {
             revert RoyaltyInvalidPercentage();
         }
+        _;
+    }
+
+    /// @notice that this modifier is used to check if the address is the Mint Gold Dust set price contract address
+    /// @dev it is used by the collectorMint flows
+    modifier onlySetPrice() {
+        if (msg.sender != mintGoldDustSetPriceAddress) {
+            revert UnauthorizedOnNFT("SET_PRICE");
+        }
+        _;
+    }
+
+    /// @notice that this modifier is used to check if the address is not zero address
+    modifier isZeroAddress(address _address) {
+        require(_address != address(0), "address is zero address");
         _;
     }
 }

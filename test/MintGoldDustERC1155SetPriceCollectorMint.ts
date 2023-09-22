@@ -13,7 +13,7 @@ chai.use(chaiAsPromised);
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("MintGoldDustSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the collectorMint feature of MintGoldDustSetPrice market for MintGoldDustERC1155 splitted tokens. \n\n", function () {
+describe("MintGoldDustSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the collectorMint feature of MintGoldDustSetPrice market for MintGoldDustERC1155 tokens. \n\n", function () {
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 
@@ -36,9 +36,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
   let addr3: SignerWithAddress;
-  let addr4: SignerWithAddress;
-  let addr5: SignerWithAddress;
-  let addr6: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
   let URI = "sample URI";
@@ -94,8 +91,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
     await mintGoldDustMemoir.deployed();
 
-    [deployer, addr1, addr2, addr3, addr4, addr5, addr6, ...addrs] =
-      await ethers.getSigners();
+    [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
 
     mintGoldDustCompany = await upgrades.deployProxy(
       MintGoldDustCompany,
@@ -273,8 +269,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         console.log("Signature is not from Hardhat address 1");
       }
 
-      let tokenAmount = price * quantityToBuy;
-      tokenAmount = tokenAmount + (tokenAmount * 3) / 100;
+      let tokenAmount =
+        price * quantityToBuy + (price * quantityToBuy * 3) / 100;
 
       const tx = await mintGoldDustSetPrice
         .connect(addr2)
@@ -626,8 +622,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const receiptList3 = await txList3.wait();
       const totalGasList3 = receiptList3.gasUsed.mul(await txList3.gasPrice);
 
-      tokenAmount = price * quantityToBuy;
-      tokenAmount = tokenAmount + (tokenAmount * 3) / 100;
+      tokenAmount = price * quantityToBuy + (price * quantityToBuy * 3) / 100;
+
       const txPurchase2 = await mintGoldDustSetPrice.connect(addr2).purchaseNft(
         {
           tokenId: 1,
@@ -689,6 +685,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       // Now let's do the process again that the addr1 buys the addr2 NFTs
       // But now we'll list all tokens and it should work well. Now all sales are secondary for the artist for this NFT
+
       const artistBalanceBeforeFourthTx = await addr1.getBalance();
       const buyerBalanceBeforeFourthTx = await addr2.getBalance();
       const deployerBeforeFourthTx = await deployer.getBalance();
@@ -760,7 +757,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
       ).to.equal(0);
 
-      // Now we'll list the 10 items. And all sales now MUST be secondary sales.
+      // // Now we'll list the 10 items. And all sales now MUST be secondary sales.
       const artistBalanceBeforeFifthTx = await addr1.getBalance();
       const buyerBalanceBeforeFifthTx = await addr2.getBalance();
       const deployerBeforeFifthTx = await deployer.getBalance();
@@ -902,17 +899,15 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       mintGoldDustCompany.connect(deployer).setPublicKey(wallet.address);
     });
 
-    it('Should call the collectorMint function with an address that is not the mintGoldDustERC1155 address. It MUST revert with an "UnauthorizedOnNFT" error.', async () => {
+    it('Should call the collectorMint function with an address that is not the mintGoldDustERC1155 address. It MUST revert with an "Invalid contract address" error.', async () => {
       await expect(
         mintGoldDustERC1155
           .connect(addr1)
-          .collectorSplitMint(
+          .collectorMint(
             URI,
             toWei(royalty),
-            [addr2.address, addr3.address, addr4.address, addr5.address],
-            [toWei(20), toWei(20), toWei(20), toWei(20), toWei(20)],
             quantityToMint,
-            addr4.address,
+            addr1.address,
             bytesMemoir,
             1,
             mintGoldDustSetPrice.address
@@ -1001,7 +996,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       let tokenAmount = price * quantityToBuy;
       tokenAmount = tokenAmount + (tokenAmount * 3) / 100;
-
       await mintGoldDustSetPrice
         .connect(addr2)
         .collectorMintPurchase(
@@ -1045,6 +1039,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const signerWrong = ethers.provider.getSigner(2);
       const signatureWrong = await signData(hash, signerWrong);
 
+      let tokenAmount = price * quantityToBuy;
+      tokenAmount = tokenAmount - (tokenAmount * 3) / 100;
+
       await expect(
         mintGoldDustSetPrice
           .connect(addr2)
@@ -1055,7 +1052,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             signatureWrong,
             quantityToBuy,
             {
-              value: toWei(price * quantityToBuy),
+              value: toWei(tokenAmount),
             }
           )
       ).to.be.revertedWith("Invalid signature");

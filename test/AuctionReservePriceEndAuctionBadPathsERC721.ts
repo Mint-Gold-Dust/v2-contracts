@@ -1,13 +1,13 @@
 require("dotenv").config();
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { expect } from "chai";
+import { expect, use } from "chai";
 import { Contract, ContractFactory } from "ethers";
 import { ethers } from "hardhat";
 
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Contracts \n************___************\n \nHere we'll have the tests related of an auction cancellation flow. \n", function () {
+describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Contracts \n************___************\n \nHere we'll have the tests related with a complete flow for an auction for the MintGoldDustERC721 token. \n", function () {
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 
@@ -29,6 +29,8 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
   let deployer: SignerWithAddress;
   let addr1: SignerWithAddress;
   let addr2: SignerWithAddress;
+  let addr3: SignerWithAddress;
+  let addr4: SignerWithAddress;
   let addrs: SignerWithAddress[];
 
   let URI = "sample URI";
@@ -41,7 +43,13 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
   const collector_fee_initial = 3000000000000000000n;
   const max_royalty_initial = 20000000000000000000n;
   const auction_duration = 5;
-  const auction_extension_duration = 1;
+  const auction_extension_duration = 3;
+
+  let primary_sale_fee_percent = 15;
+  let secondary_sale_fee_percent = 5;
+  let collector_fee = 3;
+  let max_royalty = 20;
+  let royalty = 5;
 
   const MEMOIR = "This is a great moment of my life!";
 
@@ -65,7 +73,8 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
     mintGoldDustMemoir = await MintGoldDustMemoir.deploy();
     await mintGoldDustMemoir.deployed();
 
-    [deployer, addr1, addr2, ...addrs] = await ethers.getSigners();
+    [deployer, addr1, addr2, addr3, addr4, ...addrs] =
+      await ethers.getSigners();
 
     mintGoldDustCompany = await upgrades.deployProxy(
       MintGoldDustCompany,
@@ -155,8 +164,11 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       .setMintGoldDustMarketplace(mintGoldDustMarketplaceAuction.address);
   });
 
-  describe("\n****************_**************** Tests related with cancelling auction flow for MintGoldDustERC721 ****************_****************\n", function () {
-    let price = 1;
+  describe("\n\t------------------ WAIT UNTIL THE END OF TIME AND WINNER CALL END AUCTION TO GET THE TOKEN ------------------\n", () => {
+    let price = 4;
+    const secondBidValue = price + 2;
+    const _timeout = 3 * 1000;
+    let expectedEndTime;
     let quantityToMint = 1;
     let quantityToList = 1;
 
@@ -165,67 +177,24 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await mintGoldDustCompany
         .connect(deployer)
         .whitelist(addr1.address, true);
-      // addr1 mints a MintGoldDustER721
 
       const encoder = new TextEncoder();
       const bytesMemoir = encoder.encode(MEMOIR);
 
+      // addr1 mints a nft
       await mintGoldDustERC721
         .connect(addr1)
         .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
-      // Artist approve gdMarketPlace marketplace to exchange its MintGoldDustER721
+      // Artist approve gdMarketPlace marketplace to exchange its NFT
       await mintGoldDustERC721
         .connect(addr1)
         .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
 
-      await mintGoldDustMarketplaceAuction
+      const txList = await mintGoldDustMarketplaceAuction
         .connect(addr1)
         .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
-    });
 
-    it("Should revert with an ItemIsNotListedBySeller error when an address that is not the seller tries to cancel an auction.", async function () {
-      await expect(
-        mintGoldDustMarketplaceAuction
-          .connect(addr2)
-          .cancelAuction(1, mintGoldDustERC721.address)
-      )
-        .to.be.revertedWithCustomError(
-          mintGoldDustMarketplaceAuction,
-          "ItemIsNotListedBySeller"
-        )
-        .withArgs(
-          1,
-          mintGoldDustMarketplaceAuction.address,
-          mintGoldDustERC721.address,
-          addr2.address,
-          addr2.address
-        );
-    });
-
-    it("Should revert with an ItemIsNotListedBySeller if the seller tries to cancel an auction that was already ended or cancelled.", async function () {
-      await mintGoldDustMarketplaceAuction
-        .connect(addr1)
-        .cancelAuction(1, mintGoldDustERC721.address);
-
-      await expect(
-        mintGoldDustMarketplaceAuction
-          .connect(addr1)
-          .cancelAuction(1, mintGoldDustERC721.address)
-      )
-        .to.be.revertedWithCustomError(
-          mintGoldDustMarketplaceAuction,
-          "ItemIsNotListedBySeller"
-        )
-        .withArgs(
-          1,
-          mintGoldDustMarketplaceAuction.address,
-          mintGoldDustERC721.address,
-          addr1.address,
-          addr1.address
-        );
-    });
-
-    it("Should revert with an AuctionAlreadyStarted() error when the seller tries to cancel an auction that have already started.", async function () {
+      // *********************** FIRST BID ****************************
       await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
         {
           tokenId: 1,
@@ -237,78 +206,128 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         }
       );
 
-      await expect(
-        mintGoldDustMarketplaceAuction
-          .connect(addr1)
-          .cancelAuction(1, mintGoldDustERC721.address)
-      ).to.be.revertedWithCustomError(
-        mintGoldDustMarketplaceAuction,
-        "AuctionAlreadyStarted"
+      //******************** SECOND BID ***********************
+      await mintGoldDustMarketplaceAuction.connect(addr3).placeBid(
+        {
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        },
+        {
+          value: toWei(secondBidValue + (secondBidValue * 3) / 100),
+        }
       );
     });
 
-    it("Should simulate a cancel auction flow without errors.", async function () {
-      /**
-       * @notice that Here I check if the balance of erc721 for the addr1 is 0 and if the balance of the contract is 1
-       */
-      const addr1BalanceBefore = await mintGoldDustERC721.balanceOf(
-        addr1.address
+    it("Should revert with an Unauthorized error if an address that was not the bid winner tries to call the end auction function.", async function () {
+      console.log(`\n\t\tWaiting until the final of the auction...`);
+      await new Promise((resolve) => setTimeout(resolve, _timeout * 2));
+
+      await expect(
+        mintGoldDustMarketplaceAuction.connect(addr4).endAuction({
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        })
+      ).to.be.revertedWith("Unauthorized");
+    });
+
+    it("Should revert with an Unauthorized error if an address that was not the bid winner tries to call the end auction function before it ends.", async function () {
+      await expect(
+        mintGoldDustMarketplaceAuction.connect(addr4).endAuction({
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        })
+      ).to.be.revertedWith("Unauthorized");
+    });
+
+    it("Should revert with an AuctionCannotBeEndedYet error if the highest bidder tries to call the end auction function before it ends.", async function () {
+      await expect(
+        mintGoldDustMarketplaceAuction.connect(addr3).endAuction({
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        })
+      ).to.be.revertedWithCustomError(
+        mintGoldDustMarketplaceAuction,
+        "AuctionCannotBeEndedYet"
       );
-      expect(addr1BalanceBefore).to.be.equal(0);
+    });
 
-      const auctionContractBalanceBefore = await mintGoldDustERC721.balanceOf(
-        mintGoldDustMarketplaceAuction.address
-      );
-      expect(auctionContractBalanceBefore).to.be.equal(1);
+    it("Should revert with an ItemIsNotListedBySeller error if the bid winner tries to call the end auction function twice.", async function () {
+      console.log(`\n\t\tWaiting until the final of the auction...`);
+      await new Promise((resolve) => setTimeout(resolve, _timeout * 2));
 
-      // Cancel auction
-      const tx = await mintGoldDustMarketplaceAuction
-        .connect(addr1)
-        .cancelAuction(1, mintGoldDustERC721.address);
+      await mintGoldDustMarketplaceAuction.connect(addr3).endAuction({
+        tokenId: 1,
+        contractAddress: mintGoldDustERC721.address,
+        seller: addr1.address,
+      });
 
-      const receipt = await tx.wait();
-
-      // Gas values
-      console.log("Gas used to cancel auction: ", receipt.gasUsed.toString());
-      console.log("Gas price: ", (await tx.gasPrice).toString());
-      console.log("Total gas fee: ", receipt.gasUsed.mul(await tx.gasPrice));
-
-      // Check the event AuctionCancelled
-      expect(receipt.events[1].event).to.be.equal("AuctionCancelled");
-      expect(receipt.events[1].eventSignature).to.be.equal(
-        "AuctionCancelled(uint256,address,address,uint256,uint256)"
-      );
-      expect(receipt.events[1].args.tokenId).to.be.equal(1);
-      expect(receipt.events[1].args.contractAddress).to.be.equal(
-        mintGoldDustERC721.address
-      );
-      expect(receipt.events[1].args.seller).to.be.equal(addr1.address);
-      expect(receipt.events[1].args.cancelTime).to.be.equal(
-        (await receipt.events[0].getBlock()).timestamp
-      );
-      expect(receipt.events[1].args.auctionId).to.be.equal(1);
-
-      // Check if the item was deleted from the mapping
-      const marketItem =
-        await mintGoldDustMarketplaceAuction.idMarketItemsByContractByOwner(
-          mintGoldDustERC721.address,
+      await expect(
+        mintGoldDustMarketplaceAuction.connect(addr3).endAuction({
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        })
+      )
+        .to.be.revertedWithCustomError(
+          mintGoldDustMarketplaceAuction,
+          "ItemIsNotListedBySeller"
+        )
+        .withArgs(
           1,
-          addr1.address
+          mintGoldDustMarketplaceAuction.address,
+          mintGoldDustERC721.address,
+          addr1.address,
+          addr3.address
         );
-      expect(marketItem.tokenId).to.be.equal(0);
+    });
+  });
 
-      /**
-       * @notice that now I need to check if the balance of erc721 for the addr1 is the same as before and if the balance of the contract is 0
-       */
-      const addr1BalanceAfter = await mintGoldDustERC721.balanceOf(
-        addr1.address
-      );
-      expect(addr1BalanceAfter).to.be.equal(quantityToMint);
+  describe("Simulate when the auction have not received any bid", () => {
+    let price = 4;
+    const secondBidValue = price + 2;
+    const _timeout = 3 * 1000;
+    let expectedEndTime;
+    let quantityToMint = 10;
+    let quantityToList = 5;
 
-      const auctionContractBalanceAfter = await mintGoldDustERC721.balanceOf(
-        mintGoldDustMarketplaceAuction.address
+    beforeEach(async () => {
+      // MGD owner whitelist the artist
+      await mintGoldDustCompany
+        .connect(deployer)
+        .whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
+      // addr1 mints a nft
+      await mintGoldDustERC721
+        .connect(addr1)
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
+      // Artist approve gdMarketPlace marketplace to exchange its NFT
+      await mintGoldDustERC721
+        .connect(addr1)
+        .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
+
+      await mintGoldDustMarketplaceAuction
+        .connect(addr1)
+        .list(1, 1, mintGoldDustERC721.address, toWei(price));
+    });
+
+    it("Should revert with an AuctionTimeNotStartedYet error if an address tries to call the end auction function before it have not received any bid.", async function () {
+      await expect(
+        mintGoldDustMarketplaceAuction.connect(addr1).endAuction({
+          tokenId: 1,
+          contractAddress: mintGoldDustERC721.address,
+          seller: addr1.address,
+        })
+      ).to.be.revertedWithCustomError(
+        mintGoldDustMarketplaceAuction,
+        "AuctionTimeNotStartedYet"
       );
-      expect(auctionContractBalanceAfter).to.be.equal(0);
     });
   });
 });

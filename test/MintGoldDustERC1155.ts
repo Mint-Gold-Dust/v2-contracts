@@ -166,7 +166,7 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
       ).to.be.equal(toWei(5));
     });
 
-    it(`Should revert with a MGDnftRoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than ${max_royalty}.`, async function () {
+    it(`Should revert with a RoyaltyInvalidPercentage error if some artist try to mint with a royalty percent greater than ${max_royalty}.`, async function () {
       await mgdCompany.connect(deployer).whitelist(addr1.address, true);
 
       const encoder = new TextEncoder();
@@ -178,11 +178,11 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
           .mintNft("", toWei(max_royalty + 1), 5, bytesMemoir)
       ).to.be.revertedWithCustomError(
         mintGoldDustERC1155,
-        "MGDnftRoyaltyInvalidPercentage"
+        "RoyaltyInvalidPercentage"
       );
     });
 
-    it("Should revert with a MGDnftUnauthorized error if some not whitelisted artist try to mint a NFT.", async function () {
+    it("Should revert with a UnauthorizedOnNFT error if some not whitelisted artist try to mint a NFT.", async function () {
       // addr1 try to mint a NFT without be whitelisted
 
       const encoder = new TextEncoder();
@@ -190,10 +190,50 @@ describe("MintGoldDustERC1155.sol Smart Contract \n_____________________________
 
       await expect(
         mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 5, bytesMemoir)
-      ).to.be.revertedWithCustomError(
-        mintGoldDustERC1155,
-        "MGDnftUnauthorized"
-      );
+      )
+        .to.be.revertedWithCustomError(mintGoldDustERC1155, "UnauthorizedOnNFT")
+        .withArgs("ARTIST");
+    });
+
+    it("Should revert when non-owner tries to pause the contract", async function () {
+      await expect(mintGoldDustERC1155.connect(addr1).pauseContract())
+        .to.be.revertedWithCustomError(mintGoldDustERC1155, "UnauthorizedOnNFT")
+        .withArgs("OWNER");
+    });
+
+    it("Owner should be able to pause the contract", async function () {
+      await mintGoldDustERC1155.connect(deployer).pauseContract();
+
+      await expect(await mintGoldDustERC1155.paused()).to.equal(true);
+    });
+
+    it("Should revert when non-owner tries to unpause the contract", async function () {
+      await mintGoldDustERC1155.connect(deployer).pauseContract();
+      await expect(mintGoldDustERC1155.connect(addr1).unpauseContract())
+        .to.be.revertedWithCustomError(mintGoldDustERC1155, "UnauthorizedOnNFT")
+        .withArgs("OWNER");
+    });
+
+    it("Owner should be able to unpause the contract", async function () {
+      await mintGoldDustERC1155.connect(deployer).pauseContract();
+      await mintGoldDustERC1155.connect(deployer).unpauseContract();
+
+      await expect(await mintGoldDustERC1155.paused()).to.equal(false);
+    });
+
+    it("Should revert when trying to mint a NFT while the contract is paused", async function () {
+      // Assuming addr1 is a whitelisted artist
+      await mgdCompany.connect(deployer).whitelist(addr1.address, true);
+
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+
+      // Pause the contract
+      await mintGoldDustERC1155.connect(deployer).pauseContract();
+
+      await expect(
+        mintGoldDustERC1155.connect(addr1).mintNft("", toWei(5), 5, bytesMemoir)
+      ).to.be.reverted; // Assuming that your mintNft function reverts the transaction when the contract is paused
     });
   });
 });

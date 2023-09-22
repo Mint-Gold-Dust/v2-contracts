@@ -7,7 +7,7 @@ import { ethers } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Contracts \n************___************\n \nHere we'll have the test cases for listings of ERC721 for auction. \n", function () {
+describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Contracts \n************___************\n \nHere we'll have the test cases for listings of ERC1155 for auction. \n", function () {
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 
@@ -125,9 +125,37 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
     await mintGoldDustCompany
       .connect(deployer)
       .setValidator(deployer.address, true);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustMarketplaceAuction
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
+
+    await mintGoldDustSetPrice
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustMarketplaceAuction.address);
   });
 
-  describe("\n****************_**************** Tests related with listing MintGoldDustERC721 for auction ****************_****************\n", function () {
+  describe("\n****************_**************** Tests related with listing MintGoldDustERC1155 for auction ****************_****************\n", function () {
     let price = 1;
     let quantityToMint = 10;
     let quantityToList = 5;
@@ -146,11 +174,11 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       const encoder = new TextEncoder();
       const bytesMemoir = encoder.encode(MEMOIR);
 
-      await mintGoldDustERC721
+      await mintGoldDustERC1155
         .connect(addr1)
         .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
       // Artist approve gdMarketPlace marketplace to exchange its MintGoldDustER721
-      await mintGoldDustERC721
+      await mintGoldDustERC1155
         .connect(addr1)
         .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
     });
@@ -158,7 +186,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
     it("Should simulate a successfull flow.", async function () {
       const tx = await mintGoldDustMarketplaceAuction
         .connect(addr1)
-        .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
+        .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price));
 
       const receipt = await tx.wait();
 
@@ -168,7 +196,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         "ItemListedToAuction(uint256,address,address,uint256,uint256,uint256)"
       );
       expect(receipt.events[1].args[0]).to.equal(1);
-      expect(receipt.events[1].args[1]).to.equal(mintGoldDustERC721.address);
+      expect(receipt.events[1].args[1]).to.equal(mintGoldDustERC1155.address);
       expect(receipt.events[1].args[2]).to.equal(addr1.address);
       expect(receipt.events[1].args[3]).to.equal(toWei(price));
       expect(receipt.events[1].args[4]).to.equal(
@@ -180,46 +208,42 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
     it("Should revert with an ItemIsAlreadyListed error if an address tries to list a MintGoldDustERC1155 itemId that is already listed for auction.", async function () {
       await mintGoldDustMarketplaceAuction
         .connect(addr1)
-        .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
+        .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price));
       await expect(
         mintGoldDustMarketplaceAuction
           .connect(addr1)
-          .list(1, quantityToList, mintGoldDustERC721.address, toWei(price))
+          .list(1, quantityToList, mintGoldDustERC1155.address, toWei(price))
       )
         .to.be.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
           "ItemIsAlreadyListed"
         )
-        .withArgs(mintGoldDustERC721.address);
+        .withArgs(mintGoldDustERC1155.address);
     });
 
-    it("Should not revert with an AddressUnauthorized error if an address tries to list a quantity of a MintGoldDustERC721 itemId greater than it has, because for MintGoldDustERC721 the frontend should not concern about the quantity. It is always ONE.", async function () {
-      const tx = await mintGoldDustMarketplaceAuction
-        .connect(addr1)
-        .list(1, quantityToList * 3, mintGoldDustERC721.address, toWei(price));
-
-      const receipt = await tx.wait();
-
-      expect(receipt.status).to.equal(1);
-      expect(receipt.events[1].event).to.equal("ItemListedToAuction");
-      expect(receipt.events[1].eventSignature).to.equal(
-        "ItemListedToAuction(uint256,address,address,uint256,uint256,uint256)"
-      );
-      expect(receipt.events[1].args[0]).to.equal(1);
-      expect(receipt.events[1].args[1]).to.equal(mintGoldDustERC721.address);
-      expect(receipt.events[1].args[2]).to.equal(addr1.address);
-      expect(receipt.events[1].args[3]).to.equal(toWei(price));
-      expect(receipt.events[1].args[4]).to.equal(
-        (await receipt.events[0].getBlock()).timestamp
-      );
-      expect(receipt.events[1].args[5]).to.equal(1);
+    it("Should revert with an AddressUnauthorized('Not owner or not has enough token quantity!') error if an address tries to list a quantity of a MintGoldDustERC1155 itemId greater than it has.", async function () {
+      await expect(
+        mintGoldDustMarketplaceAuction
+          .connect(addr1)
+          .list(
+            1,
+            quantityToList * 3,
+            mintGoldDustERC1155.address,
+            toWei(price)
+          )
+      )
+        .to.be.revertedWithCustomError(
+          mintGoldDustMarketplaceAuction,
+          "AddressUnauthorized"
+        )
+        .withArgs("Not owner or not has enough token quantity!");
     });
 
     it("Should revert with an InvalidAmount error if an address tries to list ZERO of a MintGoldDustERC1155 itemId.", async function () {
       await expect(
         mintGoldDustMarketplaceAuction
           .connect(addr1)
-          .list(1, 0, mintGoldDustERC721.address, toWei(price))
+          .list(1, 0, mintGoldDustERC1155.address, toWei(price))
       ).to.be.revertedWithCustomError(
         mintGoldDustMarketplaceAuction,
         "InvalidAmount"
@@ -237,34 +261,39 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       );
     });
 
-    it("Should revert with a ERC721: invalid token ID error if an address tries to list a tokenId that not exists.", async function () {
+    it("Should revert with a AddressUnauthorized('Not owner or not has enough token quantity!') error if an address tries to list a tokenId that not exists or that it is not the owner.", async function () {
       await expect(
         mintGoldDustMarketplaceAuction
           .connect(addr1)
-          .list(2, quantityToList, mintGoldDustERC721.address, toWei(price))
-      ).to.be.revertedWith("ERC721: invalid token ID");
-    });
-
-    it("Should revert with an AddressUnauthorized('Is not owner') error if an address tries to list a tokenId that it is not the owner.", async function () {
-      const encoder = new TextEncoder();
-      const bytesMemoir = encoder.encode(MEMOIR);
-      await mintGoldDustERC721
-        .connect(addr2)
-        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
-      // Artist approve gdMarketPlace marketplace to exchange its MintGoldDustER721
-      await mintGoldDustERC721
-        .connect(addr2)
-        .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
-      await expect(
-        mintGoldDustMarketplaceAuction
-          .connect(addr1)
-          .list(2, quantityToList, mintGoldDustERC721.address, toWei(price))
+          .list(2, quantityToList, mintGoldDustERC1155.address, toWei(price))
       )
         .to.be.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
           "AddressUnauthorized"
         )
-        .withArgs("Not owner!");
+        .withArgs("Not owner or not has enough token quantity!");
+    });
+
+    it("Should revert with an AddressUnauthorized('Not owner or not has enough token quantity!') error if an address tries to list a tokenId that it is not the owner.", async function () {
+      const encoder = new TextEncoder();
+      const bytesMemoir = encoder.encode(MEMOIR);
+      await mintGoldDustERC1155
+        .connect(addr2)
+        .mintNft(URI, toWei(5), quantityToMint, bytesMemoir);
+      // Artist approve gdMarketPlace marketplace to exchange its MintGoldDustER721
+      await mintGoldDustERC1155
+        .connect(addr2)
+        .setApprovalForAll(mintGoldDustMarketplaceAuction.address, true);
+      await expect(
+        mintGoldDustMarketplaceAuction
+          .connect(addr1)
+          .list(2, quantityToList, mintGoldDustERC1155.address, toWei(price))
+      )
+        .to.be.revertedWithCustomError(
+          mintGoldDustMarketplaceAuction,
+          "AddressUnauthorized"
+        )
+        .withArgs("Not owner or not has enough token quantity!");
     });
   });
 });

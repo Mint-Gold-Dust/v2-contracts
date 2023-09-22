@@ -125,6 +125,34 @@ describe("\nnMintGoldDustMaretplace.sol + MintGoldDustMaretplaceAuction.sol + Mi
     await mintGoldDustCompany
       .connect(deployer)
       .setValidator(deployer.address, true);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustSetPriceAddress(mintGoldDustSetPrice.address);
+
+    await mintGoldDustERC1155
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustERC721
+      .connect(deployer)
+      .setMintGoldDustMarketplaceAuctionAddress(
+        mintGoldDustMarketplaceAuction.address
+      );
+
+    await mintGoldDustMarketplaceAuction
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustSetPrice.address);
+
+    await mintGoldDustSetPrice
+      .connect(deployer)
+      .setMintGoldDustMarketplace(mintGoldDustMarketplaceAuction.address);
   });
 
   describe("\n****************_**************** Tests related with listing a MintGoldDustERC1155 and a MintGoldDustERC721 for auction ****************_****************\n", function () {
@@ -174,7 +202,7 @@ describe("\nnMintGoldDustMaretplace.sol + MintGoldDustMaretplaceAuction.sol + Mi
       expect(receipt.events[1].args[0]).to.equal(1);
       expect(receipt.events[1].args[1]).to.equal(mintGoldDustERC1155.address);
       expect(receipt.events[1].args[2]).to.equal(addr1.address);
-      expect(receipt.events[1].args[3]).to.equal(toWei(price / quantityToList));
+      expect(receipt.events[1].args[3]).to.equal(toWei(price));
       expect(receipt.events[1].args[4]).to.equal(
         (await receipt.events[0].getBlock()).timestamp
       );
@@ -182,7 +210,7 @@ describe("\nnMintGoldDustMaretplace.sol + MintGoldDustMaretplaceAuction.sol + Mi
 
       const tx2 = await mintGoldDustMarketplaceAuction
         .connect(addr1)
-        .list(1, quantityToList, mintGoldDustERC721.address, toWei(price));
+        .list(1, 1, mintGoldDustERC721.address, toWei(price));
 
       const receipt2 = await tx2.wait();
 
