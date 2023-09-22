@@ -1,14 +1,21 @@
+/**
+ * @dev This one will deploy all the contracts first time with the upgrade proxy pattern
+ *      So for each contract we'll have 3 addresses:
+ *        - The proxy address: The one that will always be used to interact with the contract
+ *        - The implementation address: The one that will be upgraded
+ *        - The proxy admin address: The one that will be used to upgrade the proxy
+ */
 const { ethers, upgrades } = require("hardhat");
 const fs = require("fs");
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
-  const primary_sale_fee_percent_initial = 15000000000000000000n;
-  const secondary_sale_fee_percent_initial = 5000000000000000000n;
-  const collector_fee_initial = 3000000000000000000n;
-  const max_royalty_initial = 20000000000000000000n;
-  const auction_duration = 86400;
-  const auction_extension_duration = 300;
+  const [deployer] = await ethers.getSigners(); // The metamask account
+  const primary_sale_fee_percent_initial = 15000000000000000000n; // 15%
+  const secondary_sale_fee_percent_initial = 5000000000000000000n; // 5%
+  const collector_fee_initial = 3000000000000000000n; // 3%
+  const max_royalty_initial = 20000000000000000000n; // 20%
+  const auction_duration = 86400; // 1 day or 24 hours
+  const auction_extension_duration = 300; // 5 minutes
 
   console.log("Deploying contracts with the account:", deployer.address);
 
@@ -302,3 +309,5 @@ main()
     console.error(error);
     process.exit(1);
   });
+
+export {};
