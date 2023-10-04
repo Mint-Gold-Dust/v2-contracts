@@ -79,7 +79,14 @@ contract MintGoldDustERC721 is
     address _sender,
     uint256 _collectorMintId,
     bytes calldata _memoir
-  ) internal override isZeroAddress(_sender) returns (uint256) {
+  )
+    internal
+    override
+    isZeroAddress(_sender)
+    isArtistWhitelisted(_sender)
+    validPercentage(_royaltyPercent)
+    returns (uint256)
+  {
     _tokenIds.increment();
     uint256 newTokenId = _tokenIds.current();
     _safeMint(_sender, newTokenId);

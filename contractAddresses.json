@@ -1,32 +1,32 @@
 {
   "MintGoldDustCompany": {
-    "proxy": "0xa66603fAa4291C28063056185ec142183836453A",
-    "implementation": "0x5551a877d9CbC6ff84280B3b489C6b331EcaF32f",
-    "proxyAdmin": "0x29FAd1fb39Ebd5090b12c3949462A64861DE7C6D"
+    "proxy": "0xe7c27a90eAFFB6098C5F4363C7e768B87aF4Bc50",
+    "implementation": "0xcd7BD7988D8eBb27e4A9F45E8ea519968BF549cA",
+    "proxyAdmin": "0xb2768233be3c57b81C42a348DBCe2A7F8adEE02C"
   },
   "MintGoldDustMemoir": {
-    "proxy": "0xb8f7392E030D38691bF8623B8792765230E7bf78",
-    "implementation": "0xc3d23ffad698aEBC31b71ed92AAF6394CE65E21D",
-    "proxyAdmin": "0x29FAd1fb39Ebd5090b12c3949462A64861DE7C6D"
+    "proxy": "0x0caF74FBCb990CCb728751ef5FD7BDb79Ac15E7D",
+    "implementation": "0x4806cEfaab787F426ABDdbBb567104A75EBE825a",
+    "proxyAdmin": "0xb2768233be3c57b81C42a348DBCe2A7F8adEE02C"
   },
   "MintGoldDustERC721": {
-    "proxy": "0x19Be5A6b0Db4fA9bC23961f5b7a31D0d0E35841c",
-    "implementation": "0x860e10573365AB2246345DB3f2c43Cc36FAd1345",
-    "proxyAdmin": "0x29FAd1fb39Ebd5090b12c3949462A64861DE7C6D"
+    "proxy": "0xE8670Fac680132220cD7d7C51543B037514196a7",
+    "implementation": "0xB5C7A37899AcBC036d5B5eE79f07b7443EEf6C5e",
+    "proxyAdmin": "0xb2768233be3c57b81C42a348DBCe2A7F8adEE02C"
   },
   "MintGoldDustERC1155": {
-    "proxy": "0xF5581706AD14Cb640E6a265e2f1756DeE085ed1b",
-    "implementation": "0x3C7eaEB2cEeD07Af95789c71a9B27e6C94Be57f3",
-    "proxyAdmin": "0x29FAd1fb39Ebd5090b12c3949462A64861DE7C6D"
+    "proxy": "0x74A5ff688497826f5909Eb309f767070546A7661",
+    "implementation": "0xC17A0B0AA0cE9853c37F4D207D498c4dd3691591",
+    "proxyAdmin": "0xb2768233be3c57b81C42a348DBCe2A7F8adEE02C"
   },
   "MintGoldDustSetPrice": {
-    "proxy": "0x25cB66b1a44c7Fb39f6e6618C7627Dc540A64195",
-    "implementation": "0x01cD89043F0cBd298c4aBEb97425031341a1E44F",
-    "proxyAdmin": "0x29FAd1fb39Ebd5090b12c3949462A64861DE7C6D"
+    "proxy": "0x1A0E07C2F5EC4D69CD7295634cE8d3651AdBf914",
+    "implementation": "0x974456dc7753946c61C05A9E52875CEAb2724395",
+    "proxyAdmin": "0xb2768233be3c57b81C42a348DBCe2A7F8adEE02C"
   },
   "MGDAuction": {
-    "proxy": "0x2b557b573f303E6FeCfb30Df8aF856560d4D9Df2",
-    "implementation": "0x04eE4D22bB98a693b8f819990d2CAB6C133C7319",
-    "proxyAdmin": "0x29FAd1fb39Ebd5090b12c3949462A64861DE7C6D"
+    "proxy": "0xcf5F46Bb114565F514d7D0FffaEE72Aa4D0B8380",
+    "implementation": "0x8f12b2773F342f8287CAEbcF9fd32E941A8Bd584",
+    "proxyAdmin": "0xb2768233be3c57b81C42a348DBCe2A7F8adEE02C"
   }
 }

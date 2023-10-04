@@ -176,10 +176,7 @@ abstract contract MintGoldDustMarketplace is
    * @param newOwner the address that is buying the item.
    * @param buyPrice the price that the buyer is paying for the item.
    * @param sellerAmount the final value that the seller should receive.
-   * @param feeAmount the primary sale fee to be applied on top of the item price.
-   * @param collectorFeeAmount the value paind by the collector to the marketplace.
    * @param tokenAmountSold the quantity of tokens bought.
-   * @param hasCollaborators a parameter that indicate if the item has or not collaborators.
    * @param isERC721 a parameter that indicate if the item is an ERC721 or not.
    */
   event MintGoldDustNftPurchasedPrimaryMarket(
@@ -189,10 +186,7 @@ abstract contract MintGoldDustMarketplace is
     address newOwner,
     uint256 buyPrice,
     uint256 sellerAmount,
-    uint256 feeAmount,
-    uint256 collectorFeeAmount,
     uint256 tokenAmountSold,
-    bool hasCollaborators,
     bool isERC721
   );
 
@@ -204,12 +198,7 @@ abstract contract MintGoldDustMarketplace is
    * @param seller the address of the seller.
    * @param newOwner the address that is buying the item.
    * @param sellerAmount the final value that the seller should receive.
-   * @param royaltyPercent the royalty percent setted for this token.
-   * @param royaltyAmount the value to be paid for the artist and the collaborators (when it has) for the royalties.
-   * @param royaltyRecipient the main recipient for the royalty value (the artist).
-   * @param feeAmount the fee final value that was paid to the marketplace.
    * @param tokenAmountSold the quantity of tokens bought.
-   * @param hasCollaborators a parameter that indicate if the item has or not collaborators.
    * @param isERC721 a parameter that indicate if the item is an ERC721 or not.
    */
   event MintGoldDustNftPurchasedSecondaryMarket(
@@ -219,12 +208,7 @@ abstract contract MintGoldDustMarketplace is
     address newOwner,
     uint256 buyPrice,
     uint256 sellerAmount,
-    uint256 royaltyPercent,
-    uint256 royaltyAmount,
-    address royaltyRecipient,
-    uint256 feeAmount,
     uint256 tokenAmountSold,
-    bool hasCollaborators,
     bool isERC721
   );
 
@@ -943,21 +927,18 @@ abstract contract MintGoldDustMarketplace is
 
     uint256 fee;
     uint256 collFee;
-    uint256 balance;
 
     /// @dev it removes the fee from the value that the buyer sent.
     uint256 netValue = (_value * (100e18)) / (103e18);
 
     fee = (netValue * mintGoldDustCompany.primarySaleFeePercent()) / (100e18);
     collFee = (netValue * mintGoldDustCompany.collectorFee()) / (100e18);
-    balance = netValue - fee;
 
     checkIfIsSplitPaymentAndCall(
       _mintGoldDustNFT,
       _marketItem,
       _saleDTO,
-      balance,
-      fee,
+      netValue - fee,
       collFee,
       true,
       netValue,
@@ -975,7 +956,6 @@ abstract contract MintGoldDustMarketplace is
    * @param _marketItem the struct MarketItem - check it in the primarySale or secondary sale functions.
    * @param _saleDTO the struct SaleDTO - check it in the primarySale or secondary sale functions.
    * @param _balance uint256 that represents the total amount to be received by the seller after fee calculations.
-   * @param _fee uint256 the primary or the secondary fee to be paid by the buyer.
    * @param _collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
    * @param isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
    * @param _value The value to be paid for the purchase.
@@ -989,7 +969,6 @@ abstract contract MintGoldDustMarketplace is
     MarketItem memory _marketItem,
     SaleDTO memory _saleDTO,
     uint256 _balance,
-    uint256 _fee,
     uint256 _collFeeOrRoyalty,
     bool isPrimarySale,
     uint256 _value,
@@ -1006,7 +985,6 @@ abstract contract MintGoldDustMarketplace is
         _mintGoldDustNFT,
         _saleDTO,
         _balance,
-        _fee,
         _collFeeOrRoyalty,
         _artistOrSeller,
         isPrimarySale,
@@ -1021,8 +999,6 @@ abstract contract MintGoldDustMarketplace is
         _mintGoldDustNFT,
         _marketItem,
         _saleDTO,
-        _fee,
-        _collFeeOrRoyalty,
         _balance,
         _value,
         _sender
@@ -1031,11 +1007,9 @@ abstract contract MintGoldDustMarketplace is
     }
 
     uniqueOwnerSecondarySale(
-      _marketItem,
       _mintGoldDustNFT,
       _saleDTO,
       _artistOrSeller,
-      _fee,
       _collFeeOrRoyalty,
       _balance,
       _value,
@@ -1049,8 +1023,6 @@ abstract contract MintGoldDustMarketplace is
    * @param _mintGoldDustNFT explained in checkIfIsSplitPaymentAndCall function.
    * @param _marketItem explained in checkIfIsSplitPaymentAndCall function.
    * @param _saleDTO explained in checkIfIsSplitPaymentAndCall function.
-   * @param _fee the primary fee to be paid for the MintGoldDustMarketplace.
-   * @param _collFee represent the collector fee.
    * @param _balance represents the total amount to be received by the seller after fee calculations.
    * @param _value The value to be paid for the purchase.
    * @param _sender The address that started this flow.
@@ -1062,8 +1034,6 @@ abstract contract MintGoldDustMarketplace is
     MintGoldDustNFT _mintGoldDustNFT,
     MarketItem memory _marketItem,
     SaleDTO memory _saleDTO,
-    uint256 _fee,
-    uint256 _collFee,
     uint256 _balance,
     uint256 _value,
     address _sender
@@ -1076,6 +1046,15 @@ abstract contract MintGoldDustMarketplace is
     );
 
     payable(_marketItem.seller).transfer(_balance);
+    finalizePrimarySale(_saleDTO, _balance, _value, _sender);
+  }
+
+  function finalizePrimarySale(
+    SaleDTO memory _saleDTO,
+    uint256 _balance,
+    uint256 _value,
+    address _sender
+  ) private {
     updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
     emit MintGoldDustNftPurchasedPrimaryMarket(
       itemsSold.current(),
@@ -1084,11 +1063,8 @@ abstract contract MintGoldDustMarketplace is
       _sender,
       _value,
       _balance,
-      _fee,
-      _collFee,
       _saleDTO.amount,
-      false,
-      _marketItem.isERC721
+      _saleDTO.contractAddress == mintGoldDustERC721Address
     );
   }
 
@@ -1111,11 +1087,9 @@ abstract contract MintGoldDustMarketplace is
   /**
    * @dev this function is called when in the checkIfIsSplitPaymentAndCall function the flow goes for
    *      a sale for an item that does not has collaborators and was already sold the first time.
-   * @param _marketItem explained in checkIfIsSplitPaymentAndCall function.
    * @param _mintGoldDustNFT explained in checkIfIsSplitPaymentAndCall function.
    * @param _saleDTO explained in checkIfIsSplitPaymentAndCall function.
    * @param _artist the creator of the artwork to receive the royalties.
-   * @param _fee the secondary fee to be paid for the MintGoldDustMarketplace.
    * @param _royalty represent the royalty to be paid for the artist.
    * @param _balance represents the total amount to be received by the seller after fee calculations.
    * @param _value The value to be paid for the purchase.
@@ -1125,11 +1099,9 @@ abstract contract MintGoldDustMarketplace is
    *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
    */
   function uniqueOwnerSecondarySale(
-    MarketItem memory _marketItem,
     MintGoldDustNFT _mintGoldDustNFT,
     SaleDTO memory _saleDTO,
     address _artist,
-    uint256 _fee,
     uint256 _royalty,
     uint256 _balance,
     uint256 _value,
@@ -1143,8 +1115,16 @@ abstract contract MintGoldDustMarketplace is
     );
 
     payable(_artist).transfer(_royalty);
-    updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
+    finalizeSecondarySale(_saleDTO, _balance, _value, _sender);
+  }
 
+  function finalizeSecondarySale(
+    SaleDTO memory _saleDTO,
+    uint256 _balance,
+    uint256 _value,
+    address _sender
+  ) private {
+    updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
     emit MintGoldDustNftPurchasedSecondaryMarket(
       itemsSold.current(),
       _saleDTO.tokenId,
@@ -1152,13 +1132,8 @@ abstract contract MintGoldDustMarketplace is
       _sender,
       _value,
       _balance,
-      _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId),
-      _royalty,
-      _artist,
-      _fee,
       _saleDTO.amount,
-      false,
-      _marketItem.isERC721
+      _saleDTO.contractAddress == mintGoldDustERC721Address
     );
   }
 
@@ -1168,7 +1143,6 @@ abstract contract MintGoldDustMarketplace is
    *      the balance for primary sale or the royalty for secondary sales.
    *    @notice that the emitEventForSplitPayment os called to trigger the correct event depending of the flow.
    * @param _balance uint256 that represents the total amount to be received by the seller after fee calculations.
-   * @param _fee uint256 the primary or the secondary fee to be paid by the buyer.
    * @param _collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
    * @param _artist the creator of the artwork to receive the royalties.
    * @param _saleDTO The SaleDTO struct parameter to use.
@@ -1187,7 +1161,6 @@ abstract contract MintGoldDustMarketplace is
    */
   function splittedSale(
     uint256 _balance,
-    uint256 _fee,
     uint256 _collFeeOrRoyalty,
     address _artist,
     MintGoldDustNFT _mintGoldDustNFT,
@@ -1242,11 +1215,7 @@ abstract contract MintGoldDustMarketplace is
     emitEventForSplitPayment(
       _saleDTO,
       _marketItem,
-      _mintGoldDustNFT,
-      _artist,
       _balance,
-      _fee,
-      _collFeeOrRoyalty,
       _isPrimarySale,
       _value,
       _sender
@@ -1256,13 +1225,8 @@ abstract contract MintGoldDustMarketplace is
   /**
    * @notice that is the function responsible to trigger the correct event for splitted sales.
    * @dev the _isPrimarySale defines if the primary sale or the secondary sale should be triggered.
-   * @param _mintGoldDustNFT MintGoldDustNFT is an instance of MintGoldDustERC721 or MintGoldDustERC1155.
    * @param _marketItem explained in splittedSale function.
-   * @param _artist the creator of the artwork to receive the royalties.
-   * @param _artist the creator of the artwork to receive the royalties.
    * @param _balance uint256 that represents the total amount to be received by the seller after fee calculations.
-   * @param _fee uint256 the primary or the secondary fee to be paid by the buyer.
-   * @param _collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
    * @param _isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
    * @param _value The value to be paid for the purchase.
    * @param _sender The address that started this flow.
@@ -1273,11 +1237,7 @@ abstract contract MintGoldDustMarketplace is
   function emitEventForSplitPayment(
     SaleDTO memory _saleDTO,
     MarketItem memory _marketItem,
-    MintGoldDustNFT _mintGoldDustNFT,
-    address _artist,
     uint256 _balance,
-    uint256 _fee,
-    uint256 _collFeeOrRoyalty,
     bool _isPrimarySale,
     uint256 _value,
     address _sender
@@ -1290,10 +1250,7 @@ abstract contract MintGoldDustMarketplace is
         _sender,
         _value,
         _balance,
-        _fee,
-        _collFeeOrRoyalty,
         _saleDTO.amount,
-        true,
         _marketItem.isERC721
       );
       return;
@@ -1306,12 +1263,7 @@ abstract contract MintGoldDustMarketplace is
       _sender,
       _value,
       _balance,
-      _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId),
-      _collFeeOrRoyalty,
-      _artist,
-      _fee,
       _saleDTO.amount,
-      true,
       _marketItem.isERC721
     );
   }
@@ -1328,7 +1280,6 @@ abstract contract MintGoldDustMarketplace is
    *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
    *                    - seller: The seller of the marketItem.
    * @param _balance uint256 that represents the total amount to be received by the seller after fee calculations.
-   * @param _fee uint256 the primary or the secondary fee to be paid by the buyer.
    * @param _collFeeOrRoyalty uint256 that represent the collerctor fee or the royalty depending of the flow.
    * @param _artistOrSeller address for the artist on secondary sales and for the seller on the primary sales.
    * @param _isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
@@ -1342,7 +1293,6 @@ abstract contract MintGoldDustMarketplace is
     MintGoldDustNFT _mintGoldDustNFT,
     SaleDTO memory _saleDTO,
     uint256 _balance,
-    uint256 _fee,
     uint256 _collFeeOrRoyalty,
     address _artistOrSeller,
     bool _isPrimarySale,
@@ -1357,7 +1307,6 @@ abstract contract MintGoldDustMarketplace is
     );
     splittedSale(
       _balance,
-      _fee,
       _collFeeOrRoyalty,
       _artistOrSeller,
       _mintGoldDustNFT,
@@ -1426,7 +1375,6 @@ abstract contract MintGoldDustMarketplace is
       _marketItem,
       _saleDTO,
       balance,
-      fee,
       royalty,
       false,
       _value,

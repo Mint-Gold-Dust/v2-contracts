@@ -1,0 +1,32 @@
+{
+  "MintGoldDustCompany": {
+    "proxy": "0x2f00435f003d6568933586b4A272c6c6B481e0aD",
+    "implementation": "0x773603b6759D9b97792AdCb23F51341a185d602e",
+    "proxyAdmin": "0x53E3a7Ece7555c5bC69AfbD8Df8Df7b056339Ab0"
+  },
+  "MintGoldDustMemoir": {
+    "proxy": "0x30726030c06d4e0b9dD8fB5C3c64ec6DC6Df29cC",
+    "implementation": "0x0E6C7572e9b46e292391cC0D4fDA2c6367764DfF",
+    "proxyAdmin": "0x53E3a7Ece7555c5bC69AfbD8Df8Df7b056339Ab0"
+  },
+  "MintGoldDustERC721": {
+    "proxy": "0x4B0Dc0900dDe9d4f15115Bee56554857AE0Becb0",
+    "implementation": "0x211E072c63b38E05B112ACeFD4dF46E676143bB4",
+    "proxyAdmin": "0x53E3a7Ece7555c5bC69AfbD8Df8Df7b056339Ab0"
+  },
+  "MintGoldDustERC1155": {
+    "proxy": "0x47356C2EFdf0eA13eF48ecAE9651D6BB8a524dd9",
+    "implementation": "0x6f850118B1227B0190e87Ad154606C7431386af3",
+    "proxyAdmin": "0x53E3a7Ece7555c5bC69AfbD8Df8Df7b056339Ab0"
+  },
+  "MintGoldDustSetPrice": {
+    "proxy": "0x76cDa4e918581c4a57CB3e65975768c5F295f4D9",
+    "implementation": "0x831DFcE1ccB493a2B0116Ce0d512b75E142eC3F4",
+    "proxyAdmin": "0x53E3a7Ece7555c5bC69AfbD8Df8Df7b056339Ab0"
+  },
+  "MGDAuction": {
+    "proxy": "0x27a4640985328E19016f665632204dcdB48B1fD6",
+    "implementation": "0x310EDa8d8A4D04364b7fE3142d34bB8E7F067d41",
+    "proxyAdmin": "0x53E3a7Ece7555c5bC69AfbD8Df8Df7b056339Ab0"
+  }
+}

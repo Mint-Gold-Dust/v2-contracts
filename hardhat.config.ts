@@ -20,7 +20,6 @@ const config: HardhatUserConfig = {
     goerli: {
       url: `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [`${process.env.PK}`],
-      gasPrice: 20000000000, // Optional: specify gas price in wei (this is just an example value)
       chainId: 5, // Optional: specify the chainId for sepolia
     },
     localhost: {
@@ -42,11 +41,8 @@ const config: HardhatUserConfig = {
       optimizer: {
         enabled: true,
         runs: 200,
-        details: {
-          yul: true,
-        },
       },
-      viaIR: true,
+      evmVersion: "london",
     },
   },
   paths: {
