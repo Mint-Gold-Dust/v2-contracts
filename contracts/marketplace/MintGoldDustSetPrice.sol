@@ -14,7 +14,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
   using ECDSA for bytes32;
 
   struct DelistDTO {
-    uint256 tokenId;
+    uint128 tokenId;
     uint256 amount;
     address contractAddress;
   }
@@ -278,9 +278,8 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
   ) external payable nonReentrant whenNotPaused {
     mustBeMintGoldDustERC721Or1155(_collectorMintDTO.contractAddress);
 
-    require(_collectorMintDTO.amount > 0, "Invalid amount to mint");
-    require(_amountToBuy > 0, "Invalid amount to buy");
-
+    require(_collectorMintDTO.amount > 0 || _amountToBuy > 0, "Invalid amount to mint or invalid amount to buy");
+  
     require(
       collectorMintIdUsed[_collectorMintDTO.collectorMintId] == false,
       "Collector Mint Id already used"
@@ -351,7 +350,8 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
    *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
    *                    - seller: The seller of the marketItem.
    */
-  function purchaseNft(SaleDTO memory _saleDTO) external payable {
+  function purchaseNft(SaleDTO calldata  _saleDTO) external payable {
+    
     executePurchaseNftFlow(_saleDTO, msg.sender, msg.value);
   }
 

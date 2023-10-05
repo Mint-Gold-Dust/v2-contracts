@@ -8,7 +8,8 @@
     "prettier": "prettier --write 'contracts/**/*.sol'",
     "lint": "prettier --list-different 'contracts/**/*.sol'",
     "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "report":"yarn hardhat test test/MintGoldDustSetPriceERC721.ts"
   },
   "repository": {
     "type": "git",

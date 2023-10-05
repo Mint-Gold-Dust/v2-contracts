@@ -8,7 +8,15 @@ import "solidity-coverage";
 import "hardhat-gas-reporter";
 import "hardhat-contract-sizer";
 
+
 const config: HardhatUserConfig = {
+  gasReporter: {
+    currency: 'USD',
+    gasPrice: 12.74,
+
+      
+  },
+
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {},
