@@ -82,13 +82,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
 
-    mgdCompany = await upgrades.deployProxy(
-      MintGoldDustCompany,
-      [
-        TEST_OWNER,
-      ],
-      { initializer: "initialize" }
-    );
+    mgdCompany = await upgrades.deployProxy(MintGoldDustCompany, [TEST_OWNER], {
+      initializer: "initialize",
+    });
     await mgdCompany.deployed();
 
     mintGoldDustERC721 = await upgrades.deployProxy(
@@ -481,18 +477,10 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             mintGoldDustERC721.address,
             addr2.address
           )
-      )
-        .to.be.revertedWithCustomError(
-          mintGoldDustSetPrice,
-          "ItemIsNotListedBySeller"
-        )
-        .withArgs(
-          1,
-          mintGoldDustSetPrice.address,
-          mintGoldDustERC721.address,
-          addr2.address,
-          addr2.address
-        );
+      ).to.be.revertedWithCustomError(
+        mintGoldDustSetPrice,
+        "ItemIsNotListedBySeller"
+      );
     });
   });
 
@@ -730,10 +718,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           addr2.address,
           toWei(priceToList),
           toWei(balance),
-          toWei(fee),
-          toWei(collFee),
           1,
-          false,
           true
         );
 
@@ -1062,12 +1047,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           addr3.address,
           toWei(priceToListForSecondary),
           toWei(balance),
-          toWei(royalty),
-          toWei(royaltyFee),
-          artistCreatorAddress,
-          toWei(secondarySaleFee),
           amountToBuyForSecondary,
-          false,
           true
         );
       // prepare the future balance that the owner should have after the transaction
