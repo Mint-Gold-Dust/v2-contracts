@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
-pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -43,8 +42,8 @@ abstract contract MintGoldDustNFT is
 
   mapping(uint256 => bytes) public tokenIdMemoir;
 
-  mapping(uint256 => address[]) public tokenCollaborators;
-  mapping(uint256 => uint256[]) public tokenIdCollaboratorsPercentage;
+  mapping(uint256 => address[4]) public tokenCollaborators;
+  mapping(uint256 => uint256[5]) public tokenIdCollaboratorsPercentage;
 
   mapping(uint256 => bool) public hasTokenCollaborators;
   mapping(uint256 => uint256) public tokenIdCollaboratorsQuantity;

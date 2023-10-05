@@ -101,12 +101,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       MintGoldDustCompany,
       [
         TEST_OWNER,
-        primary_sale_fee_percent_initial,
-        secondary_sale_fee_percent_initial,
-        collector_fee_initial,
-        max_royalty_initial,
-        auction_duration,
-        auction_extension_duration,
       ],
       { initializer: "initialize" }
     );

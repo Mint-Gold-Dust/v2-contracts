@@ -101,12 +101,6 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       MintGoldDustCompany,
       [
         TEST_OWNER,
-        primary_sale_fee_percent_initial,
-        secondary_sale_fee_percent_initial,
-        collector_fee_initial,
-        max_royalty_initial,
-        auction_duration,
-        auction_extension_duration,
       ],
       { initializer: "initialize" }
     );
@@ -209,6 +203,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
           quantityToMint,
           bytesMemoir
         );
+        console.log(121312312);
 
       const receipt = await tx.wait();
       console.log(receipt.events[3]);
