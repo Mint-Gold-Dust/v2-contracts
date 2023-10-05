@@ -28,6 +28,10 @@ abstract contract MintGoldDustMarketplace is
 {
   using Counters for Counters.Counter;
 
+  uint256 public constant PRIMARY_SALE_FEE = 15e18;
+  uint256 public constant SECONDARY_SALE_FEE = 5e18;
+  uint256 public constant COLLECTOR_FEE = 3e18;
+
   /// @notice that this struct has the necessary fields to manage the secondary sales.
   /// @dev it will be used by the isSecondarySale mapping.
   struct ManageSecondarySale {
@@ -197,6 +201,7 @@ abstract contract MintGoldDustMarketplace is
    * @param tokenId the sequence number for the item.
    * @param seller the address of the seller.
    * @param newOwner the address that is buying the item.
+   * @param buyPrice the price that the buyer is paying for the item.
    * @param sellerAmount the final value that the seller should receive.
    * @param tokenAmountSold the quantity of tokens bought.
    * @param isERC721 a parameter that indicate if the item is an ERC721 or not.
@@ -229,13 +234,7 @@ abstract contract MintGoldDustMarketplace is
   );
 
   error ItemIsNotListed(address _contractAddress);
-  error ItemIsNotListedBySeller(
-    uint256 tokenId,
-    address market,
-    address contractAddress,
-    address seller,
-    address msgSender
-  );
+  error ItemIsNotListedBySeller();
   error ItemIsAlreadyListed(address _contractAddress);
   error AddressUnauthorized(string _reason);
   error MustBeERC721OrERC1155();
@@ -732,13 +731,7 @@ abstract contract MintGoldDustMarketplace is
       idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
         .tokenAmount == 0
     ) {
-      revert ItemIsNotListedBySeller(
-        _tokenId,
-        address(this),
-        _contractAddress,
-        _seller,
-        msg.sender
-      );
+      revert ItemIsNotListedBySeller();
     }
     if (
       _contractAddress == mintGoldDustERC721Address &&
@@ -931,8 +924,8 @@ abstract contract MintGoldDustMarketplace is
     /// @dev it removes the fee from the value that the buyer sent.
     uint256 netValue = (_value * (100e18)) / (103e18);
 
-    fee = (netValue * mintGoldDustCompany.primarySaleFeePercent()) / (100e18);
-    collFee = (netValue * mintGoldDustCompany.collectorFee()) / (100e18);
+    fee = (netValue * PRIMARY_SALE_FEE) / (100e18);
+    collFee = (netValue * COLLECTOR_FEE) / (100e18);
 
     checkIfIsSplitPaymentAndCall(
       _mintGoldDustNFT,
@@ -1363,7 +1356,7 @@ abstract contract MintGoldDustMarketplace is
     uint256 royalty;
     uint256 balance;
 
-    fee = (_value * mintGoldDustCompany.secondarySaleFeePercent()) / (100e18);
+    fee = (_value * SECONDARY_SALE_FEE) / (100e18);
     royalty =
       (_value * _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId)) /
       (100e18);

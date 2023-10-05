@@ -68,6 +68,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
   );
 
   mapping(uint256 => bool) public collectorMintIdUsed;
+  address public publicKey;
 
   /**
    *
@@ -91,6 +92,13 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
 
   function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
     return interfaceId == type(IERC165).interfaceId;
+  }
+
+  /// @notice Set the public key to be used by the Mint Gold Dust Company
+  /// @param _mintGoldDustPublicKey is the public key to be used by the Mint Gold Dust Company
+  function setPublicKey(address _mintGoldDustPublicKey) external isowner {
+    require(_mintGoldDustPublicKey != address(0), "Invalid address");
+    publicKey = _mintGoldDustPublicKey;
   }
 
   /**
@@ -293,11 +301,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     generateEIP712Hash(_collectorMintDTO, _eip712HashOffChain);
 
     require(
-      verifySignature(
-        mintGoldDustCompany.publicKey(),
-        _eip712HashOffChain,
-        _mintGoldDustSignature
-      ),
+      verifySignature(publicKey, _eip712HashOffChain, _mintGoldDustSignature),
       "Invalid signature"
     );
 

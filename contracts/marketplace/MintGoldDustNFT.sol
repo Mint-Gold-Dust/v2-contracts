@@ -32,6 +32,8 @@ abstract contract MintGoldDustNFT is
     mintGoldDustCompany = MintGoldDustCompany(payable(_mintGoldDustCompany));
   }
 
+  uint256 public constant MAX_ROYALTY = 20e18;
+
   MintGoldDustCompany internal mintGoldDustCompany;
   address private mintGoldDustSetPriceAddress;
   address private mintGoldDustMarketplaceAuctionAddress;
@@ -356,7 +358,7 @@ abstract contract MintGoldDustNFT is
 
   /// @notice that this modifier is used to check if the percentage is not greater than the max royalty percentage
   modifier validPercentage(uint256 percentage) {
-    if (percentage > mintGoldDustCompany.maxRoyalty()) {
+    if (percentage > MAX_ROYALTY) {
       revert RoyaltyInvalidPercentage();
     }
     _;

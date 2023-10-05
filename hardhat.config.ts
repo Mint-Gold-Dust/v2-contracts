@@ -6,6 +6,7 @@ import "@openzeppelin/hardhat-upgrades";
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
 import "hardhat-gas-reporter";
+import "hardhat-contract-sizer";
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -31,7 +32,6 @@ const config: HardhatUserConfig = {
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [`${process.env.PK}`],
-      gasPrice: 20000000000, // Optional: specify gas price in wei (this is just an example value)
       chainId: 1, // Optional: specify the chainId for mainnet
     },
   },

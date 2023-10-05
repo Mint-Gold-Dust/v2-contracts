@@ -29,6 +29,8 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
   Counters.Counter public auctionIds;
   mapping(address => mapping(address => mapping(uint256 => mapping(address => bool))))
     private checkBidder;
+  uint256 public constant AUCTION_DURATION = 86400 * 1 seconds;
+  uint256 public constant AUCTION_FINAL_TIME = 300 * 1 seconds;
 
   /**
    * @notice that this event show the info about the creation of a new auction.
@@ -542,7 +544,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
       item.auctionProps.startTime = block.timestamp;
       item.auctionProps.endTime =
         item.auctionProps.startTime +
-        mintGoldDustCompany.auctionDuration();
+        AUCTION_DURATION;
 
       emit AuctionTimeStarted(
         _bidDTO.tokenId,
@@ -568,13 +570,10 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @dev If a higher bid happens in the last 5 minutes we should add more 5 minutes
      * to the end time auction.
      */
-    if (
-      item.auctionProps.endTime - block.timestamp <
-      mintGoldDustCompany.auctionFinalMinutes()
-    ) {
+    if (item.auctionProps.endTime - block.timestamp < AUCTION_FINAL_TIME) {
       item.auctionProps.endTime =
         item.auctionProps.endTime +
-        mintGoldDustCompany.auctionFinalMinutes();
+        AUCTION_FINAL_TIME;
       emit AuctionExtended(
         _bidDTO.tokenId,
         _bidDTO.contractAddress,
