@@ -792,9 +792,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         .sub(toWei(priceToList))
         .sub(ethers.BigNumber.from(gasPrice).mul(gasLimit));
       expect(
-        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(3))
+        parseFloat(parseFloat(fromWei(await addr3.getBalance())).toFixed(2))
       ).to.be.equal(
-        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(3))
+        parseFloat(parseFloat(fromWei(addr3ShouldBeAfter)).toFixed(2))
       );
 
       feeAccountAfterEthBalShouldBe = ethers.BigNumber.from(

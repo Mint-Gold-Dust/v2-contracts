@@ -516,13 +516,6 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         .to.be.revertedWithCustomError(
           mintGoldDustSetPrice,
           "ItemIsNotListedBySeller"
-        )
-        .withArgs(
-          1,
-          mintGoldDustSetPrice.address,
-          mintGoldDustERC1155.address,
-          addr2.address,
-          addr2.address
         );
     });
   });
@@ -801,10 +794,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           addr2.address,
           toWei(priceToBuy),
           toWei(balance),
-          toWei(fee),
-          toWei(collFee),
           amountToBuy,
-          true,
           false
         );
 
@@ -1141,12 +1131,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           addr3.address,
           toWei(priceToBuyForSecondary),
           toWei(balance),
-          toWei(royalty),
-          toWei(royaltyFee),
-          artistCreatorAddress,
-          toWei(secondarySaleFee),
           amountToBuyForSecondary,
-          true,
           false
         );
       // prepare the future balance that the owner should have after the transaction

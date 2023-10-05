@@ -247,10 +247,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           addr2.address,
           toWei(priceToList),
           toWei(balance),
-          toWei(fee),
-          toWei(collFee),
           1,
-          false,
           true
         );
 

@@ -666,6 +666,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
         // Check AuctionNewBid event
         // eventSignature: 'AuctionNewBid(uint256,address,address,address,uint256,uint256,uint256)',
+        console.log(receipt2.events)
         expect(receipt2.events[1].event).to.be.equal("AuctionNewBid");
         expect(receipt2.events[1].eventSignature).to.be.equal(
           "AuctionNewBid(uint256,address,address,address,uint256,uint256,uint256)"

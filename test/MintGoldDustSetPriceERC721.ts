@@ -82,9 +82,13 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     [deployer, addr1, addr2, addr3, ...addrs] = await ethers.getSigners();
 
-    mgdCompany = await upgrades.deployProxy(MintGoldDustCompany, [TEST_OWNER], {
-      initializer: "initialize",
-    });
+    mgdCompany = await upgrades.deployProxy(
+      MintGoldDustCompany,
+      [
+        TEST_OWNER,
+      ],
+      { initializer: "initialize" }
+    );
     await mgdCompany.deployed();
 
     mintGoldDustERC721 = await upgrades.deployProxy(
@@ -477,10 +481,11 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             mintGoldDustERC721.address,
             addr2.address
           )
-      ).to.be.revertedWithCustomError(
-        mintGoldDustSetPrice,
-        "ItemIsNotListedBySeller"
-      );
+      )
+        .to.be.revertedWithCustomError(
+          mintGoldDustSetPrice,
+          "ItemIsNotListedBySeller"
+        );
     });
   });
 

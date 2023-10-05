@@ -304,13 +304,6 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         .to.be.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
           "ItemIsNotListedBySeller"
-        )
-        .withArgs(
-          1,
-          mintGoldDustMarketplaceAuction.address,
-          mintGoldDustERC1155.address,
-          addr1.address,
-          addr2.address
         );
     });
   });

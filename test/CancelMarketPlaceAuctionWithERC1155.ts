@@ -186,13 +186,6 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
         .to.be.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
           "ItemIsNotListedBySeller"
-        )
-        .withArgs(
-          1,
-          mintGoldDustMarketplaceAuction.address,
-          mintGoldDustERC1155.address,
-          addr2.address,
-          addr2.address
         );
     });
 
@@ -209,13 +202,6 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
         .to.be.revertedWithCustomError(
           mintGoldDustMarketplaceAuction,
           "ItemIsNotListedBySeller"
-        )
-        .withArgs(
-          1,
-          mintGoldDustMarketplaceAuction.address,
-          mintGoldDustERC1155.address,
-          addr1.address,
-          addr1.address
         );
     });
 

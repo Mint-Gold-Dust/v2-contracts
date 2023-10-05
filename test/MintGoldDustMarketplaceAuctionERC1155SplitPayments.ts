@@ -1817,7 +1817,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         "MintGoldDustNftPurchasedPrimaryMarket"
       );
       expect(receipt.events[6].eventSignature).to.be.equal(
-        "MintGoldDustNftPurchasedPrimaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,uint256,uint256,bool,bool)"
+        "MintGoldDustNftPurchasedPrimaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,bool)"
       );
       expect(receipt.events[6].args.saleId).to.be.equal(1);
       expect(receipt.events[6].args.tokenId).to.be.equal(1);
@@ -1825,14 +1825,9 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       expect(receipt.events[6].args.newOwner).to.be.equal(addr2.address);
       expect(receipt.events[6].args.buyPrice).to.be.equal(toWei(price));
       expect(receipt.events[6].args.sellerAmount).to.be.equal(toWei(balance));
-      expect(receipt.events[6].args.feeAmount).to.be.equal(toWei(fee));
-      expect(receipt.events[6].args.collectorFeeAmount).to.be.equal(
-        toWei(collFee)
-      );
       expect(receipt.events[6].args.tokenAmountSold).to.be.equal(
         quantityToList
       );
-      expect(receipt.events[6].args.hasCollaborators).to.be.equal(true);
       expect(receipt.events[6].args.isERC721).to.be.equal(false);
 
       expect(receipt.events[7].event).to.be.equal("AuctionWinnerCall");
@@ -2052,7 +2047,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         "MintGoldDustNftPurchasedSecondaryMarket"
       );
       expect(receipt.events[6].eventSignature).to.be.equal(
-        "MintGoldDustNftPurchasedSecondaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,uint256,address,uint256,uint256,bool,bool)"
+        "MintGoldDustNftPurchasedSecondaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,bool)"
       );
       expect(receipt.events[6].args.saleId).to.be.equal(2);
       expect(receipt.events[6].args.tokenId).to.be.equal(1);
@@ -2063,7 +2058,6 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       expect(receipt.events[6].args.tokenAmountSold).to.be.equal(
         quantityToList
       );
-      expect(receipt.events[6].args.hasCollaborators).to.be.equal(true);
       expect(receipt.events[6].args.isERC721).to.be.equal(false);
 
       expect(receipt.events[7].event).to.be.equal("AuctionWinnerCall");

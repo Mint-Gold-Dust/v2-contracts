@@ -244,7 +244,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       // Sign the hash
       const mintGoldDustSignature = await wallet.signMessage(hash);
 
-      mintGoldDustCompany.connect(deployer).setPublicKey(wallet.address);
+      mintGoldDustSetPrice.connect(deployer).setPublicKey(wallet.address);
 
       const signer1After = ethers.utils.verifyMessage(
         hash,
@@ -316,45 +316,25 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       const receipt = await tx.wait();
 
-      expect(receipt.events[4].event).to.be.equal(
-        "MintGoldDustNftListedToSetPrice"
-      );
-      expect(receipt.events[4].eventSignature).to.be.equal(
-        "MintGoldDustNftListedToSetPrice(uint256,address,uint256,uint256,address)"
-      );
-      expect(receipt.events[4].args.tokenId).to.be.equal(1);
-      expect(receipt.events[4].args.seller).to.be.equal(addr1.address);
-      expect(receipt.events[4].args.price).to.be.equal(toWei(price));
-      expect(receipt.events[4].args.amount).to.be.equal(quantityToMint);
-      expect(receipt.events[4].args.contractAddress).to.be.equal(
-        mintGoldDustERC721.address
-      );
 
-      expect(receipt.events[6].event).to.be.equal(
+      expect(receipt.events[5].event).to.be.equal(
         "MintGoldDustNftPurchasedPrimaryMarket"
       );
-      expect(receipt.events[6].eventSignature).to.be.equal(
-        "MintGoldDustNftPurchasedPrimaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,uint256,uint256,bool,bool)"
+      expect(receipt.events[5].eventSignature).to.be.equal(
+        "MintGoldDustNftPurchasedPrimaryMarket(uint256,uint256,address,address,uint256,uint256,uint256,bool)"
       );
-      expect(receipt.events[6].args.saleId).to.be.equal(1);
-      expect(receipt.events[6].args.tokenId).to.be.equal(1);
-      expect(receipt.events[6].args.seller).to.be.equal(addr1.address);
-      expect(receipt.events[6].args.newOwner).to.be.equal(addr2.address);
-      expect(receipt.events[6].args.buyPrice).to.be.equal(
+      expect(receipt.events[5].args.saleId).to.be.equal(1);
+      expect(receipt.events[5].args.tokenId).to.be.equal(1);
+      expect(receipt.events[5].args.seller).to.be.equal(addr1.address);
+      expect(receipt.events[5].args.newOwner).to.be.equal(addr2.address);
+      expect(receipt.events[5].args.buyPrice).to.be.equal(
         toWei(price * quantityToBuy)
       );
-      expect(receipt.events[6].args.sellerAmount).to.be.equal(
+      expect(receipt.events[5].args.sellerAmount).to.be.equal(
         toWei(balance * quantityToBuy)
       );
-      expect(receipt.events[6].args.feeAmount).to.be.equal(
-        toWei(fee * quantityToBuy)
-      );
-      expect(receipt.events[6].args.collectorFeeAmount).to.be.equal(
-        toWei(collFee * quantityToBuy)
-      );
-      expect(receipt.events[6].args.tokenAmountSold).to.be.equal(quantityToBuy);
-      expect(receipt.events[6].args.hasCollaborators).to.be.false;
-      expect(receipt.events[6].args.isERC721).to.be.true;
+      expect(receipt.events[5].args.tokenAmountSold).to.be.equal(quantityToBuy);
+      expect(receipt.events[5].args.isERC721).to.be.true;
 
       let marketItem =
         await mintGoldDustSetPrice.idMarketItemsByContractByOwner(
@@ -630,7 +610,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
       wallet = await generateWallet();
 
-      mintGoldDustCompany.connect(deployer).setPublicKey(wallet.address);
+      mintGoldDustSetPrice.connect(deployer).setPublicKey(wallet.address);
     });
 
     it('Should call the collectorMint function with an address that is not the mintGoldDustERC721 address. It MUST revert with an "Invalid contract address" error.', async () => {
@@ -645,8 +625,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             quantityToMint,
             addr4.address,
             bytesMemoir,
-            1,
-            mintGoldDustSetPrice.address
+            1
           )
       )
         .to.be.revertedWithCustomError(mintGoldDustERC721, "UnauthorizedOnNFT")
@@ -696,7 +675,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           )
       )
         .to.be.revertedWithCustomError(
-          mintGoldDustSetPrice,
+          mintGoldDustERC721,
           "UnauthorizedOnNFT"
         )
         .withArgs("ARTIST");
