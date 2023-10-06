@@ -95,9 +95,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     mintGoldDustCompany = await upgrades.deployProxy(
       MintGoldDustCompany,
-      [
-        TEST_OWNER,
-      ],
+      [TEST_OWNER],
       { initializer: "initialize" }
     );
     await mintGoldDustCompany.deployed();
@@ -176,7 +174,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     domainSeparator = {
       name: "MintGoldDustSetPrice",
       version: "1.0.0",
-      chainId: 31337, // Replace with your desired chain ID
+      chainId: 1, // Replace with your desired chain ID
       verifyingContract: mintGoldDustSetPrice.address, // Replace with your contract address
     };
 
@@ -306,7 +304,6 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       expect(ethers.utils.toUtf8String(events[0].args!.memoir)).to.be.equal(
         MEMOIR
       );
-
 
       expect(events1[0].event).to.be.equal("MetadataUpdate");
       expect(events1[0].eventSignature).to.be.equal("MetadataUpdate(uint256)");
@@ -588,7 +585,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr2.address);
     });
 
-    it("Should revert with a 'Collector Mint Id already used' if some user try to call collector mint using a collector mint id that was already used before.", async function () {
+    it("Should revert with a 'Coll Id used' if some user try to call collector mint using a collector mint id that was already used before.", async function () {
       let collectrDTO = {
         contractAddress: mintGoldDustERC721.address,
         tokenURI: URI,
@@ -670,7 +667,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
               value: toWei(realPrice),
             }
           )
-      ).to.be.rejectedWith("Collector Mint Id already used");
+      ).to.be.rejectedWith("Coll Id used");
     });
   });
 
@@ -754,10 +751,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
             }
           )
       )
-        .to.be.revertedWithCustomError(
-          mintGoldDustERC721,
-          "UnauthorizedOnNFT"
-        )
+        .to.be.revertedWithCustomError(mintGoldDustERC721, "UnauthorizedOnNFT")
         .withArgs("ARTIST");
     });
 
