@@ -10,7 +10,14 @@ import "hardhat-gas-reporter";
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
-    hardhat: {},
+    develop: {
+      url: "http://127.0.0.1:8545/",      
+    },
+    hardhat: {
+      forking: {
+        url: "https://eth-mainnet.g.alchemy.com/v2/bhwVbe04yQYbezp6JIFOlQAZmBbiSJAq",
+      }
+    },
     sepolia: {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [`${process.env.PK}`],
