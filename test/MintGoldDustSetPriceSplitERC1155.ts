@@ -598,7 +598,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         })
       )
         .to.emit(mintGoldDustSetPrice, "NftQuantityDelisted")
-        .withArgs(1, addr1.address, mintGoldDustERC1155.address);
+        .withArgs(1, quantityToList, addr1.address, mintGoldDustERC1155.address);
       // the market item should be sold
       //   await expect(
       //     (
