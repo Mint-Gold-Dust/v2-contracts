@@ -64,7 +64,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         uint256 indexed tokenId,
         uint256 amount,
         address seller,
-        address contractAddress        
+        address contractAddress
     );
 
     error RoyaltyInvalidPercentage();
