@@ -18,13 +18,20 @@ async function main(newContractName: string) {
   const newImplementationAddress = await deployNewImplementation(
     newContractName
   );
-  console.log("New implementation deployed to:", newImplementationAddress);
+  console.log("New implementation deployed to:", newImplementationAddress);  
 
   /**
    * @attention this one will not be necessary using the safe app
    */
-  //const data = await generateUpgradeData(newImplementationAddress);
-  //console.log("Encoded Upgrade Data:", data);
+  const data = await generateUpgradeData(newImplementationAddress);
+  console.log("Encoded Upgrade Data:", data);
+
+  await hre.network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: ["0x098809aF9e0650ED1Fd9c7615021D9384032a613"],
+  });
+  const signer = await ethers.getSigner("0x098809aF9e0650ED1Fd9c7615021D9384032a613")
+  // I NEED
 }
 
 /**

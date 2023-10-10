@@ -963,11 +963,8 @@ abstract contract MintGoldDustMarketplace is
       netValue,
       _sender
     );
-    
-    (bool successOwner, ) = payable(mintGoldDustCompany.owner()).call{
-      value: collFee + fee
-    }("");
-    require(successOwner, "Transfer to owner failed.");
+
+    payable(mintGoldDustCompany.owner()).transfer(collFee + fee);
   }
 
   /**
@@ -1077,7 +1074,8 @@ abstract contract MintGoldDustMarketplace is
       _saleDTO.tokenId,
       _saleDTO.amount
     );
-    
+
+    payable(_marketItem.seller).transfer(_balance);
     updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
     emit MintGoldDustNftPurchasedPrimaryMarket(
       itemsSold.current(),
@@ -1092,11 +1090,6 @@ abstract contract MintGoldDustMarketplace is
       false,
       _marketItem.isERC721
     );
-
-    (bool successSeller, ) = payable(_marketItem.seller).call{
-      value: _balance
-    }("");
-    require(successSeller, "Transfer to seller failed.");
   }
 
   function updateIdMarketItemsByContractByOwnerMapping(
@@ -1148,7 +1141,8 @@ abstract contract MintGoldDustMarketplace is
       _saleDTO.tokenId,
       _saleDTO.amount
     );
-    
+
+    payable(_artist).transfer(_royalty);
     updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
 
     emit MintGoldDustNftPurchasedSecondaryMarket(
@@ -1166,11 +1160,6 @@ abstract contract MintGoldDustMarketplace is
       false,
       _marketItem.isERC721
     );
-
-    (bool successArtist, ) = payable(_artist).call{
-      value: _royalty
-    }("");
-    require(successArtist, "Transfer to artist failed.");
   }
 
   /**
@@ -1222,11 +1211,7 @@ abstract contract MintGoldDustMarketplace is
       _mintGoldDustNFT.tokenIdCollaboratorsPercentage(_saleDTO.tokenId, 0)) /
       (100e18);
 
-    (bool successArtist, ) = payable(_artist).call{
-        value: balanceSplitPart
-    }("");
-    require(successArtist, "Split tx to artist failed.");
-
+    payable(_artist).transfer(balanceSplitPart);
     emit NftPurchasedCollaboratorAmount(
       itemsSold.current(),
       _artist,
@@ -1245,17 +1230,12 @@ abstract contract MintGoldDustMarketplace is
         _saleDTO.tokenId,
         i - 1
       );
-            
-      (bool successCollaborator, ) = payable(collaborator).call{
-        value: balanceSplitPart
-      }("");
-      require(successCollaborator, "Split tx to collab failed.");
-
+      payable(collaborator).transfer(balanceSplitPart);
       emit NftPurchasedCollaboratorAmount(
         itemsSold.current(),
         collaborator,
         balanceSplitPart
-      );      
+      );
     }
 
     updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
@@ -1452,16 +1432,9 @@ abstract contract MintGoldDustMarketplace is
       _value,
       _sender
     );
-    
-    (bool successOwner, ) = payable(mintGoldDustCompany.owner()).call{
-      value: fee
-    }("");
-    require(successOwner, "Transaction to owner failed.");
 
-    (bool successSeller, ) = payable(_marketItem.seller).call{
-      value: balance
-    }("");
-    require(successSeller, "Transaction to seller failed.");    
+    payable(mintGoldDustCompany.owner()).transfer(fee);
+    payable(_marketItem.seller).transfer(balance);
   }
 
   /// @dev it is a private function to verify if the msg.value is enough to pay the product between the

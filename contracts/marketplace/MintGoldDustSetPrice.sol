@@ -56,13 +56,15 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      * @notice that this event show the info about a delisting.
      * @dev this event will be triggered when a market item is delisted from the marketplace.
      * @param tokenId the sequence number for the item.
+     * @param amount the quantity to be delisted.
      * @param seller the seller of this tokenId.
      * @param contractAddress the MintGoldDustERC1155 or the MintGoldDustERC721 address.
      */
     event NftQuantityDelisted(
         uint256 indexed tokenId,
+        uint256 amount,
         address seller,
-        address contractAddress
+        address contractAddress        
     );
 
     error RoyaltyInvalidPercentage();
@@ -256,6 +258,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
 
         emit NftQuantityDelisted(
             _delistDTO.tokenId,
+            _delistDTO.amount,
             msg.sender,
             _delistDTO.contractAddress
         );
