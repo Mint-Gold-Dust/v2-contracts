@@ -1,7 +1,7 @@
 require("dotenv").config();
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomiclabs/hardhat-ethers";
-import "@nomiclabs/hardhat-etherscan";
+import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
@@ -64,6 +64,11 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 40000,
   },
+  etherscan: {
+    // Define Your API key for Etherscan on .env
+    // Obtain one at https://etherscan.io/
+    apiKey: `${process.env.ETHERSCAN_KEY}`
+  }
 };
 
 export default config;
