@@ -260,6 +260,19 @@ async function main() {
     .setMintGoldDustMarketplaceAuctionAddress(
       mintGoldDustMarketplaceAuction.address
     );
+<<<<<<< Updated upstream
+=======
+
+  // // Add Chris as Validator
+  // await mintGoldDustCompany.setValidator("0x49a44EC6243b516cB699F1aD7b8731e54cFEc978", true);
+
+  // // Add Vinny as Validator
+  // await mintGoldDustCompany.setValidator("0x929A4DfC610963246644b1A7f6D1aed40a27dD2f", true);
+
+  // // Transfer the Ownership to John's Gnosis Safe
+  // await mintGoldDustCompany
+  // .connect(deployer).transferOwnership("0x098809aF9e0650ED1Fd9c7615021D9384032a613");
+>>>>>>> Stashed changes
   /************************************** MintGoldDustMarketplaceAuction FINAL *************************************/
 
   const contractAddresses = {
