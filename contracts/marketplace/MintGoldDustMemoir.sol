@@ -10,38 +10,38 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
 contract MintGoldDustMemoir is Initializable {
-  mapping(address => mapping(uint256 => bytes)) public userCounterMemoirs;
-  mapping(address => uint256) public userCounter;
+    mapping(address => mapping(uint256 => bytes)) public userCounterMemoirs;
+    mapping(address => uint256) public userCounter;
 
-  event EOAMemoirCreated(
-    address indexed externallyOwnedAccount,
-    uint256 counter,
-    bytes memoir
-  );
+    event EOAMemoirCreated(
+        address indexed externallyOwnedAccount,
+        uint256 counter,
+        bytes memoir
+    );
 
-  function initialize() external initializer {
-    // Empty initializer function for the upgrade proxy pattern
-  }
+    function initialize() external initializer {
+        // Empty initializer function for the upgrade proxy pattern
+    }
 
-  /**
-   *
-   * @notice that function creates a new memoir for some EOA address.
-   *
-   * @param _eoa is the address of the user that is creating its memoirs.
-   * @param _memoir is the bytes that represents the memoir.
-   * @notice that this bytes is calldata type because we don't have a limit of
-   * length for this memoir. So we handle this string inside our function.
-   *
-   *    - Requirements:
-   *        - At the moment to create a memoir for this address we need
-   *        to verify the last state of the counter and add more one
-   *        before update the mapping for this user.
-   */
-  function addMemoirForEOA(address _eoa, bytes calldata _memoir) external {
-    uint256 next = userCounter[_eoa] + 1;
-    userCounterMemoirs[_eoa][next] = _memoir;
-    userCounter[_eoa] = next;
+    /**
+     *
+     * @notice that function creates a new memoir for some EOA address.
+     *
+     * @param _eoa is the address of the user that is creating its memoirs.
+     * @param _memoir is the bytes that represents the memoir.
+     * @notice that this bytes is calldata type because we don't have a limit of
+     * length for this memoir. So we handle this string inside our function.
+     *
+     *    - Requirements:
+     *        - At the moment to create a memoir for this address we need
+     *        to verify the last state of the counter and add more one
+     *        before update the mapping for this user.
+     */
+    function addMemoirForEOA(address _eoa, bytes calldata _memoir) external {
+        uint256 next = userCounter[_eoa] + 1;
+        userCounterMemoirs[_eoa][next] = _memoir;
+        userCounter[_eoa] = next;
 
-    emit EOAMemoirCreated(_eoa, next, _memoir);
-  }
+        emit EOAMemoirCreated(_eoa, next, _memoir);
+    }
 }

@@ -1,7 +1,7 @@
 require("dotenv").config();
 import "@nomicfoundation/hardhat-chai-matchers";
 import "@nomiclabs/hardhat-ethers";
-import "@nomiclabs/hardhat-etherscan";
+import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
@@ -10,7 +10,14 @@ import "hardhat-gas-reporter";
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
-    hardhat: {},
+    develop: {
+      url: "http://127.0.0.1:8545/",      
+    },
+    hardhat: {
+      forking: {
+        url: "https://eth-mainnet.g.alchemy.com/v2/bhwVbe04yQYbezp6JIFOlQAZmBbiSJAq",
+      }
+    },
     sepolia: {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [`${process.env.PK}`],
@@ -31,8 +38,7 @@ const config: HardhatUserConfig = {
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: [`${process.env.PK}`],
-      gasPrice: 20000000000, // Optional: specify gas price in wei (this is just an example value)
+      accounts: [`${process.env.PK}`],      
       chainId: 1, // Optional: specify the chainId for mainnet
     },
   },
@@ -58,6 +64,11 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 40000,
   },
+  etherscan: {
+    // Define Your API key for Etherscan on .env
+    // Obtain one at https://etherscan.io/
+    apiKey: `${process.env.ETHERSCAN_KEY}`
+  }
 };
 
 export default config;
