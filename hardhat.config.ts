@@ -31,7 +31,7 @@ const config: HardhatUserConfig = {
       chainId: 5, // Optional: specify the chainId for sepolia
     },
     localhost: {
-      url: "http://127.0.0.1:8545",
+      url: process.env.PROVIDER_LOCAL || "http://127.0.0.1:8545",
       accounts: [
         "0xea6c44ac03bff858b476bba40716402b03e41b8e97e276d1baec7c37d42484a0", // Replace with the private key of the chosen pre-funded account
       ],
