@@ -73,7 +73,20 @@ const config: HardhatUserConfig = {
   etherscan: {
     // Define Your API key for Etherscan on .env
     // Obtain one at https://etherscan.io/
-    apiKey: `${process.env.ETHERSCAN_KEY}`
+    apiKey: {
+      mainnet: `${process.env.ETHERSCAN_KEY}`,
+      baseSepolia: `${process.env.ETHERSCAN_KEY}`
+    },
+    customChains: [
+      {
+        network: "baseSepolia",
+        chainId: 84532,
+        urls: {
+          apiURL: "https://base-sepolia.blockscout.com/api",
+          browserURL: "https://base-sepolia.blockscout.com/"
+        }
+      }
+    ]
   }
 };
 
