@@ -262,10 +262,10 @@ async function main() {
     );
 
   // // Add Chris as Validator
-  // await mintGoldDustCompany.setValidator("0x49a44EC6243b516cB699F1aD7b8731e54cFEc978", true);
+  await mintGoldDustCompany.setValidator("0x49a44EC6243b516cB699F1aD7b8731e54cFEc978", true);
 
   // // Add Vinny as Validator
-  // await mintGoldDustCompany.setValidator("0x929A4DfC610963246644b1A7f6D1aed40a27dD2f", true);
+  await mintGoldDustCompany.setValidator("0x929A4DfC610963246644b1A7f6D1aed40a27dD2f", true);
 
   // // Transfer the Ownership to John's Gnosis Safe
   // await mintGoldDustCompany

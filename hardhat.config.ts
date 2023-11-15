@@ -24,6 +24,12 @@ const config: HardhatUserConfig = {
       gasPrice: 20000000000, // Optional: specify gas price in wei (this is just an example value)
       chainId: 11155111, // Optional: specify the chainId for sepolia
     },
+    baseSepolia: {
+      url: `https://sepolia.base.org`,
+      gasPrice: 1000000000,
+      accounts: [`${process.env.PK}`],
+      chainId: 84532, // Optional: specify the chainId for baseSepolia
+    },
     goerli: {
       url: `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [`${process.env.PK}`],
