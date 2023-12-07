@@ -5,8 +5,15 @@
  *        - The implementation address: The one that will be upgraded
  *        - The proxy admin address: The one that will be used to upgrade the proxy
  */
+require("dotenv").config();
 const { ethers, upgrades } = require("hardhat");
+const hre = require("hardhat");
 const fs = require("fs");
+
+if (!process.env.DEPLOYMENT_NETWORK) throw "Please set DEPLOYMENT_NETWORK in .env";
+if (hre.hardhatArguments.network != process.env.DEPLOYMENT_NETWORK) {
+  throw `Hardhat network "${hre.hardhatArguments.network}" and DEPLOYMENT_NETWORK in .env don't match`;
+} 
 
 async function main() {
   const [deployer] = await ethers.getSigners(); // The metamask account
@@ -305,12 +312,16 @@ async function main() {
     },
   };
 
+  const dirname = `./deployments/${process.env.DEPLOYMENT_NETWORK}/`;
+  if (!fs.existsSync(dirname)) {
+    try { fs.mkdirSync(dirname, {recursive: true});} catch (error){console.log(error)}
+  }
   fs.writeFileSync(
-    "contractAddresses.json",
+    `${dirname}/contractAddresses.json`,
     JSON.stringify(contractAddresses, null, 2)
   );
 
-  console.log("Contract addresses saved to contractAddresses.json");
+  console.log(`Contract addresses saved to ${dirname}contractAddresses.json`);
 }
 
 main()
