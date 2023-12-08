@@ -8,4 +8,8 @@ typechain-types
 # Hardhat files
 cache
 artifacts
+/deployments/develop/
+/deployments/localhost/
+/deployments/hardhat/
+
 
