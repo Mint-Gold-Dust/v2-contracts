@@ -46,7 +46,7 @@ contract MintGoldDustERC721 is
         address _to,
         uint256 _tokenId,
         uint256 _amount
-    ) external override nonReentrant {
+    ) public virtual override nonReentrant {
         safeTransferFrom(_from, _to, _tokenId, "");
     }
 

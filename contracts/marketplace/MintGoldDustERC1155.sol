@@ -47,7 +47,7 @@ contract MintGoldDustERC1155 is
         address to,
         uint256 tokenId,
         uint256 amount
-    ) external override nonReentrant {
+    ) public virtual override nonReentrant {
         safeTransferFrom(from, to, tokenId, amount, "");
     }
 
