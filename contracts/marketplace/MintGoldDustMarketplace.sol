@@ -11,7 +11,7 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/se
 import {MintGoldDustCompany} from "./MintGoldDustCompany.sol";
 import {MintGoldDustERC721} from "./MintGoldDustERC721.sol";
 import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
-import {MintGoldDustERC1155} from  "./MintGoldDustERC1155.sol";
+import {MintGoldDustERC1155} from "./MintGoldDustERC1155.sol";
 
 /// @title An abstract contract responsible to define some general responsibilites related with
 /// a marketplace for its childrens.
