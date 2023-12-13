@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /// @title A contract responsible by allow External Owned Accounts to create one or more memoirs.
 /// A memoir is a form of expression that the artist or any user of the platform can use

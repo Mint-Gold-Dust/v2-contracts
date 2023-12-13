@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
-import "./MintGoldDustCompany.sol";
-import "./MintGoldDustNFT.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import {ERC1155URIStorageUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
+import {MintGoldDustCompany} from "./MintGoldDustCompany.sol";
+import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
+import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 
 /// @title A contract responsible by all the operations related with Mint Gold Dust ERC1155 tokens.
 /// @notice Contains functions to mint, transfer and burn Mint Gold Dust ERC1155 tokens.

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
-import "./MintGoldDustCompany.sol";
-import "./MintGoldDustNFT.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ERC721URIStorageUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import {MintGoldDustCompany} from "./MintGoldDustCompany.sol";
+import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
+import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 
 /// @title A contract responsible by all the operations related with Mint Gold Dust ERC721 tokens.
 /// @notice Contains functions to mint, transfer and burn Mint Gold Dust ERC721 tokens.
@@ -39,13 +40,12 @@ contract MintGoldDustERC721 is
      * @param _from sender of the token.
      * @param _to token destionation.
      * @param _tokenId id of the token.
-     * @param _amount is unused for MintGoldDustERC721.
      */
     function transfer(
         address _from,
         address _to,
         uint256 _tokenId,
-        uint256 _amount
+        uint256
     ) public virtual override nonReentrant {
         safeTransferFrom(_from, _to, _tokenId, "");
     }
@@ -66,7 +66,6 @@ contract MintGoldDustERC721 is
      *
      * @param _tokenURI The URI of the minted token, storing metadata off-chain.
      * @param _royaltyPercent The royalty percentage for the artist.
-     * @param _amount The amount of tokens to be minted (for ERC1155 compatibility, set to 1 for ERC721).
      * @param _sender The address of the user who initiates the minting process.
      * @param _collectorMintId The ID associated with the collector mint.
      * @param _memoir Extra data associated with the token.
@@ -82,7 +81,7 @@ contract MintGoldDustERC721 is
     function executeMintFlow(
         string calldata _tokenURI,
         uint256 _royaltyPercent,
-        uint256 _amount,
+        uint256,
         address _sender,
         uint256 _collectorMintId,
         bytes calldata _memoir

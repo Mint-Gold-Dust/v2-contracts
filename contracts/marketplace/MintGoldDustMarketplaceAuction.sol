@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import "./MintGoldDustMarketplace.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
+import {MintGoldDustMarketplace} from "./MintGoldDustMarketplace.sol";
+import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 
 /// @title A contract responsible by the Marketplace Auction functionalities
 /// @notice Contains functions for list, place a bid in an existent auction
