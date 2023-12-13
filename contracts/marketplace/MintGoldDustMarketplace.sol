@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "./MintGoldDustCompany.sol";
-import "./MintGoldDustERC721.sol";
-import "./MintGoldDustNFT.sol";
-import "./MintGoldDustERC1155.sol";
+import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/introspection/ERC165Upgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {MintGoldDustCompany} from "./MintGoldDustCompany.sol";
+import {MintGoldDustERC721} from "./MintGoldDustERC721.sol";
+import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
+import {MintGoldDustERC1155} from "./MintGoldDustERC1155.sol";
 
 /// @title An abstract contract responsible to define some general responsibilites related with
 /// a marketplace for its childrens.
@@ -138,7 +138,8 @@ abstract contract MintGoldDustMarketplace is
     MintGoldDustCompany internal mintGoldDustCompany;
     address payable internal mintGoldDustERC721Address;
     address payable internal mintGoldDustERC1155Address;
-    uint256[48] __gap;
+
+    uint256[48] private __gap;
 
     /**
      * @notice that this mapping do the relationship between a contract address,
@@ -372,30 +373,30 @@ abstract contract MintGoldDustMarketplace is
     }
 
     function onERC1155Received(
-        address operator,
-        address from,
-        uint256 id,
-        uint256 value,
-        bytes calldata data
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
     ) external pure override returns (bytes4) {
         return this.onERC1155Received.selector;
     }
 
     function onERC1155BatchReceived(
-        address operator,
-        address from,
-        uint256[] calldata ids,
-        uint256[] calldata values,
-        bytes calldata data
+        address,
+        address,
+        uint256[] calldata,
+        uint256[] calldata,
+        bytes calldata
     ) external pure override returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
     }
 
     function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
+        address,
+        address,
+        uint256,
+        bytes calldata
     ) external pure override returns (bytes4) {
         return this.onERC721Received.selector;
     }

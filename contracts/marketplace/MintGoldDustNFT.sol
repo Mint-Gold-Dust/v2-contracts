@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "./MintGoldDustCompany.sol";
+import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import {MintGoldDustCompany} from "./MintGoldDustCompany.sol";
 
 error RoyaltyInvalidPercentage();
 error UnauthorizedOnNFT(string message);
@@ -73,7 +73,7 @@ abstract contract MintGoldDustNFT is
         }
     }
 
-    uint256[48] __gap;
+    uint256[48] private __gap;
 
     /// @notice that this function is used for the Mint Gold Dust owner
     /// create the dependence of the Mint Gold Dust set price contract address.
@@ -312,10 +312,7 @@ abstract contract MintGoldDustNFT is
                 _newOwners[i] != address(0),
                 "Owner address cannot be null!"
             );
-            require(
-                _ownersPercentage[i] > 0,
-                "Owner percentage must be greater than zero!"
-            );
+            require(_ownersPercentage[i] > 0, "Percentage must be > zero!");
 
             ownersCount++;
             totalPercentage += _ownersPercentage[i]; /// @dev Accumulate the percentage for each valid collaborator
@@ -325,7 +322,7 @@ abstract contract MintGoldDustNFT is
 
         require(
             _ownersPercentage[ownersCount] > 0,
-            "Owner percentage must be greater than zero!"
+            "Percentage must be > zero!"
         );
 
         require(ownersCount >= 1, "Add more than 1 owner!");
