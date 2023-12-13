@@ -312,10 +312,7 @@ abstract contract MintGoldDustNFT is
                 _newOwners[i] != address(0),
                 "Owner address cannot be null!"
             );
-            require(
-                _ownersPercentage[i] > 0,
-                "Owner percentage must be greater than zero!"
-            );
+            require(_ownersPercentage[i] > 0, "Percentage must be > zero!");
 
             ownersCount++;
             totalPercentage += _ownersPercentage[i]; /// @dev Accumulate the percentage for each valid collaborator
@@ -325,7 +322,7 @@ abstract contract MintGoldDustNFT is
 
         require(
             _ownersPercentage[ownersCount] > 0,
-            "Owner percentage must be greater than zero!"
+            "Percentage must be > zero!"
         );
 
         require(ownersCount >= 1, "Add more than 1 owner!");

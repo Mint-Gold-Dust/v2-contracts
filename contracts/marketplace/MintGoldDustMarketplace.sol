@@ -138,7 +138,8 @@ abstract contract MintGoldDustMarketplace is
     MintGoldDustCompany internal mintGoldDustCompany;
     address payable internal mintGoldDustERC721Address;
     address payable internal mintGoldDustERC1155Address;
-    uint256[48] __gap;
+
+    uint256[48] private __gap;
 
     /**
      * @notice that this mapping do the relationship between a contract address,
