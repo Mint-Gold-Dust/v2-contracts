@@ -73,7 +73,7 @@ abstract contract MintGoldDustNFT is
         }
     }
 
-    uint256[48] __gap;
+    uint256[48] private __gap;
 
     /// @notice that this function is used for the Mint Gold Dust owner
     /// create the dependence of the Mint Gold Dust set price contract address.
