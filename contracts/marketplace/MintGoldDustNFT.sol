@@ -34,8 +34,8 @@ abstract contract MintGoldDustNFT is
     }
 
     MintGoldDustCompany internal mintGoldDustCompany;
-    address private mintGoldDustSetPriceAddress;
-    address private mintGoldDustMarketplaceAuctionAddress;
+    address internal mintGoldDustSetPriceAddress;
+    address internal mintGoldDustMarketplaceAuctionAddress;
 
     mapping(uint256 => address) public tokenIdArtist;
     mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
