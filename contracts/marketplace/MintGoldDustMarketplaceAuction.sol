@@ -514,7 +514,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             revert BidTooLow();
         }
 
-        ManageSecondarySale memory manageSecondarySale = isSecondarySale[
+        ManageSecondarySale memory manageSecondarySale = _isSecondarySale[
             _bidDTO.contractAddress
         ][_bidDTO.tokenId];
 
@@ -631,7 +631,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
 
         uint256 realPrice = msg.value;
 
-        ManageSecondarySale memory manageSecondarySale = isSecondarySale[
+        ManageSecondarySale memory manageSecondarySale = _isSecondarySale[
             _bidDTO.contractAddress
         ][_bidDTO.tokenId];
 

@@ -62,7 +62,7 @@ abstract contract MintGoldDustMarketplace is
      *  With this mapping and the ManageSecondarySale struct we can manage it.
      */
     mapping(address => mapping(uint256 => ManageSecondarySale))
-        public isSecondarySale;
+        internal _isSecondarySale;
 
     /**
      * @notice that this event show the info about primary sales.
@@ -189,10 +189,20 @@ abstract contract MintGoldDustMarketplace is
         mintGoldDustERC1155Address = _mintGoldDustERC1155Address;
     }
 
+    /// @notice Returns the `isSecondarySale` mapping.
+    /// @param _contractAddress of nft contract
+    /// @param _tokenId of token
+    function getSecondaruSale(
+        address _contractAddress,
+        uint256 _tokenId
+    ) external view returns (ManageSecondarySale memory) {
+        return _isSecondarySale[_contractAddress][_tokenId];
+    }
+
     /// @notice that this function set an instance of the MintGoldDustMarketplace to the sibling contract.
     /// @param _mintGoldDustMarketplace the address of the MintGoldDustMarketplace.
     /// @dev we create this lazy dependence because of the circular dependence between the
-    /// MintGoldDustMarketplace. So this way we can share the state of the isSecondarySale mapping.
+    /// MintGoldDustMarketplace. So this way we can share the state of the _isSecondarySale mapping.
     function setMintGoldDustMarketplace(
         address _mintGoldDustMarketplace
     ) external {
@@ -202,7 +212,7 @@ abstract contract MintGoldDustMarketplace is
         );
     }
 
-    /// @notice that this function is used to populate the isSecondarySale mapping for the
+    /// @notice that this function is used to populate the _isSecondarySale mapping for the
     /// sibling contract. This way the mapping state will be shared.
     /// @param _contractAddress the address of the MintGoldDustERC1155 or MintGoldDustERC721.
     /// @param _tokenId the id of the token.
@@ -217,14 +227,14 @@ abstract contract MintGoldDustMarketplace is
         uint256 _amount
     ) external {
         require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
-        isSecondarySale[_contractAddress][_tokenId] = ManageSecondarySale(
+        _isSecondarySale[_contractAddress][_tokenId] = ManageSecondarySale(
             _owner,
             _sold,
             _amount
         );
     }
 
-    /// @notice that this function should be used to update the amount attribute for the isSecondarySale mapping
+    /// @notice that this function should be used to update the amount attribute for the _isSecondarySale mapping
     /// in the sibling contract.
     /// @param _contractAddress the address of the MintGoldDustERC1155 or MintGoldDustERC721.
     /// @param _tokenId the id of the token.
@@ -235,13 +245,13 @@ abstract contract MintGoldDustMarketplace is
         uint256 _amount
     ) external {
         require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
-        ManageSecondarySale storage _manageSecondarySale = isSecondarySale[
+        ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
             _contractAddress
         ][_tokenId];
         _manageSecondarySale.amount = _manageSecondarySale.amount - _amount;
     }
 
-    /// @notice that this function should be used to update the sold attribute for the isSecondarySale mapping
+    /// @notice that this function should be used to update the sold attribute for the _isSecondarySale mapping
     /// in the sibling contract.
     /// @param _contractAddress the address of the MintGoldDustERC1155 or MintGoldDustERC721.
     /// @param _tokenId the id of the token.
@@ -252,7 +262,7 @@ abstract contract MintGoldDustMarketplace is
         bool _sold
     ) external {
         require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
-        ManageSecondarySale storage _manageSecondarySale = isSecondarySale[
+        ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
             _contractAddress
         ][_tokenId];
         _manageSecondarySale.sold = _sold;
@@ -358,7 +368,7 @@ abstract contract MintGoldDustMarketplace is
         }
 
         if (
-            isSecondarySale[address(_mintGoldDustNFT)][_listDTO.tokenId]
+            _isSecondarySale[address(_mintGoldDustNFT)][_listDTO.tokenId]
                 .owner == address(0)
         ) {
             uint256 _amountMinted = 1;
@@ -369,7 +379,7 @@ abstract contract MintGoldDustMarketplace is
                 ).balanceOf(_sender, _listDTO.tokenId);
             }
 
-            isSecondarySale[address(_mintGoldDustNFT)][
+            _isSecondarySale[address(_mintGoldDustNFT)][
                 _listDTO.tokenId
             ] = ManageSecondarySale(_sender, false, _amountMinted);
             mintGoldDustMarketplace.setSecondarySale(
@@ -381,7 +391,7 @@ abstract contract MintGoldDustMarketplace is
             );
         }
 
-        ManageSecondarySale memory manageSecondarySale = isSecondarySale[
+        ManageSecondarySale memory manageSecondarySale = _isSecondarySale[
             address(_mintGoldDustNFT)
         ][_listDTO.tokenId];
 
@@ -550,7 +560,7 @@ abstract contract MintGoldDustMarketplace is
         address _sender,
         uint256 _realAmount
     ) internal {
-        ManageSecondarySale memory manageSecondarySale = isSecondarySale[
+        ManageSecondarySale memory manageSecondarySale = _isSecondarySale[
             _saleDTO.contractAddress
         ][_marketItem.tokenId];
 
@@ -819,7 +829,7 @@ abstract contract MintGoldDustMarketplace is
         MintGoldDustNFT _mintGoldDustNFT = getERC1155OrERC721(
             _marketItem.isERC721
         );
-        ManageSecondarySale storage _manageSecondarySale = isSecondarySale[
+        ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
             _saleDTO.contractAddress
         ][_saleDTO.tokenId];
 
