@@ -192,7 +192,7 @@ abstract contract MintGoldDustMarketplace is
     /// @notice Returns the `isSecondarySale` mapping.
     /// @param _contractAddress of nft contract
     /// @param _tokenId of token
-    function getSecondaruSale(
+    function getSecondarySale(
         address _contractAddress,
         uint256 _tokenId
     ) external view returns (ManageSecondarySale memory) {
