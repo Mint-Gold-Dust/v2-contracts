@@ -275,7 +275,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.equal(false);
     });
@@ -559,7 +559,12 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         })
       )
         .to.emit(mintGoldDustSetPrice, "NftQuantityDelisted")
-        .withArgs(1, quantityToList, addr1.address, mintGoldDustERC1155.address);
+        .withArgs(
+          1,
+          quantityToList,
+          addr1.address,
+          mintGoldDustERC1155.address
+        );
       // the market item tokenAmount listed should be zero
       expect(
         (
@@ -699,7 +704,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.equal(false);
 
@@ -794,7 +799,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(amountToMint - amountToBuy);
 
@@ -955,7 +960,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(amountToMint);
 
@@ -963,7 +968,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.equal(false);
     });
@@ -987,7 +992,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(amountToMint - amountToBuy);
 
@@ -995,7 +1000,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.equal(false);
     });
@@ -1030,7 +1035,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(0);
 
@@ -1038,7 +1043,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.equal(true);
     });
@@ -1099,7 +1104,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(0);
 
@@ -1107,7 +1112,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.equal(true);
     });
@@ -1170,7 +1175,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(2);
 
@@ -1178,7 +1183,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.equal(false);
     });
@@ -1322,7 +1327,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       // verify if the isSecondarySale sale attribute is true
       expect(
         (
-          await mintGoldDustSetPrice.isSecondarySale(
+          await mintGoldDustSetPrice.getSecondarySale(
             mintGoldDustERC1155.address,
             1
           )

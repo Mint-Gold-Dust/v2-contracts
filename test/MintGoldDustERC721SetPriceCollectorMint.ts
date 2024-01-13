@@ -415,7 +415,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
 
       // The artist amount should be 5.
-      const manageSecondarySale = await mintGoldDustSetPrice.isSecondarySale(
+      const manageSecondarySale = await mintGoldDustSetPrice.getSecondarySale(
         mintGoldDustERC721.address,
         1
       );
@@ -426,7 +426,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       expect(manageSecondarySale.sold).to.be.true;
 
       const manageSecondarySaleAuction =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
+        await mintGoldDustMarketplaceAuction.getSecondarySale(
           mintGoldDustERC721.address,
           1
         );
@@ -492,7 +492,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
 
       // The artist amount should be 5.
-      const manageSecondarySale2 = await mintGoldDustSetPrice.isSecondarySale(
+      const manageSecondarySale2 = await mintGoldDustSetPrice.getSecondarySale(
         mintGoldDustERC721.address,
         1
       );
@@ -503,7 +503,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       expect(manageSecondarySale2.sold).to.be.true;
 
       const manageSecondarySaleAuction2 =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
+        await mintGoldDustMarketplaceAuction.getSecondarySale(
           mintGoldDustERC721.address,
           1
         );
@@ -595,7 +595,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         deployerBeforeThirdTx.add(toWei(secondarySaleFee))
       );
 
-      const manageSecondarySale3 = await mintGoldDustSetPrice.isSecondarySale(
+      const manageSecondarySale3 = await mintGoldDustSetPrice.getSecondarySale(
         mintGoldDustERC721.address,
         1
       );
@@ -605,7 +605,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       expect(manageSecondarySale3.sold).to.be.true;
 
       const manageSecondarySaleAuction3 =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
+        await mintGoldDustMarketplaceAuction.getSecondarySale(
           mintGoldDustERC721.address,
           1
         );

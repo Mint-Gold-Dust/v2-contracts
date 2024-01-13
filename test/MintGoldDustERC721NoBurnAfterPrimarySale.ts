@@ -220,7 +220,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC721.address, 1)
+            .getSecondarySale(mintGoldDustERC721.address, 1)
         ).sold
       ).to.be.equal(false);
 
