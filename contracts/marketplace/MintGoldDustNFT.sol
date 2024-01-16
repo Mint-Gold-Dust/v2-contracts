@@ -6,6 +6,7 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {MintGoldDustCompany} from "./MintGoldDustCompany.sol";
+import {ManagePrimarySale} from "../libraries/MgdMarketPlaceDataTypes.sol";
 
 error RoyaltyInvalidPercentage();
 error UnauthorizedOnNFT(string message);
@@ -81,7 +82,7 @@ abstract contract MintGoldDustNFT is
 
     mapping(uint256 => bool) internal _tokenWasSold;
 
-    mapping(uint256 => uint256) internal _primarySaleQuantityToSold;
+    mapping(uint256 => uint256) internal _primarySaleQuantityToSell;
 
     uint256[48] private __gap;
 
@@ -169,6 +170,18 @@ abstract contract MintGoldDustNFT is
         mintGoldDustCompany = MintGoldDustCompany(
             payable(_mintGoldDustCompany)
         );
+    }
+
+    function getManagePrimarySale(
+        uint256 _tokenId
+    ) public view returns (ManagePrimarySale memory) {
+        uint256 remaining = _primarySaleQuantityToSell[_tokenId];
+        return
+            ManagePrimarySale({
+                owner: tokenIdArtist[_tokenId],
+                soldout: remaining == 0,
+                amount: remaining
+            });
     }
 
     /**
@@ -299,19 +312,30 @@ abstract contract MintGoldDustNFT is
     /// @dev This function should only be called by authorized addresses.
     /// @param _tokenId The ID of the token whose primary sale quantity needs to be updated.
     /// @param _amountSold The amount sold that needs to be subtracted from the remaining quantity.
-    function updatePrimarySaleQuantityToSold(
+    function updatePrimarySaleQuantityToSell(
         uint256 _tokenId,
         uint256 _amountSold
-    ) external {
+    ) external virtual {
         require(
             msg.sender == mintGoldDustMarketplaceAuctionAddress ||
                 msg.sender == mintGoldDustSetPriceAddress,
             "Unauthorized on NFT"
         );
-        if (_primarySaleQuantityToSold[_tokenId] > 0) {
-            _primarySaleQuantityToSold[_tokenId] =
-                _primarySaleQuantityToSold[_tokenId] -
+        if (_primarySaleQuantityToSell[_tokenId] > 0) {
+            _primarySaleQuantityToSell[_tokenId] =
+                _primarySaleQuantityToSell[_tokenId] -
                 _amountSold;
+        }
+    }
+
+    function setTokenWasSold(uint256 _tokenId) public {
+        require(
+            msg.sender == mintGoldDustMarketplaceAuctionAddress ||
+                msg.sender == mintGoldDustSetPriceAddress,
+            "Unauthorized on NFT"
+        );
+        if (!_tokenWasSold[_tokenId]) {
+            _tokenWasSold[_tokenId] = true;
         }
     }
 
@@ -341,15 +365,6 @@ abstract contract MintGoldDustNFT is
             "Already setted!"
         );
         mintGoldDustMarketplaceAuctionAddress = _mintGoldDustMarketplaceAuctionAddress;
-    }
-
-    function setTokenWasSold(uint256 _tokenId) public {
-        require(
-            msg.sender == mintGoldDustMarketplaceAuctionAddress ||
-                msg.sender == mintGoldDustSetPriceAddress,
-            "Unauthorized on NFT"
-        );
-        _tokenWasSold[_tokenId] = true;
     }
 
     function transfer(

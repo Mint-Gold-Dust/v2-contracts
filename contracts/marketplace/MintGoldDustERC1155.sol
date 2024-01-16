@@ -92,7 +92,7 @@ contract MintGoldDustERC1155 is
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
         tokenIdMemoir[newTokenId] = _memoir;
 
-        _primarySaleQuantityToSold[newTokenId] = _amount;
+        _primarySaleQuantityToSell[newTokenId] = _amount;
 
         emit MintGoldDustNFTMinted(
             newTokenId,
@@ -145,7 +145,7 @@ contract MintGoldDustERC1155 is
 
         require(
             // Ensure the owner has enough tokens to burn
-            _primarySaleQuantityToSold[tokenId] >= amount,
+            _primarySaleQuantityToSell[tokenId] >= amount,
             "Items sold not possible to burn"
         );
 

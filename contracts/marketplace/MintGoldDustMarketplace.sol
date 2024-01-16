@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import {AuctionProps, CollectorMintDTO, ListDTO, ManageSecondarySale, MarketItem, SaleDTO} from "../libraries/MgdMarketPlaceDataTypes.sol";
+import {AuctionProps, CollectorMintDTO, ListDTO, ManagePrimarySale, MarketItem, SaleDTO} from "../libraries/MgdMarketPlaceDataTypes.sol";
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
@@ -106,7 +106,7 @@ abstract contract MintGoldDustMarketplace is
         uint256 amount
     );
 
-    error ItemIsNotListed(address _contractAddress);
+    error ItemIsNotListed(address nft);
     error ItemIsNotListedBySeller(
         uint256 tokenId,
         address market,
@@ -114,7 +114,7 @@ abstract contract MintGoldDustMarketplace is
         address seller,
         address msgSender
     );
-    error ItemIsAlreadyListed(address _contractAddress);
+    error ItemIsAlreadyListed(address nft);
     error AddressUnauthorized(string _reason);
     error MustBeERC721OrERC1155();
     error LessItemsListedThanTheRequiredAmount();
@@ -154,8 +154,9 @@ abstract contract MintGoldDustMarketplace is
      *      - But notice that it can sale only more five in the primary sale flow.
      *  With this mapping and the ManageSecondarySale struct we can manage it.
      */
-    mapping(address => mapping(uint256 => ManageSecondarySale))
-        internal _isSecondarySale;
+    /// @custom:daigaro
+    // mapping(address => mapping(uint256 => ManageSecondarySale))
+    //     internal _isSecondarySale;
 
     modifier isowner() {
         if (msg.sender != mintGoldDustCompany.owner()) {
@@ -190,14 +191,15 @@ abstract contract MintGoldDustMarketplace is
     }
 
     /// @notice Returns the `isSecondarySale` mapping.
-    /// @param _contractAddress of nft contract
-    /// @param _tokenId of token
-    function getSecondarySale(
-        address _contractAddress,
-        uint256 _tokenId
-    ) external view returns (ManageSecondarySale memory) {
-        return _isSecondarySale[_contractAddress][_tokenId];
-    }
+    /// @param nft of nft contract
+    /// @param tokenId of token
+    /// @custom:daigaro
+    // function getSecondarySale(
+    //     address nft,
+    //     uint256 tokenId
+    // ) external view returns (ManageSecondarySale memory) {
+    //     return _isSecondarySale[nft][tokenId];
+    // }
 
     /// @notice that this function set an instance of the MintGoldDustMarketplace to the sibling contract.
     /// @param _mintGoldDustMarketplace the address of the MintGoldDustMarketplace.
@@ -214,59 +216,62 @@ abstract contract MintGoldDustMarketplace is
 
     /// @notice that this function is used to populate the _isSecondarySale mapping for the
     /// sibling contract. This way the mapping state will be shared.
-    /// @param _contractAddress the address of the MintGoldDustERC1155 or MintGoldDustERC721.
-    /// @param _tokenId the id of the token.
+    /// @param nft the address of the MintGoldDustERC1155 or MintGoldDustERC721.
+    /// @param tokenId the id of the token.
     /// @param _owner the owner of the token.
     /// @param _sold a boolean that indicates if the token was sold or not.
-    /// @param _amount the amount of tokens minted for this token.
-    function setSecondarySale(
-        address _contractAddress,
-        uint256 _tokenId,
-        address _owner,
-        bool _sold,
-        uint256 _amount
-    ) external {
-        require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
-        _isSecondarySale[_contractAddress][_tokenId] = ManageSecondarySale(
-            _owner,
-            _sold,
-            _amount
-        );
-    }
+    /// @param amount the amount of tokens minted for this token.
+    /// @custom:daigaro
+    // function setSecondarySale(
+    //     address nft,
+    //     uint256 tokenId,
+    //     address _owner,
+    //     bool _sold,
+    //     uint256 amount
+    // ) external {
+    //     require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
+    //     _isSecondarySale[nft][tokenId] = ManageSecondarySale(
+    //         _owner,
+    //         _sold,
+    //         amount
+    //     );
+    // }
 
     /// @notice that this function should be used to update the amount attribute for the _isSecondarySale mapping
     /// in the sibling contract.
-    /// @param _contractAddress the address of the MintGoldDustERC1155 or MintGoldDustERC721.
-    /// @param _tokenId the id of the token.
-    /// @param _amount the amount of tokens minted for this token.
-    function updateSecondarySaleAmount(
-        address _contractAddress,
-        uint256 _tokenId,
-        uint256 _amount
-    ) external {
-        require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
-        ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
-            _contractAddress
-        ][_tokenId];
-        _manageSecondarySale.amount = _manageSecondarySale.amount - _amount;
-    }
+    /// @param nft the address of the MintGoldDustERC1155 or MintGoldDustERC721.
+    /// @param tokenId the id of the token.
+    /// @param amount the amount of tokens minted for this token.
+    /// @custom:daigaro
+    // function updateSecondarySaleAmount(
+    //     address nft,
+    //     uint256 tokenId,
+    //     uint256 amount
+    // ) external {
+    //     require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
+    //     ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
+    //         nft
+    //     ][tokenId];
+    //     _manageSecondarySale.amount = _manageSecondarySale.amount - amount;
+    // }
 
     /// @notice that this function should be used to update the sold attribute for the _isSecondarySale mapping
     /// in the sibling contract.
-    /// @param _contractAddress the address of the MintGoldDustERC1155 or MintGoldDustERC721.
-    /// @param _tokenId the id of the token.
+    /// @param nft the address of the MintGoldDustERC1155 or MintGoldDustERC721.
+    /// @param tokenId the id of the token.
     /// @param _sold a boolean that indicates if the token was sold or not.
-    function updateSecondarySaleSold(
-        address _contractAddress,
-        uint256 _tokenId,
-        bool _sold
-    ) external {
-        require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
-        ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
-            _contractAddress
-        ][_tokenId];
-        _manageSecondarySale.sold = _sold;
-    }
+    /// @custom:daigaro
+    // function updateSecondarySaleSold(
+    //     address nft,
+    //     uint256 tokenId,
+    //     bool _sold
+    // ) external {
+    //     require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
+    //     ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
+    //         nft
+    //     ][tokenId];
+    //     _manageSecondarySale.sold = _sold;
+    // }
 
     /// @notice Pause the contract
     function pauseContract() external isowner {
@@ -312,17 +317,17 @@ abstract contract MintGoldDustMarketplace is
      * @notice that is a general function that must be implemented by the more specif makets.
      * @dev it is a internal function and should be implemented by the childrens
      * if these are not abstract also.
-     * @param _tokenId: The tokenId of the marketItem.
-     * @param _amount: The quantity of tokens to be listed for an MintGoldDustERC1155.
+     * @param tokenId: The tokenId of the marketItem.
+     * @param amount: The quantity of tokens to be listed for an MintGoldDustERC1155.
      *    @dev For MintGoldDustERC721 the amout must be always one.
-     * @param _contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
-     * @param _price: The price or reserve price for the item.
+     * @param nft: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+     * @param price: The price or reserve price for the item.
      */
     function list(
-        uint256 _tokenId,
-        uint256 _amount,
-        address _contractAddress,
-        uint256 _price
+        uint256 tokenId,
+        uint256 amount,
+        MintGoldDustNFT nft,
+        uint256 price
     ) external virtual;
 
     /**
@@ -336,7 +341,7 @@ abstract contract MintGoldDustMarketplace is
      *      the delist function in the Set Price market.
      *      After the MarketItem struct creation the NFT is transferred from the seller to the respective
      *      markeplace address (marketplace auction or set price).
-     * @param _listDTO The ListDTO struct parameter to use.
+     * @param listDTO The ListDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
@@ -344,77 +349,76 @@ abstract contract MintGoldDustMarketplace is
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      *                    - price: the price to list the item. For auction it corresponds to the reserve price.
-     * @param _auctionId the auctionId for the auction. If the item is being listed to the set price market it is *                   zero.
-     * @param _sender the address that is listing the item.
+     * @param auctionId the auctionId for the auction. If the item is being listed to the set price market it is *                   zero.
+     * @param sender the address that is listing the item.
      *    @dev we need this parameter because in the collectorMint flow who calls this function is the buyer. How *    it function is internal we can have a good control on top of it.
      */
     function _list(
-        ListDTO memory _listDTO,
-        uint256 _auctionId,
-        address _sender
+        ListDTO memory listDTO,
+        uint256 auctionId,
+        address sender
     ) internal {
-        MintGoldDustNFT _mintGoldDustNFT;
-        bool _isERC721 = false;
-        uint256 _realAmount = 1;
+        bool isERC721 = false;
+        uint256 realAmount = 1;
 
-        if (_listDTO.contractAddress == mintGoldDustERC721Address) {
-            _isNFTowner(_listDTO.tokenId, _sender);
-            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
-            _isERC721 = true;
+        if (address(listDTO.nft) == mintGoldDustERC721Address) {
+            _isNFTowner(listDTO.tokenId, sender);
+            isERC721 = true;
+        } else if (address(listDTO.nft) == mintGoldDustERC1155Address) {
+            _checkBalanceForERC1155(listDTO.tokenId, listDTO.amount, sender);
+            realAmount = listDTO.amount;
         } else {
-            _checkBalanceForERC1155(_listDTO.tokenId, _listDTO.amount, _sender);
-            _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
-            _realAmount = _listDTO.amount;
+            revert MustBeERC721OrERC1155();
         }
 
-        if (
-            _isSecondarySale[address(_mintGoldDustNFT)][_listDTO.tokenId]
-                .owner == address(0)
-        ) {
-            uint256 _amountMinted = 1;
+        /// @custom:daigaro
+        // if (
+        //     _isSecondarySale[address(_mintGoldDustNFT)][_listDTO.tokenId]
+        //         .owner == address(0)
+        // ) {
+        //     uint256 amountMinted = 1;
 
-            if (address(_mintGoldDustNFT) == mintGoldDustERC1155Address) {
-                _amountMinted = (
-                    MintGoldDustERC1155(mintGoldDustERC1155Address)
-                ).balanceOf(_sender, _listDTO.tokenId);
-            }
+        //     if (address(_mintGoldDustNFT) == mintGoldDustERC1155Address) {
+        //         amountMinted = (
+        //             MintGoldDustERC1155(mintGoldDustERC1155Address)
+        //         ).balanceOf(sender, _listDTO.tokenId);
+        //     }
 
-            _isSecondarySale[address(_mintGoldDustNFT)][
-                _listDTO.tokenId
-            ] = ManageSecondarySale(_sender, false, _amountMinted);
-            mintGoldDustMarketplace.setSecondarySale(
-                _listDTO.contractAddress,
-                _listDTO.tokenId,
-                _sender,
-                false,
-                _amountMinted
-            );
-        }
+        //     _isSecondarySale[address(_mintGoldDustNFT)][
+        //         _listDTO.tokenId
+        //     ] = ManageSecondarySale(sender, false, amountMinted);
+        //     mintGoldDustMarketplace.setSecondarySale(
+        //         _listDTO.contractAddress,
+        //         _listDTO.tokenId,
+        //         sender,
+        //         false,
+        //         amountMinted
+        //     );
+        // }
 
-        ManageSecondarySale memory manageSecondarySale = _isSecondarySale[
-            address(_mintGoldDustNFT)
-        ][_listDTO.tokenId];
+        ManagePrimarySale memory managePS = listDTO.nft.getManagePrimarySale(
+            listDTO.tokenId
+        );
 
         /// @dev why we need this? We need to check if there are some amount listed for the other market.
         /// I mean, if the item was listed for the set price market and the seller is trying to list it for auction.
         /// It needs to be added to the sommary of the quantity restant for primary sales.
         (, , , , uint256 returnedTokenAmount, ) = mintGoldDustMarketplace
             .idMarketItemsByContractByOwner(
-                address(_mintGoldDustNFT),
-                _listDTO.tokenId,
-                _sender
+                address(listDTO.nft),
+                listDTO.tokenId,
+                sender
             );
 
-        if (!manageSecondarySale.sold && _sender == manageSecondarySale.owner) {
+        if (!managePS.soldout && sender == managePS.owner) {
             require(
-                _listDTO.amount + returnedTokenAmount <=
-                    manageSecondarySale.amount,
+                listDTO.amount + returnedTokenAmount <= managePS.amount,
                 "Invalid amount for primary sale"
             );
         }
 
         AuctionProps memory auctionProps = AuctionProps(
-            _auctionId,
+            auctionId,
             0,
             0,
             payable(address(0)),
@@ -422,22 +426,22 @@ abstract contract MintGoldDustMarketplace is
             false
         );
 
-        idMarketItemsByContractByOwner[_listDTO.contractAddress][
-            _listDTO.tokenId
-        ][_sender] = MarketItem(
-            _listDTO.tokenId,
-            _sender,
-            _listDTO.price,
-            _isERC721,
-            _realAmount,
+        idMarketItemsByContractByOwner[address(listDTO.nft)][listDTO.tokenId][
+            sender
+        ] = MarketItem(
+            listDTO.tokenId,
+            sender,
+            listDTO.price,
+            isERC721,
+            realAmount,
             auctionProps
         );
 
-        _mintGoldDustNFT.transfer(
-            _sender,
+        listDTO.nft.transfer(
+            sender,
             address(this),
-            _listDTO.tokenId,
-            _realAmount
+            listDTO.tokenId,
+            realAmount
         );
     }
 
@@ -446,18 +450,19 @@ abstract contract MintGoldDustMarketplace is
     ///      it creates an isntance for MintGoldDustERC1155.
     /// @param _isERC721 a boolean that say if the address is an ERC721 or not.
     /// @return MintGoldDustNFT an instance of MintGoldDustERC721 or MintGoldDustERC1155.
-    function _getERC1155OrERC721(
-        bool _isERC721
-    ) internal view returns (MintGoldDustNFT) {
-        if (_isERC721) {
-            return MintGoldDustNFT(mintGoldDustERC721Address);
-        } else {
-            return MintGoldDustNFT(mintGoldDustERC1155Address);
-        }
-    }
+    /// @custom:daigaro
+    // function _getERC1155OrERC721(
+    //     bool _isERC721
+    // ) internal view returns (MintGoldDustNFT) {
+    //     if (_isERC721) {
+    //         return MintGoldDustNFT(mintGoldDustERC721Address);
+    //     } else {
+    //         return MintGoldDustNFT(mintGoldDustERC1155Address);
+    //     }
+    // }
 
     /**
-     * @param _saleDTO The SaleDTO struct parameter to use.
+     * @param saleDTO The SaleDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
@@ -481,109 +486,103 @@ abstract contract MintGoldDustMarketplace is
      *                        - ended: a boolean that indicates if the auction was already finished or not.
      */
     function _getMarketItem(
-        SaleDTO memory _saleDTO
+        SaleDTO memory saleDTO
     ) internal view returns (MarketItem memory) {
         return
-            idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-                _saleDTO.tokenId
-            ][_saleDTO.seller];
+            idMarketItemsByContractByOwner[address(saleDTO.nft)][
+                saleDTO.tokenId
+            ][saleDTO.seller];
     }
 
     /**
      * @notice function will fail if the token was not listed to the set price market.
      * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
      * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
-     * @param _saleDTO The SaleDTO struct parameter to use.
+     * @param saleDTO The SaleDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
      *                              MintGoldDustERC721 the amout must be always one.
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
-     * @param _sender The address that started this flow.
-     * @param _value The value to be paid for the purchase.
+     * @param sender The address that started this flow.
+     * @param value The value to be paid for the purchase.
      */
     function _executePurchaseNftFlow(
-        SaleDTO memory _saleDTO,
-        address _sender,
-        uint256 _value
+        SaleDTO memory saleDTO,
+        address sender,
+        uint256 value
     ) internal {
-        _isTokenListed(
-            _saleDTO.tokenId,
-            _saleDTO.contractAddress,
-            _saleDTO.seller
-        );
-
-        _mustBeMintGoldDustERC721Or1155(_saleDTO.contractAddress);
+        _isTokenListed(saleDTO.tokenId, address(saleDTO.nft), saleDTO.seller);
+        _mustBeMintGoldDustERC721Or1155(address(saleDTO.nft));
 
         _hasEnoughAmountListed(
-            _saleDTO.tokenId,
-            _saleDTO.contractAddress,
+            saleDTO.tokenId,
+            address(saleDTO.nft),
             address(this),
-            _saleDTO.amount,
-            _saleDTO.seller
+            saleDTO.amount,
+            saleDTO.seller
         );
 
-        MarketItem memory _marketItem = _getMarketItem(_saleDTO);
+        MarketItem memory marketItem = _getMarketItem(saleDTO);
 
         /// @dev if the flow goes for ERC721 the amount of tokens MUST be ONE.
-        uint256 _realAmount = 1;
+        uint256 realAmount = 1;
 
-        if (!_marketItem.isERC721) {
-            _realAmount = _saleDTO.amount;
+        if (!marketItem.isERC721) {
+            realAmount = saleDTO.amount;
         }
 
         _checkIfIsPrimaryOrSecondarySaleAndCall(
-            _marketItem,
-            _saleDTO,
-            _value,
-            _sender,
-            _realAmount
+            marketItem,
+            saleDTO,
+            value,
+            sender,
+            realAmount
         );
     }
 
     /**
      * @dev this function check if the item was already sold some time and *      direct the flow to
      *     a primary or a secondary sale flow.
-     * @param _marketItem The MarketItem struct parameter to use.
-     * @param _saleDTO The SaleDTO struct parameter to use.
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
+     * @param marketItem The MarketItem struct parameter to use.
+     * @param saleDTO The SaleDTO struct parameter to use.
+     * @param value The value to be paid for the purchase.
+     * @param sender The address that started this flow.
      *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
      *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
      *         that we get is the highest bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function _checkIfIsPrimaryOrSecondarySaleAndCall(
-        MarketItem memory _marketItem,
-        SaleDTO memory _saleDTO,
-        uint256 _value,
-        address _sender,
-        uint256 _realAmount
+        MarketItem memory marketItem,
+        SaleDTO memory saleDTO,
+        uint256 value,
+        address sender,
+        uint256 realAmount
     ) internal {
-        ManageSecondarySale memory manageSecondarySale = _isSecondarySale[
-            _saleDTO.contractAddress
-        ][_marketItem.tokenId];
+        ManagePrimarySale memory managePS = saleDTO.nft.getManagePrimarySale(
+            saleDTO.tokenId
+        );
 
         if (
-            (manageSecondarySale.owner == _saleDTO.seller &&
-                manageSecondarySale.sold) ||
-            (manageSecondarySale.owner != _saleDTO.seller)
+            (managePS.owner == saleDTO.seller && managePS.soldout) ||
+            (managePS.owner != saleDTO.seller)
         ) {
             _isMsgValueEnough(
-                _marketItem.price,
-                _realAmount,
-                _value,
-                _marketItem.auctionProps.auctionId
+                marketItem.price,
+                realAmount,
+                value,
+                marketItem.auctionProps.auctionId
             );
-            _secondarySale(_marketItem, _saleDTO, _value, _sender);
+            _secondarySale(marketItem, saleDTO, value, sender);
         } else {
             _isMsgValueEnoughPrimarySale(
-                _marketItem.price,
-                _realAmount,
-                _value,
-                _marketItem.auctionProps.auctionId
+                marketItem.price,
+                realAmount,
+                value,
+                marketItem.auctionProps.auctionId
             );
-            _primarySale(_marketItem, _saleDTO, _value, _sender, _realAmount);
+            _primarySale(marketItem, saleDTO, value, sender, realAmount);
         }
     }
 
@@ -592,16 +591,16 @@ abstract contract MintGoldDustMarketplace is
      *      is necessary to inform the quantity of tokens to be listed.
      *    @notice that in this case, at the moment of the purchase, the buyer needs to buy all the tokens
      *            listed for auction.
-     *    @notice that this function check if the _amount being purchased by the onwer is the same of the amount
+     *    @notice that this function check if the amount being purchased by the onwer is the same of the amount
      *            of listed MintGoldDustERC1155 tokenId.
-     * @param _saleDTO a parameter just like in doxygen (must be followed by parameter name)
+     * @param saleDTO a parameter just like in doxygen (must be followed by parameter name)
      */
-    function _isBuyingAllListedTokens(SaleDTO memory _saleDTO) internal view {
+    function _isBuyingAllListedTokens(SaleDTO memory saleDTO) internal view {
         if (
-            _saleDTO.amount <
-            idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-                _saleDTO.tokenId
-            ][_saleDTO.seller].tokenAmount
+            saleDTO.amount <
+            idMarketItemsByContractByOwner[address(saleDTO.nft)][
+                saleDTO.tokenId
+            ][saleDTO.seller].tokenAmount
         ) {
             revert PurchaseOfERC1155InAuctionThatCoverAllListedItems();
         }
@@ -611,18 +610,15 @@ abstract contract MintGoldDustMarketplace is
      * @dev this function check if the an address represents a MintGoldDustNFT contract.
      *      It MUST be a MintGoldDustERC721 address or a MintGoldDustERC1155 address.
      * @notice that the function REVERTS with a MustBeERC721OrERC1155() error if the conditon is not met.
-     * @param _contractAddress is a MintGoldDustNFT address.
+     * @param nft is a MintGoldDustNFT address.
      */
-    function _mustBeMintGoldDustERC721Or1155(
-        address _contractAddress
-    ) internal view {
+    function _mustBeMintGoldDustERC721Or1155(address nft) internal view {
         //   // Get the interfaces that the contract supports
-        bool _isERC721 = _contractAddress == mintGoldDustERC721Address;
-
-        bool _isERC1155 = _contractAddress == mintGoldDustERC1155Address;
+        bool isERC721 = nft == mintGoldDustERC721Address;
+        bool isERC1155 = nft == mintGoldDustERC1155Address;
 
         // Ensure that the contract is either an ERC721 or ERC1155
-        if (!_isERC1155 && !_isERC721) {
+        if (!isERC1155 && !isERC721) {
             revert MustBeERC721OrERC1155();
         }
     }
@@ -631,13 +627,13 @@ abstract contract MintGoldDustMarketplace is
      * @dev the main goal of this function is check if the address calling the function is the
      *      owner of the tokenId.
      * @notice that it REVERTS with a AddressUnauthorized error if the condition is not met.
-     * @param _tokenId is the id that represent the token.
-     * @param _sender is the address that started this flow.
+     * @param tokenId is the id that represent the token.
+     * @param sender is the address that started this flow.
      */
-    function _isNFTowner(uint256 _tokenId, address _sender) internal view {
+    function _isNFTowner(uint256 tokenId, address sender) internal view {
         if (
-            (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(_tokenId) !=
-            _sender
+            (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(tokenId) !=
+            sender
         ) {
             revert AddressUnauthorized("Not owner!");
         }
@@ -647,43 +643,44 @@ abstract contract MintGoldDustMarketplace is
      * @dev the goal here is, depending of the contract address (MintGoldDustERC721 or MintGoldDustERC1155)
      *      verify if the tokenId is really listed.
      * @notice that if not it REVERTS with a Item_isNotListed() error.
-     * @param _tokenId is the id that represent the token.
-     * @param _contractAddress is a MintGoldDustNFT address.
+     * @param tokenId is the id that represent the token.
+     * @param nft is a MintGoldDustNFT address.
+     * @param seller is the address of the seller of this tokenId.
      */
     function _isTokenListed(
-        uint256 _tokenId,
-        address _contractAddress,
-        address _seller
+        uint256 tokenId,
+        address nft,
+        address seller
     ) internal view {
         if (
-            idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
-                .tokenAmount == 0
+            idMarketItemsByContractByOwner[nft][tokenId][seller].tokenAmount ==
+            0
         ) {
             revert ItemIsNotListedBySeller(
-                _tokenId,
+                tokenId,
                 address(this),
-                _contractAddress,
-                _seller,
+                nft,
+                seller,
                 msg.sender
             );
         }
         if (
-            _contractAddress == mintGoldDustERC721Address &&
-            (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(_tokenId) !=
+            nft == mintGoldDustERC721Address &&
+            (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(tokenId) !=
             address(this)
         ) {
-            revert ItemIsNotListed(_contractAddress);
+            revert ItemIsNotListed(nft);
         }
 
         if (
-            _contractAddress == mintGoldDustERC1155Address &&
+            nft == mintGoldDustERC1155Address &&
             (MintGoldDustERC1155(mintGoldDustERC1155Address)).balanceOf(
                 address(this),
-                _tokenId
+                tokenId
             ) ==
             0
         ) {
-            revert ItemIsNotListed(_contractAddress);
+            revert ItemIsNotListed(nft);
         }
     }
 
@@ -691,32 +688,32 @@ abstract contract MintGoldDustMarketplace is
      * @dev the goal here is verify if the MintGoldDustMarketplace contract has the quantity of
      *      MintGoldDustERC1155 tokens that the collector is trying to buy.
      * @notice that if not it REVERTS with a LessItemsListedThanTheRequiredAmount() error.
-     * @param _tokenId is the id that represent the token.
-     * @param _contractAddress is a MintGoldDustNFT address.
-     * @param _marketPlaceAddress it can be a MintGoldDustMarketplaceAuction or a MintGoldDustSetPrice address.
-     * @param _tokenQuantity the quantity of tokens desired by the buyer.
-     * @param _seller is the address of the seller of this tokenId.
+     * @param tokenId is the id that represent the token.
+     * @param nft is a MintGoldDustNFT address.
+     * @param marketPlaceAddress it can be a MintGoldDustMarketplaceAuction or a MintGoldDustSetPrice address.
+     * @param tokenQuantity the quantity of tokens desired by the buyer.
+     * @param seller is the address of the seller of this tokenId.
      */
     function _hasEnoughAmountListed(
-        uint256 _tokenId,
-        address _contractAddress,
-        address _marketPlaceAddress,
-        uint256 _tokenQuantity,
-        address _seller
+        uint256 tokenId,
+        address nft,
+        address marketPlaceAddress,
+        uint256 tokenQuantity,
+        address seller
     ) internal view {
         if (
-            _contractAddress == mintGoldDustERC1155Address &&
+            nft == mintGoldDustERC1155Address &&
             (MintGoldDustERC1155(mintGoldDustERC1155Address)).balanceOf(
-                _marketPlaceAddress,
-                _tokenId
+                marketPlaceAddress,
+                tokenId
             ) <
-            _tokenQuantity
+            tokenQuantity
         ) {
             revert LessItemsListedThanTheRequiredAmount();
         }
         if (
-            idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
-                .tokenAmount < _tokenQuantity
+            idMarketItemsByContractByOwner[nft][tokenId][seller].tokenAmount <
+            tokenQuantity
         ) {
             revert LessItemsListedThanTheRequiredAmount();
         }
@@ -725,39 +722,38 @@ abstract contract MintGoldDustMarketplace is
     /**
      * @dev the goal here is verify if the address is the seller of the respective tokenId for a contract address.
      * @notice that if not it REVERTS with a AddressUnauthorized() error.
-     * @param _tokenId is the id that represent the token.
-     * @param _contractAddress is a MintGoldDustNFT address.
-     * @param _seller is the address of the seller of this tokenId.
+     * @param tokenId is the id that represent the token.
+     * @param nft is a MintGoldDustNFT address.
+     * @param seller is the address of the seller of this tokenId.
      */
     function _isSeller(
-        uint256 _tokenId,
-        address _contractAddress,
-        address _seller
+        uint256 tokenId,
+        address nft,
+        address seller
     ) internal view {
         if (
             msg.sender !=
-            idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
-                .seller
+            idMarketItemsByContractByOwner[nft][tokenId][seller].seller
         ) {
             revert AddressUnauthorized("Not seller!");
         }
     }
 
     function _isNotListed(
-        uint256 _tokenId,
-        address _contractAddress,
+        uint256 tokenId,
+        address nft,
         address _seller
     ) internal view {
         if (
-            idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
-                .tokenAmount > 0
+            idMarketItemsByContractByOwner[nft][tokenId][_seller].tokenAmount >
+            0
         ) {
-            revert ItemIsAlreadyListed(_contractAddress);
+            revert ItemIsAlreadyListed(nft);
         }
     }
 
-    function _checkAmount(uint256 _amount) internal pure {
-        if (_amount <= 0) {
+    function _checkAmount(uint256 amount) internal pure {
+        if (amount <= 0) {
             revert InvalidAmount();
         }
     }
@@ -766,19 +762,19 @@ abstract contract MintGoldDustMarketplace is
      * @dev the main goal of this function is check if the address calling the function is the
      *      owner of the tokenId. For ERC1155 it means if the address has some balance for this token.
      * @notice that it REVERTS with a AddressUnauthorized error if the condition is not met.
-     * @param _tokenId is the id that represent the token.
+     * @param tokenId is the id that represent the token.
      * @param _tokenAmount is the quantity of tokens desired by the buyer.
-     * @param _sender is the address that started this flow.
+     * @param sender is the address that started this flow.
      */
     function _checkBalanceForERC1155(
-        uint256 _tokenId,
+        uint256 tokenId,
         uint256 _tokenAmount,
-        address _sender
+        address sender
     ) private view {
         if (
             (MintGoldDustERC1155(mintGoldDustERC1155Address)).balanceOf(
-                _sender,
-                _tokenId
+                sender,
+                tokenId
             ) < _tokenAmount
         ) {
             revert AddressUnauthorized(
@@ -791,7 +787,7 @@ abstract contract MintGoldDustMarketplace is
      * @notice that this function is responsible to start the primary sale flow.
      * @dev here we apply the fees related with the primary market that are:
      *                 - the primarySaleFeePercent and the collectorFee.
-     * @param _marketItem The MarketItem struct parameter to use.
+     * @param marketItem The MarketItem struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenId: The tokenId of the marketItem.
      *                    - seller: The seller of the marketItem.
@@ -806,54 +802,40 @@ abstract contract MintGoldDustMarketplace is
      *                        - highestBidder: the bidder that did bid the highest value.
      *                        - highestBid: the value of the high bid.
      *                        - ended: a boolean that indicates if the auction was already finished or not.
-     * @param _saleDTO The SaleDTO struct parameter to use.
+     * @param saleDTO The SaleDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
      *                              MintGoldDustERC721 the amout must be always one.
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
+     * @param value The value to be paid for the purchase.
+     * @param sender The address that started this flow.
      *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
      *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
      *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function _primarySale(
-        MarketItem memory _marketItem,
-        SaleDTO memory _saleDTO,
-        uint256 _value,
-        address _sender,
-        uint256 _realAmount
+        MarketItem memory marketItem,
+        SaleDTO memory saleDTO,
+        uint256 value,
+        address sender,
+        uint256 realAmount
     ) private {
-        MintGoldDustNFT _mintGoldDustNFT = _getERC1155OrERC721(
-            _marketItem.isERC721
-        );
-        ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
-            _saleDTO.contractAddress
-        ][_saleDTO.tokenId];
+        // MintGoldDustNFT _mintGoldDustNFT = _getERC1155OrERC721(
+        //     marketItem.isERC721
+        // );
 
-        _manageSecondarySale.amount = _manageSecondarySale.amount - _realAmount;
-        mintGoldDustMarketplace.updateSecondarySaleAmount(
-            _saleDTO.contractAddress,
-            _saleDTO.tokenId,
-            _realAmount
-        );
+        // ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
+        //     saleDTO.nft
+        // ][saleDTO.tokenId];
 
-        _mintGoldDustNFT.updatePrimarySaleQuantityToSold(
-            _saleDTO.tokenId,
-            _realAmount
+        saleDTO.nft.updatePrimarySaleQuantityToSell(
+            saleDTO.tokenId,
+            realAmount
         );
 
-        if (_manageSecondarySale.amount == 0) {
-            _manageSecondarySale.sold = true;
-            mintGoldDustMarketplace.updateSecondarySaleSold(
-                _saleDTO.contractAddress,
-                _saleDTO.tokenId,
-                true
-            );
-            _mintGoldDustNFT.setTokenWasSold(_saleDTO.tokenId);
-        }
+        saleDTO.nft.setTokenWasSold(saleDTO.tokenId);
 
         itemsSold.increment();
 
@@ -862,7 +844,7 @@ abstract contract MintGoldDustMarketplace is
         uint256 balance;
 
         /// @dev it removes the fee from the value that the buyer sent.
-        uint256 netValue = (_value * (100e18)) / (103e18);
+        uint256 netValue = (value * (100e18)) / (103e18);
 
         fee =
             (netValue * mintGoldDustCompany.primarySaleFeePercent()) /
@@ -871,15 +853,15 @@ abstract contract MintGoldDustMarketplace is
         balance = netValue - fee;
 
         _checkIfIsSplitPaymentAndCall(
-            _mintGoldDustNFT,
-            _marketItem,
-            _saleDTO,
+            saleDTO.nft,
+            marketItem,
+            saleDTO,
             balance,
             fee,
             collFee,
             true,
             netValue,
-            _sender
+            sender
         );
 
         (bool successOwner, ) = payable(mintGoldDustCompany.owner()).call{
@@ -892,202 +874,190 @@ abstract contract MintGoldDustMarketplace is
      * @notice that this function will check if the item has or not the collaborator and call the correct
      *         flow (unique sale or split sale)
      * @dev Explain to a developer any extra details
-     * @param _mintGoldDustNFT MintGoldDustNFT is an instance of MintGoldDustERC721 or MintGoldDustERC1155.
-     * @param _marketItem the struct MarketItem - check it in the primarySale or secondary sale functions.
-     * @param _saleDTO the struct SaleDTO - check it in the primarySale or secondary sale functions.
-     * @param _balance uint256 that represents the total amount to be received by the seller after fee calculations.
-     * @param _fee uint256 the primary or the secondary fee to be paid by the buyer.
-     * @param _collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
+     * @param nft MintGoldDustNFT is an instance of MintGoldDustERC721 or MintGoldDustERC1155.
+     * @param marketItem the struct MarketItem - check it in the primarySale or secondary sale functions.
+     * @param saleDTO the struct SaleDTO - check it in the primarySale or secondary sale functions.
+     * @param balance uint256 that represents the total amount to be received by the seller after fee calculations.
+     * @param fee uint256 the primary or the secondary fee to be paid by the buyer.
+     * @param collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
      * @param isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
+     * @param value The value to be paid for the purchase.
+     * @param sender The address that started this flow.
      *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
      *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
      *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function _checkIfIsSplitPaymentAndCall(
-        MintGoldDustNFT _mintGoldDustNFT,
-        MarketItem memory _marketItem,
-        SaleDTO memory _saleDTO,
-        uint256 _balance,
-        uint256 _fee,
-        uint256 _collFeeOrRoyalty,
+        MintGoldDustNFT nft,
+        MarketItem memory marketItem,
+        SaleDTO memory saleDTO,
+        uint256 balance,
+        uint256 fee,
+        uint256 collFeeOrRoyalty,
         bool isPrimarySale,
-        uint256 _value,
-        address _sender
+        uint256 value,
+        address sender
     ) private {
-        address _artistOrSeller = _mintGoldDustNFT.tokenIdArtist(
-            _saleDTO.tokenId
-        );
+        address artistOrSeller = nft.tokenIdArtist(saleDTO.tokenId);
 
         if (isPrimarySale) {
-            _artistOrSeller = _saleDTO.seller;
+            artistOrSeller = saleDTO.seller;
         }
 
-        if (_mintGoldDustNFT.hasTokenCollaborators(_saleDTO.tokenId)) {
-            handleSplitPaymentCall(
-                _mintGoldDustNFT,
-                _saleDTO,
-                _balance,
-                _fee,
-                _collFeeOrRoyalty,
-                _artistOrSeller,
+        if (nft.hasTokenCollaborators(saleDTO.tokenId)) {
+            _handleSplitPaymentCall(
+                nft,
+                saleDTO,
+                balance,
+                fee,
+                collFeeOrRoyalty,
+                artistOrSeller,
                 isPrimarySale,
-                _value,
-                _sender
+                value,
+                sender
             );
             return;
         }
 
         if (isPrimarySale) {
-            uniqueOwnerPrimarySale(
-                _mintGoldDustNFT,
-                _marketItem,
-                _saleDTO,
-                _fee,
-                _collFeeOrRoyalty,
-                _balance,
-                _value,
-                _sender
+            _uniqueOwnerPrimarySale(
+                nft,
+                marketItem,
+                saleDTO,
+                fee,
+                collFeeOrRoyalty,
+                balance,
+                value,
+                sender
             );
             return;
         }
 
-        uniqueOwnerSecondarySale(
-            _marketItem,
-            _mintGoldDustNFT,
-            _saleDTO,
-            _artistOrSeller,
-            _fee,
-            _collFeeOrRoyalty,
-            _balance,
-            _value,
-            _sender
+        _uniqueOwnerSecondarySale(
+            marketItem,
+            nft,
+            saleDTO,
+            artistOrSeller,
+            fee,
+            collFeeOrRoyalty,
+            balance,
+            value,
+            sender
         );
     }
 
     /**
      * @dev this function is called when in the checkIfIsSplitPaymentAndCall function the flow goes for
      *      a sale for an item that does not has collaborators and is its first sale in the MintGoldDustMarketplace.
-     * @param _mintGoldDustNFT explained in checkIfIsSplitPaymentAndCall function.
-     * @param _marketItem explained in checkIfIsSplitPaymentAndCall function.
-     * @param _saleDTO explained in checkIfIsSplitPaymentAndCall function.
-     * @param _fee the primary fee to be paid for the MintGoldDustMarketplace.
+     * @param nft explained in checkIfIsSplitPaymentAndCall function.
+     * @param marketItem explained in checkIfIsSplitPaymentAndCall function.
+     * @param saleDTO explained in checkIfIsSplitPaymentAndCall function.
+     * @param fee the primary fee to be paid for the MintGoldDustMarketplace.
      * @param _collFee represent the collector fee.
-     * @param _balance represents the total amount to be received by the seller after fee calculations.
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
+     * @param balance represents the total amount to be received by the seller after fee calculations.
+     * @param value The value to be paid for the purchase.
+     * @param sender The address that started this flow.
      *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
      *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
      *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
-    function uniqueOwnerPrimarySale(
-        MintGoldDustNFT _mintGoldDustNFT,
-        MarketItem memory _marketItem,
-        SaleDTO memory _saleDTO,
-        uint256 _fee,
+    function _uniqueOwnerPrimarySale(
+        MintGoldDustNFT nft,
+        MarketItem memory marketItem,
+        SaleDTO memory saleDTO,
+        uint256 fee,
         uint256 _collFee,
-        uint256 _balance,
-        uint256 _value,
-        address _sender
+        uint256 balance,
+        uint256 value,
+        address sender
     ) private {
-        _mintGoldDustNFT.transfer(
-            address(this),
-            _sender,
-            _saleDTO.tokenId,
-            _saleDTO.amount
-        );
+        nft.transfer(address(this), sender, saleDTO.tokenId, saleDTO.amount);
 
-        updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
+        _updateIdMarketItemsByContractByOwnerMapping(saleDTO);
         emit MintGoldDustNftPurchasedPrimaryMarket(
             itemsSold.current(),
-            _saleDTO.tokenId,
-            _saleDTO.seller,
-            _sender,
-            _value,
-            _balance,
-            _fee,
+            saleDTO.tokenId,
+            saleDTO.seller,
+            sender,
+            value,
+            balance,
+            fee,
             _collFee,
-            _saleDTO.amount,
+            saleDTO.amount,
             false,
-            _marketItem.isERC721
+            marketItem.isERC721
         );
 
-        (bool successSeller, ) = payable(_marketItem.seller).call{
-            value: _balance
+        (bool successSeller, ) = payable(marketItem.seller).call{
+            value: balance
         }("");
         require(successSeller, "Transfer to seller failed.");
     }
 
-    function updateIdMarketItemsByContractByOwnerMapping(
-        SaleDTO memory _saleDTO
+    function _updateIdMarketItemsByContractByOwnerMapping(
+        SaleDTO memory saleDTO
     ) private {
         MarketItem storage item = idMarketItemsByContractByOwner[
-            _saleDTO.contractAddress
-        ][_saleDTO.tokenId][_saleDTO.seller];
+            address(saleDTO.nft)
+        ][saleDTO.tokenId][saleDTO.seller];
 
-        item.tokenAmount = item.tokenAmount - _saleDTO.amount;
+        item.tokenAmount = item.tokenAmount - saleDTO.amount;
 
         if (item.tokenAmount == 0) {
-            delete idMarketItemsByContractByOwner[_saleDTO.contractAddress][
-                _saleDTO.tokenId
-            ][_saleDTO.seller];
+            delete idMarketItemsByContractByOwner[address(saleDTO.nft)][
+                saleDTO.tokenId
+            ][saleDTO.seller];
         }
     }
 
     /**
      * @dev this function is called when in the checkIfIsSplitPaymentAndCall function the flow goes for
      *      a sale for an item that does not has collaborators and was already sold the first time.
-     * @param _marketItem explained in checkIfIsSplitPaymentAndCall function.
-     * @param _mintGoldDustNFT explained in checkIfIsSplitPaymentAndCall function.
-     * @param _saleDTO explained in checkIfIsSplitPaymentAndCall function.
-     * @param _artist the creator of the artwork to receive the royalties.
-     * @param _fee the secondary fee to be paid for the MintGoldDustMarketplace.
+     * @param marketItem explained in checkIfIsSplitPaymentAndCall function.
+     * @param nft explained in checkIfIsSplitPaymentAndCall function.
+     * @param saleDTO explained in checkIfIsSplitPaymentAndCall function.
+     * @param artist the creator of the artwork to receive the royalties.
+     * @param fee the secondary fee to be paid for the MintGoldDustMarketplace.
      * @param _royalty represent the royalty to be paid for the artist.
-     * @param _balance represents the total amount to be received by the seller after fee calculations.
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
+     * @param balance represents the total amount to be received by the seller after fee calculations.
+     * @param value The value to be paid for the purchase.
+     * @param sender The address that started this flow.
      *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
      *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
      *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
-    function uniqueOwnerSecondarySale(
-        MarketItem memory _marketItem,
-        MintGoldDustNFT _mintGoldDustNFT,
-        SaleDTO memory _saleDTO,
-        address _artist,
-        uint256 _fee,
+    function _uniqueOwnerSecondarySale(
+        MarketItem memory marketItem,
+        MintGoldDustNFT nft,
+        SaleDTO memory saleDTO,
+        address artist,
+        uint256 fee,
         uint256 _royalty,
-        uint256 _balance,
-        uint256 _value,
-        address _sender
+        uint256 balance,
+        uint256 value,
+        address sender
     ) private {
-        _mintGoldDustNFT.transfer(
-            address(this),
-            _sender,
-            _saleDTO.tokenId,
-            _saleDTO.amount
-        );
+        nft.transfer(address(this), sender, saleDTO.tokenId, saleDTO.amount);
 
-        updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
+        _updateIdMarketItemsByContractByOwnerMapping(saleDTO);
 
         emit MintGoldDustNftPurchasedSecondaryMarket(
             itemsSold.current(),
-            _saleDTO.tokenId,
-            _saleDTO.seller,
-            _sender,
-            _value,
-            _balance,
-            _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId),
+            saleDTO.tokenId,
+            saleDTO.seller,
+            sender,
+            value,
+            balance,
+            nft.tokenIdRoyaltyPercent(saleDTO.tokenId),
             _royalty,
-            _artist,
-            _fee,
-            _saleDTO.amount,
+            artist,
+            fee,
+            saleDTO.amount,
             false,
-            _marketItem.isERC721
+            marketItem.isERC721
         );
 
-        (bool successArtist, ) = payable(_artist).call{value: _royalty}("");
+        (bool successArtist, ) = payable(artist).call{value: _royalty}("");
         require(successArtist, "Transfer to artist failed.");
     }
 
@@ -1096,11 +1066,11 @@ abstract contract MintGoldDustMarketplace is
      * @dev the _isPrimarySale is very important. It define if the value to be received is
      *      the balance for primary sale or the royalty for secondary sales.
      *    @notice that the emitEventForSplitPayment os called to trigger the correct event depending of the flow.
-     * @param _balance uint256 that represents the total amount to be received by the seller after fee calculations.
-     * @param _fee uint256 the primary or the secondary fee to be paid by the buyer.
-     * @param _collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
-     * @param _artist the creator of the artwork to receive the royalties.
-     * @param _saleDTO The SaleDTO struct parameter to use.
+     * @param balance uint256 that represents the total amount to be received by the seller after fee calculations.
+     * @param fee uint256 the primary or the secondary fee to be paid by the buyer.
+     * @param collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
+     * @param artist the creator of the artwork to receive the royalties.
+     * @param saleDTO The SaleDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
@@ -1108,61 +1078,56 @@ abstract contract MintGoldDustMarketplace is
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      * @param _isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
+     * @param value The value to be paid for the purchase.
+     * @param sender The address that started this flow.
      *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
      *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
      *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
-    function splittedSale(
-        uint256 _balance,
-        uint256 _fee,
-        uint256 _collFeeOrRoyalty,
-        address _artist,
-        MintGoldDustNFT _mintGoldDustNFT,
-        SaleDTO memory _saleDTO,
+    function _splittedSale(
+        uint256 balance,
+        uint256 fee,
+        uint256 collFeeOrRoyalty,
+        address artist,
+        MintGoldDustNFT nft,
+        SaleDTO memory saleDTO,
         bool _isPrimarySale,
-        uint256 _value,
-        address _sender
+        uint256 value,
+        address sender
     ) private {
-        MarketItem memory _marketItem = _getMarketItem(_saleDTO);
+        MarketItem memory marketItem = _getMarketItem(saleDTO);
 
-        uint256 balanceOrRoyalty = _collFeeOrRoyalty;
+        uint256 balanceOrRoyalty = collFeeOrRoyalty;
 
         if (_isPrimarySale) {
-            balanceOrRoyalty = _balance;
+            balanceOrRoyalty = balance;
         }
 
-        uint256 _tokenIdCollaboratorsQuantity = _mintGoldDustNFT
-            .tokenIdCollaboratorsQuantity(_saleDTO.tokenId);
+        uint256 tokenIdCollaboratorsQuantity = nft.tokenIdCollaboratorsQuantity(
+            saleDTO.tokenId
+        );
 
         uint256 balanceSplitPart = (balanceOrRoyalty *
-            _mintGoldDustNFT.tokenIdCollaboratorsPercentage(
-                _saleDTO.tokenId,
-                0
-            )) / (100e18);
+            nft.tokenIdCollaboratorsPercentage(saleDTO.tokenId, 0)) / (100e18);
 
-        (bool successArtist, ) = payable(_artist).call{value: balanceSplitPart}(
+        (bool successArtist, ) = payable(artist).call{value: balanceSplitPart}(
             ""
         );
         require(successArtist, "Split tx to artist failed.");
 
         emit NftPurchasedCollaboratorAmount(
             itemsSold.current(),
-            _artist,
+            artist,
             balanceSplitPart
         );
 
-        for (uint256 i = 1; i < _tokenIdCollaboratorsQuantity; i++) {
+        for (uint256 i = 1; i < tokenIdCollaboratorsQuantity; i++) {
             balanceSplitPart =
                 (balanceOrRoyalty *
-                    _mintGoldDustNFT.tokenIdCollaboratorsPercentage(
-                        _saleDTO.tokenId,
-                        i
-                    )) /
+                    nft.tokenIdCollaboratorsPercentage(saleDTO.tokenId, i)) /
                 (100e18);
-            address collaborator = _mintGoldDustNFT.tokenCollaborators(
-                _saleDTO.tokenId,
+            address collaborator = nft.tokenCollaborators(
+                saleDTO.tokenId,
                 i - 1
             );
 
@@ -1178,133 +1143,127 @@ abstract contract MintGoldDustMarketplace is
             );
         }
 
-        updateIdMarketItemsByContractByOwnerMapping(_saleDTO);
-        emitEventForSplitPayment(
-            _saleDTO,
-            _marketItem,
-            _mintGoldDustNFT,
-            _artist,
-            _balance,
-            _fee,
-            _collFeeOrRoyalty,
+        _updateIdMarketItemsByContractByOwnerMapping(saleDTO);
+        _emitEventForSplitPayment(
+            saleDTO,
+            marketItem,
+            nft,
+            artist,
+            balance,
+            fee,
+            collFeeOrRoyalty,
             _isPrimarySale,
-            _value,
-            _sender
+            value,
+            sender
         );
     }
 
     /**
      * @notice that is the function responsible to trigger the correct event for splitted sales.
      * @dev the _isPrimarySale defines if the primary sale or the secondary sale should be triggered.
-     * @param _mintGoldDustNFT MintGoldDustNFT is an instance of MintGoldDustERC721 or MintGoldDustERC1155.
-     * @param _marketItem explained in splittedSale function.
-     * @param _artist the creator of the artwork to receive the royalties.
-     * @param _artist the creator of the artwork to receive the royalties.
-     * @param _balance uint256 that represents the total amount to be received by the seller after fee calculations.
-     * @param _fee uint256 the primary or the secondary fee to be paid by the buyer.
-     * @param _collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
-     * @param _isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
+     * @param nft MintGoldDustNFT is an instance of MintGoldDustERC721 or MintGoldDustERC1155.
+     * @param marketItem explained in _splittedSale function.
+     * @param artist the creator of the artwork to receive the royalties.
+     * @param balance uint256 that represents the total amount to be received by the seller after fee calculations.
+     * @param fee uint256 the primary or the secondary fee to be paid by the buyer.
+     * @param collFeeOrRoyalty uint256 that represent the collector fee or the royalty depending of the flow.
+     * @param isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
+     * @param value The value to be paid for the purchase.
+     * @param sender The address that started this flow.
      *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
      *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
      *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
-    function emitEventForSplitPayment(
-        SaleDTO memory _saleDTO,
-        MarketItem memory _marketItem,
-        MintGoldDustNFT _mintGoldDustNFT,
-        address _artist,
-        uint256 _balance,
-        uint256 _fee,
-        uint256 _collFeeOrRoyalty,
-        bool _isPrimarySale,
-        uint256 _value,
-        address _sender
+    function _emitEventForSplitPayment(
+        SaleDTO memory saleDTO,
+        MarketItem memory marketItem,
+        MintGoldDustNFT nft,
+        address artist,
+        uint256 balance,
+        uint256 fee,
+        uint256 collFeeOrRoyalty,
+        bool isPrimarySale,
+        uint256 value,
+        address sender
     ) private {
-        if (_isPrimarySale) {
+        if (isPrimarySale) {
             emit MintGoldDustNftPurchasedPrimaryMarket(
                 itemsSold.current(),
-                _saleDTO.tokenId,
-                _saleDTO.seller,
-                _sender,
-                _value,
-                _balance,
-                _fee,
-                _collFeeOrRoyalty,
-                _saleDTO.amount,
+                saleDTO.tokenId,
+                saleDTO.seller,
+                sender,
+                value,
+                balance,
+                fee,
+                collFeeOrRoyalty,
+                saleDTO.amount,
                 true,
-                _marketItem.isERC721
+                marketItem.isERC721
             );
             return;
         }
 
         emit MintGoldDustNftPurchasedSecondaryMarket(
             itemsSold.current(),
-            _saleDTO.tokenId,
-            _saleDTO.seller,
-            _sender,
-            _value,
-            _balance,
-            _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId),
-            _collFeeOrRoyalty,
-            _artist,
-            _fee,
-            _saleDTO.amount,
+            saleDTO.tokenId,
+            saleDTO.seller,
+            sender,
+            value,
+            balance,
+            nft.tokenIdRoyaltyPercent(saleDTO.tokenId),
+            collFeeOrRoyalty,
+            artist,
+            fee,
+            saleDTO.amount,
             true,
-            _marketItem.isERC721
+            marketItem.isERC721
         );
     }
 
     /**
      * @notice that this function do continuity to split payment flow.
      * @dev Explain to a developer any extra details
-     * @param _mintGoldDustNFT MintGoldDustNFT is an instance of MintGoldDustERC721 or MintGoldDustERC1155.
-     * @param _saleDTO The SaleDTO struct parameter to use.
+     * @param nft MintGoldDustNFT is an instance of MintGoldDustERC721 or MintGoldDustERC1155.
+     * @param saleDTO The SaleDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
      *                              MintGoldDustERC721 the amout must be always one.
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
-     * @param _balance uint256 that represents the total amount to be received by the seller after fee calculations.
-     * @param _fee uint256 the primary or the secondary fee to be paid by the buyer.
-     * @param _collFeeOrRoyalty uint256 that represent the collerctor fee or the royalty depending of the flow.
-     * @param _artistOrSeller address for the artist on secondary sales and for the seller on the primary sales.
-     * @param _isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
+     * @param balance uint256 that represents the total amount to be received by the seller after fee calculations.
+     * @param fee uint256 the primary or the secondary fee to be paid by the buyer.
+     * @param collFeeOrRoyalty uint256 that represent the collerctor fee or the royalty depending of the flow.
+     * @param artistOrSeller address for the artist on secondary sales and for the seller on the primary sales.
+     * @param isPrimarySale bool that helps the code to go for the correct flow (Primary or Secondary sale).
+     * @param value The value to be paid for the purchase.
+     * @param sender The address that started this flow.
      *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
      *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
      *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
-    function handleSplitPaymentCall(
-        MintGoldDustNFT _mintGoldDustNFT,
-        SaleDTO memory _saleDTO,
-        uint256 _balance,
-        uint256 _fee,
-        uint256 _collFeeOrRoyalty,
-        address _artistOrSeller,
-        bool _isPrimarySale,
-        uint256 _value,
-        address _sender
+    function _handleSplitPaymentCall(
+        MintGoldDustNFT nft,
+        SaleDTO memory saleDTO,
+        uint256 balance,
+        uint256 fee,
+        uint256 collFeeOrRoyalty,
+        address artistOrSeller,
+        bool isPrimarySale,
+        uint256 value,
+        address sender
     ) private {
-        _mintGoldDustNFT.transfer(
-            address(this),
-            _sender,
-            _saleDTO.tokenId,
-            _saleDTO.amount
-        );
-        splittedSale(
-            _balance,
-            _fee,
-            _collFeeOrRoyalty,
-            _artistOrSeller,
-            _mintGoldDustNFT,
-            _saleDTO,
-            _isPrimarySale,
-            _value,
-            _sender
+        nft.transfer(address(this), sender, saleDTO.tokenId, saleDTO.amount);
+        _splittedSale(
+            balance,
+            fee,
+            collFeeOrRoyalty,
+            artistOrSeller,
+            nft,
+            saleDTO,
+            isPrimarySale,
+            value,
+            sender
         );
     }
 
@@ -1312,7 +1271,7 @@ abstract contract MintGoldDustMarketplace is
      * @notice that this function is responsible to start the secondary sale flow.
      * @dev here we apply the fees related with the secondary market that are:
      *                 - the secondarySaleFeePercent and the tokenIdRoyaltyPercent.
-     * @param _marketItem The MarketItem struct parameter to use.
+     * @param marketItem The MarketItem struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenId: The tokenId of the marketItem.
      *                    - seller: The seller of the marketItem.
@@ -1327,29 +1286,25 @@ abstract contract MintGoldDustMarketplace is
      *                        - highestBidder: the bidder that did bid the highest value.
      *                        - highestBid: the value of the high bid.
      *                        - ended: a boolean that indicates if the auction was already finished or not.
-     * @param _saleDTO The SaleDTO struct parameter to use.
+     * @param saleDTO The SaleDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
      *                              MintGoldDustERC721 the amout must be always one.
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
-     * @param _value The value to be paid for the purchase.
-     * @param _sender The address that started this flow.
+     * @param value The value to be paid for the purchase.
+     * @param sender The address that started this flow.
      *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
      *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
      *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function _secondarySale(
-        MarketItem memory _marketItem,
-        SaleDTO memory _saleDTO,
-        uint256 _value,
-        address _sender
+        MarketItem memory marketItem,
+        SaleDTO memory saleDTO,
+        uint256 value,
+        address sender
     ) private {
-        MintGoldDustNFT _mintGoldDustNFT = _getERC1155OrERC721(
-            _marketItem.isERC721
-        );
-
         itemsSold.increment();
 
         uint256 fee;
@@ -1357,25 +1312,24 @@ abstract contract MintGoldDustMarketplace is
         uint256 balance;
 
         fee =
-            (_value * mintGoldDustCompany.secondarySaleFeePercent()) /
+            (value * mintGoldDustCompany.secondarySaleFeePercent()) /
             (100e18);
         royalty =
-            (_value *
-                _mintGoldDustNFT.tokenIdRoyaltyPercent(_saleDTO.tokenId)) /
+            (value * saleDTO.nft.tokenIdRoyaltyPercent(saleDTO.tokenId)) /
             (100e18);
 
-        balance = _value - (fee + royalty);
+        balance = value - (fee + royalty);
 
         _checkIfIsSplitPaymentAndCall(
-            _mintGoldDustNFT,
-            _marketItem,
-            _saleDTO,
+            saleDTO.nft,
+            marketItem,
+            saleDTO,
             balance,
             fee,
             royalty,
             false,
-            _value,
-            _sender
+            value,
+            sender
         );
 
         (bool successOwner, ) = payable(mintGoldDustCompany.owner()).call{
@@ -1383,7 +1337,7 @@ abstract contract MintGoldDustMarketplace is
         }("");
         require(successOwner, "Transaction to owner failed.");
 
-        (bool successSeller, ) = payable(_marketItem.seller).call{
+        (bool successSeller, ) = payable(marketItem.seller).call{
             value: balance
         }("");
         require(successSeller, "Transaction to seller failed.");
@@ -1391,58 +1345,58 @@ abstract contract MintGoldDustMarketplace is
 
     /// @dev it is a private function to verify if the msg.value is enough to pay the product between the
     ///      price of the token and the quantity desired.
-    /// @param _price the price of one market item.
-    /// @param _amount the quantity desired for this purchase.
-    /// @param _value the value sent by the buyer.
+    /// @param price the price of one market item.
+    /// @param amount the quantity desired for this purchase.
+    /// @param value the value sent by the buyer.
     /// @notice that it REVERTS with a InvalidAmountForThisPurchase() error if the condition is not met.
     function _isMsgValueEnough(
-        uint256 _price,
-        uint256 _amount,
-        uint256 _value,
+        uint256 price,
+        uint256 amount,
+        uint256 value,
         uint256 _auctionId
     ) private pure {
-        uint256 realAmount = _amount;
+        uint256 realAmount = amount;
         if (_auctionId != 0) {
             realAmount = 1;
         }
 
-        if (_value != _price * realAmount) {
+        if (value != price * realAmount) {
             revert InvalidAmountForThisPurchase();
         }
     }
 
     /**
      * @dev Checks if the provided value is enough to cover the total price of the product, including a 3% fee.
-     * @param _price The unit price of the item.
-     * @param _amount The quantity of items desired for purchase.
-     * @param _value The value sent with the transaction, expected to cover the totalPrice including the 3% fee.
-     * @notice Reverts with the InvalidAmountForThisPurchase error if the provided _value doesn't match the expected amount.
+     * @param price The unit price of the item.
+     * @param amount The quantity of items desired for purchase.
+     * @param value The value sent with the transaction, expected to cover the totalPrice including the 3% fee.
+     * @notice Reverts with the InvalidAmountForThisPurchase error if the provided value doesn't match the expected amount.
      */
     function _isMsgValueEnoughPrimarySale(
-        uint256 _price,
-        uint256 _amount,
-        uint256 _value,
+        uint256 price,
+        uint256 amount,
+        uint256 value,
         uint256 _auctionId
     ) private pure {
-        uint256 realAmount = _amount;
+        uint256 realAmount = amount;
         if (_auctionId != 0) {
             realAmount = 1;
         }
 
-        // Calculate total price for the _amount
-        uint256 totalPrice = _price * realAmount;
+        // Calculate total price for the amount
+        uint256 totalPrice = price * realAmount;
 
         // Calculate the increase using higher precision
         uint256 increase = (totalPrice * 3) / 100;
 
         uint256 realPrice = totalPrice + increase;
 
-        // Check if _value is equal to totalPrice + realPrice
-        if (_value != realPrice && _auctionId == 0) {
+        // Check if value is equal to totalPrice + realPrice
+        if (value != realPrice && _auctionId == 0) {
             revert InvalidAmountForThisPurchase();
         }
 
-        if (_value < realPrice && _auctionId > 0) {
+        if (value < realPrice && _auctionId > 0) {
             revert InvalidAmountForThisPurchase();
         }
     }

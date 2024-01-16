@@ -94,6 +94,8 @@ contract MintGoldDustERC721 is
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
         tokenIdMemoir[newTokenId] = _memoir;
 
+        _primarySaleQuantityToSell[newTokenId] = 1;
+
         emit MintGoldDustNFTMinted(
             newTokenId,
             _tokenURI,

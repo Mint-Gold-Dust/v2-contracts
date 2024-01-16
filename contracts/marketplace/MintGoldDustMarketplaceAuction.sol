@@ -2,7 +2,7 @@
 pragma solidity 0.8.18;
 
 import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
-import {AuctionProps, BidDTO, ListDTO, ManageSecondarySale, MarketItem, SaleDTO} from "../libraries/MgdMarketPlaceDataTypes.sol";
+import {AuctionProps, BidDTO, ListDTO, ManagePrimarySale, MarketItem, SaleDTO} from "../libraries/MgdMarketPlaceDataTypes.sol";
 import {MintGoldDustMarketplace} from "./MintGoldDustMarketplace.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
@@ -124,9 +124,9 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     event LastBidderRefunded(address indexed recipient, uint256 amount);
 
     error AuctionMustBeEnded(
-        uint256 _tokenId,
+        uint256 tokenId,
         address contractAddress,
-        uint256 _auctionId
+        uint256 auctionId
     );
     error AuctionEndedAlready();
     error BidTooLow();
@@ -146,19 +146,19 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      *
      * @notice MGDAuction is a children of MintGoldDustMarketplace and this one is
      * composed by other two contracts.
-     * @param _mintGoldDustCompany The contract responsible to MGD management features.
-     * @param _mintGoldDustERC721Address The MGD ERC721.
-     * @param _mintGoldDustERC1155Address The MGD ERC721.
+     * @param mintGoldDustCompany_ The contract responsible to MGD management features.
+     * @param mintGoldDustERC721Address_ The MGD ERC721.
+     * @param mintGoldDustERC1155Address_ The MGD ERC721.
      */
     function initializeChild(
-        address _mintGoldDustCompany,
-        address payable _mintGoldDustERC721Address,
-        address payable _mintGoldDustERC1155Address
+        address mintGoldDustCompany_,
+        address payable mintGoldDustERC721Address_,
+        address payable mintGoldDustERC1155Address_
     ) external initializer {
         MintGoldDustMarketplace.initialize(
-            _mintGoldDustCompany,
-            _mintGoldDustERC721Address,
-            _mintGoldDustERC1155Address
+            mintGoldDustCompany_,
+            mintGoldDustERC721Address_,
+            mintGoldDustERC1155Address_
         );
     }
 
@@ -185,41 +185,37 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      *         - Also is verified if the bid is being done in the last final minutes of the bid (initiale it is set
      *           by 5 minutes). If yes, we add more the same quantity to the final of the end time of the auction.
      *         - If everything goes alright we do the transfers.
-     * @param _bidDTO struct that represents the data to be transfered between functions in the auction flow.
+     * @param bidDTO struct that represents the data to be transfered between functions in the auction flow.
      *                It consists of the following fields:
      *                  - tokenId: the id of the token that is listed to this auction.
      *                  - contractAddress: is a MintGoldDustNFT address.
      *                  - seller: is the address of the seller of this tokenId.
      */
-    function placeBid(BidDTO memory _bidDTO) external payable nonReentrant {
+    function placeBid(BidDTO memory bidDTO) external payable nonReentrant {
         /// @dev verifications
-        _isNotCreator(_bidDTO);
-        _isNotLastBidder(_bidDTO);
-        _isTokenListed(
-            _bidDTO.tokenId,
-            _bidDTO.contractAddress,
-            _bidDTO.seller
-        );
-        _isAuctionTimeEnded(_bidDTO);
-        _isBidTooLow(_bidDTO);
+        _isNotCreator(bidDTO);
+        _isNotLastBidder(bidDTO);
+        _isTokenListed(bidDTO.tokenId, address(bidDTO.nft), bidDTO.seller);
+        _isAuctionTimeEnded(bidDTO);
+        _isBidTooLow(bidDTO);
 
         if (
-            checkBidder[msg.sender][_bidDTO.contractAddress][_bidDTO.tokenId][
-                _bidDTO.seller
+            checkBidder[msg.sender][address(bidDTO.nft)][bidDTO.tokenId][
+                bidDTO.seller
             ] == false
         ) {
-            checkBidder[msg.sender][_bidDTO.contractAddress][_bidDTO.tokenId][
-                _bidDTO.seller
+            checkBidder[msg.sender][address(bidDTO.nft)][bidDTO.tokenId][
+                bidDTO.seller
             ] == true;
 
             /// @dev starts auction flow
-            _isAuctionTimeStarted(_bidDTO);
-            _checkIfIsLast5MinutesAndAddMore5(_bidDTO);
-            _refundLastBidder(_bidDTO);
-            _manageNewBid(_bidDTO);
-            delete checkBidder[msg.sender][_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller];
+            _isAuctionTimeStarted(bidDTO);
+            _checkIfIsLast5MinutesAndAddMore5(bidDTO);
+            _refundLastBidder(bidDTO);
+            _manageNewBid(bidDTO);
+            delete checkBidder[msg.sender][address(bidDTO.nft)][bidDTO.tokenId][
+                bidDTO.seller
+            ];
         }
     }
 
@@ -230,59 +226,50 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      *            - The seller must be the msg.sender.
      *            - The auction must not be started yet.
      *            - The time of the auction should be zero.
-     * @param _tokenId is the token id of the listed item.
-     * @param _contractAddress is a MintGoldDustERC721 or a MintGoldDustERC1155 contract address.
+     * @param tokenId is the token id of the listed item.
+     * @param nft is a MintGoldDustERC721 or a MintGoldDustERC1155 contract address.
      * @notice if everything goes alright the token is retrieved by the seller and the function EMIT the AuctionCancelled event.
      *                In the final the item is deleted from the idMarketItemsByContractByOwner mapping.
      */
     function cancelAuction(
-        uint256 _tokenId,
-        address _contractAddress
+        uint256 tokenId,
+        MintGoldDustNFT nft
     ) external nonReentrant {
-        _isTokenListed(_tokenId, _contractAddress, msg.sender);
+        _isTokenListed(tokenId, address(nft), msg.sender);
         require(
-            idMarketItemsByContractByOwner[_contractAddress][_tokenId][
-                msg.sender
-            ].seller == msg.sender,
+            idMarketItemsByContractByOwner[address(nft)][tokenId][msg.sender]
+                .seller == msg.sender,
             "Unauthorized"
         );
 
         if (
-            idMarketItemsByContractByOwner[_contractAddress][_tokenId][
-                msg.sender
-            ].auctionProps.endTime > 0
+            idMarketItemsByContractByOwner[address(nft)][tokenId][msg.sender]
+                .auctionProps
+                .endTime > 0
         ) {
             revert AuctionAlreadyStarted();
         }
 
-        MintGoldDustNFT _mintGoldDustNFT = _getERC1155OrERC721(
-            idMarketItemsByContractByOwner[_contractAddress][_tokenId][
-                msg.sender
-            ].isERC721
-        );
-
-        _mintGoldDustNFT.transfer(
+        nft.transfer(
             address(this),
             msg.sender,
-            _tokenId,
-            idMarketItemsByContractByOwner[_contractAddress][_tokenId][
-                msg.sender
-            ].tokenAmount
+            tokenId,
+            idMarketItemsByContractByOwner[address(nft)][tokenId][msg.sender]
+                .tokenAmount
         );
 
         emit AuctionCancelled(
-            _tokenId,
-            _contractAddress,
-            idMarketItemsByContractByOwner[_contractAddress][_tokenId][
-                msg.sender
-            ].seller,
+            tokenId,
+            address(nft),
+            idMarketItemsByContractByOwner[address(nft)][tokenId][msg.sender]
+                .seller,
             block.timestamp,
-            idMarketItemsByContractByOwner[_contractAddress][_tokenId][
-                msg.sender
-            ].auctionProps.auctionId
+            idMarketItemsByContractByOwner[address(nft)][tokenId][msg.sender]
+                .auctionProps
+                .auctionId
         );
 
-        delete idMarketItemsByContractByOwner[_contractAddress][_tokenId][
+        delete idMarketItemsByContractByOwner[address(nft)][tokenId][
             msg.sender
         ];
     }
@@ -301,21 +288,17 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      *            - And the time of the auction must already be reached out the final.
      *            - The auction must not be ended yet.
      *            - The time of the auction should not be zero.
-     * @param _bidDTO struct that represents the data to be transfered between functions in the auction flow.
+     * @param bidDTO struct that represents the data to be transfered between functions in the auction flow.
      *                It consists of the following fields:
      *                  - tokenId: the id of the token that is listed to this auction.
      *                  - contractAddress: is a MintGoldDustNFT address.
      *                  - seller: is the address of the seller of this tokenId.
      */
-    function endAuction(BidDTO memory _bidDTO) external nonReentrant {
-        _isTokenListed(
-            _bidDTO.tokenId,
-            _bidDTO.contractAddress,
-            _bidDTO.seller
-        );
+    function endAuction(BidDTO memory bidDTO) external nonReentrant {
+        _isTokenListed(bidDTO.tokenId, address(bidDTO.nft), bidDTO.seller);
         MarketItem storage item = idMarketItemsByContractByOwner[
-            _bidDTO.contractAddress
-        ][_bidDTO.tokenId][_bidDTO.seller];
+            address(bidDTO.nft)
+        ][bidDTO.tokenId][bidDTO.seller];
         require(
             item.auctionProps.highestBidder == msg.sender ||
                 item.seller == msg.sender ||
@@ -340,18 +323,18 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
 
         purchaseAuctionNft(
             SaleDTO(
-                _bidDTO.tokenId,
+                bidDTO.tokenId,
                 item.tokenAmount,
-                _bidDTO.contractAddress,
-                _bidDTO.seller
+                bidDTO.nft,
+                bidDTO.seller
             ),
             item.auctionProps.highestBid
         );
 
         emit AuctionWinnerCall(
-            _bidDTO.tokenId,
-            _bidDTO.contractAddress,
-            _bidDTO.seller,
+            bidDTO.tokenId,
+            address(bidDTO.nft),
+            bidDTO.seller,
             block.timestamp,
             auctionId
         );
@@ -362,39 +345,39 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @dev This is an implementation of a virtual function declared in the father contract.
      *      Here we call the more generic list function passing the correct params for an auction flow
      *      and after that emit the ItemListedToAuction event.
-     * @param _tokenId: The tokenId of the marketItem.
-     * @param _amount: The quantity of tokens to be listed for an MintGoldDustERC1155.
+     * @param tokenId: The tokenId of the marketItem.
+     * @param amount: The quantity of tokens to be listed for an MintGoldDustERC1155.
      *    @dev For MintGoldDustERC721 the amout must be always one.
-     * @param _contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
-     * @param _priceForAllTokens: The price or reserve price for the quantity of tokens listed.
+     * @param nft: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+     * @param priceForAllTokens: The price or reserve price for the quantity of tokens listed.
      *    @dev in the auction the seller must set a price for all tokens that are being listed.
      */
     function list(
-        uint256 _tokenId,
-        uint256 _amount,
-        address _contractAddress,
-        uint256 _priceForAllTokens
+        uint256 tokenId,
+        uint256 amount,
+        MintGoldDustNFT nft,
+        uint256 priceForAllTokens
     ) external override whenNotPaused {
-        _mustBeMintGoldDustERC721Or1155(_contractAddress);
-        _checkAmount(_amount);
-        _isNotListed(_tokenId, _contractAddress, msg.sender);
+        _mustBeMintGoldDustERC721Or1155(address(nft));
+        _checkAmount(amount);
+        _isNotListed(tokenId, address(nft), msg.sender);
 
-        ListDTO memory _listDTO = ListDTO(
-            _tokenId,
-            _amount,
-            _contractAddress,
-            _priceForAllTokens
+        ListDTO memory listDTO = ListDTO(
+            tokenId,
+            amount,
+            nft,
+            priceForAllTokens
         );
 
         auctionIds.increment();
 
-        _list(_listDTO, auctionIds.current(), msg.sender);
+        _list(listDTO, auctionIds.current(), msg.sender);
 
         emit ItemListedToAuction(
-            _listDTO.tokenId,
-            _contractAddress,
+            listDTO.tokenId,
+            address(nft),
             msg.sender,
-            _listDTO.price,
+            listDTO.price,
             block.timestamp,
             auctionIds.current()
         );
@@ -407,54 +390,50 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
      * @dev This function is specific for the auction market. Then, in this case, the function will be called
      *      internally from the MGDAuction contract. So is not possible to get the msg.value. Then we're receiving the value by param.
-     * @param _saleDTO The SaleDTO struct parameter to use.
+     * @param saleDTO The SaleDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
      *                              MintGoldDustERC721 the amout must be always one.
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
-     * @param _value The value to be paid for the purchase.
+     * @param value The value to be paid for the purchase.
      *    @dev we need to receive the sender this way, because in the auction flow the purchase starts from
      *         the endAuction function in the MintGoldDustMarketplaceAuction contract. So from there the address
      *         that we get is the highst bidder that is stored in the marketItem struct. So we need to manage this way.
      */
     function purchaseAuctionNft(
-        SaleDTO memory _saleDTO,
-        uint256 _value
+        SaleDTO memory saleDTO,
+        uint256 value
     ) internal {
-        _isTokenListed(
-            _saleDTO.tokenId,
-            _saleDTO.contractAddress,
-            _saleDTO.seller
-        );
+        _isTokenListed(saleDTO.tokenId, address(saleDTO.nft), saleDTO.seller);
 
-        _mustBeMintGoldDustERC721Or1155(_saleDTO.contractAddress);
+        _mustBeMintGoldDustERC721Or1155(address(saleDTO.nft));
 
         _hasEnoughAmountListed(
-            _saleDTO.tokenId,
-            _saleDTO.contractAddress,
+            saleDTO.tokenId,
+            address(saleDTO.nft),
             address(this),
-            _saleDTO.amount,
-            _saleDTO.seller
+            saleDTO.amount,
+            saleDTO.seller
         );
 
-        MarketItem memory _marketItem = _getMarketItem(_saleDTO);
+        MarketItem memory _marketItem = _getMarketItem(saleDTO);
 
         /// @dev if the flow goes for ERC721 the amount of tokens MUST be ONE.
         uint256 _realAmount = 1;
 
         if (!_marketItem.isERC721) {
-            _realAmount = _saleDTO.amount;
-            _isBuyingAllListedTokens(_saleDTO);
+            _realAmount = saleDTO.amount;
+            _isBuyingAllListedTokens(saleDTO);
         }
 
-        //require(_marketItem.price == _value, "Invalid amount for this purchase");
+        //require(_marketItem.price == value, "Invalid amount for this purchase");
 
         _checkIfIsPrimaryOrSecondarySaleAndCall(
             _marketItem,
-            _saleDTO,
-            _value,
+            saleDTO,
+            value,
             _marketItem.auctionProps.highestBidder,
             _realAmount
         );
@@ -464,19 +443,19 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @dev the main goal of this function is check if the endTime of the auction is different of zero, so
      *      the time auction was already started. And, in this case, if the endTime is greater than the current timestamp.
      * @notice that if not it REVERTS with a AuctionMustBeEnded error.
-     * @param _bidDTO BidDTO struct.
+     * @param bidDTO BidDTO struct.
      */
-    function _isAuctionTimeEnded(BidDTO memory _bidDTO) private view {
+    function _isAuctionTimeEnded(BidDTO memory bidDTO) private view {
         MarketItem storage item = idMarketItemsByContractByOwner[
-            _bidDTO.contractAddress
-        ][_bidDTO.tokenId][_bidDTO.seller];
+            address(bidDTO.nft)
+        ][bidDTO.tokenId][bidDTO.seller];
         if (
             item.auctionProps.endTime != 0 &&
             block.timestamp >= item.auctionProps.endTime
         ) {
             revert AuctionMustBeEnded(
-                _bidDTO.tokenId,
-                _bidDTO.contractAddress,
+                bidDTO.tokenId,
+                address(bidDTO.nft),
                 item.auctionProps.auctionId
             );
         }
@@ -490,12 +469,12 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @notice that in the last case the item alredy has received some bid. So the amount paid
      *         must be greater than the last highest bid.
      * @notice if one of the conditions was not met the function REVERTS with a BidTooLow() error.
-     * @param _bidDTO BidDTO struct.
+     * @param bidDTO BidDTO struct.
      */
-    function _isBidTooLow(BidDTO memory _bidDTO) private {
+    function _isBidTooLow(BidDTO memory bidDTO) private {
         MarketItem storage item = idMarketItemsByContractByOwner[
-            _bidDTO.contractAddress
-        ][_bidDTO.tokenId][_bidDTO.seller];
+            address(bidDTO.nft)
+        ][bidDTO.tokenId][bidDTO.seller];
 
         if (item.price == 0 && msg.value <= 0) {
             revert BidTooLow();
@@ -514,13 +493,12 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             revert BidTooLow();
         }
 
-        ManageSecondarySale memory manageSecondarySale = _isSecondarySale[
-            _bidDTO.contractAddress
-        ][_bidDTO.tokenId];
+        ManagePrimarySale memory managePs = bidDTO.nft.getManagePrimarySale(
+            bidDTO.tokenId
+        );
 
         if (
-            (manageSecondarySale.owner == _bidDTO.seller &&
-                !manageSecondarySale.sold) &&
+            (managePs.owner == bidDTO.seller && !managePs.soldout) &&
             item.auctionProps.highestBid == 0 &&
             item.price > 0 &&
             msg.value < (item.price * 103) / 100
@@ -534,12 +512,12 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @notice that it EMITS the AuctionTimeStarted event when the time is started.
      * @notice that the end time is the start time plus the mintGoldDustCompany.auctionDuration(). This
      *         value is 24 hours and is defined at the moment of the deployment of the contracts.
-     * @param _bidDTO BidDTO struct.
+     * @param bidDTO BidDTO struct.
      */
-    function _isAuctionTimeStarted(BidDTO memory _bidDTO) private {
+    function _isAuctionTimeStarted(BidDTO memory bidDTO) private {
         MarketItem storage item = idMarketItemsByContractByOwner[
-            _bidDTO.contractAddress
-        ][_bidDTO.tokenId][_bidDTO.seller];
+            address(bidDTO.nft)
+        ][bidDTO.tokenId][bidDTO.seller];
 
         if (item.auctionProps.endTime == 0) {
             /// @dev The time starts to count for the auction.
@@ -549,8 +527,8 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
                 mintGoldDustCompany.auctionDuration();
 
             emit AuctionTimeStarted(
-                _bidDTO.tokenId,
-                _bidDTO.contractAddress,
+                bidDTO.tokenId,
+                address(bidDTO.nft),
                 item.auctionProps.startTime,
                 item.auctionProps.endTime,
                 item.auctionProps.auctionId
@@ -562,12 +540,12 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @dev the goal of this function is check if the endTime is in the final minutes configured initially
      *      by five minutes in the MintGoldDustCompany contract. If yes it adds more five minutes to the
      *      auction end time and EMITS the AuctionExtended event.
-     * @param _bidDTO BidDTO struct.
+     * @param bidDTO BidDTO struct.
      */
-    function _checkIfIsLast5MinutesAndAddMore5(BidDTO memory _bidDTO) private {
+    function _checkIfIsLast5MinutesAndAddMore5(BidDTO memory bidDTO) private {
         MarketItem storage item = idMarketItemsByContractByOwner[
-            _bidDTO.contractAddress
-        ][_bidDTO.tokenId][_bidDTO.seller];
+            address(bidDTO.nft)
+        ][bidDTO.tokenId][bidDTO.seller];
         /**
          * @dev If a higher bid happens in the last 5 minutes we should add more 5 minutes
          * to the end time auction.
@@ -580,8 +558,8 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
                 item.auctionProps.endTime +
                 mintGoldDustCompany.auctionFinalMinutes();
             emit AuctionExtended(
-                _bidDTO.tokenId,
-                _bidDTO.contractAddress,
+                bidDTO.tokenId,
+                address(bidDTO.nft),
                 item.auctionProps.endTime,
                 item.auctionProps.auctionId
             );
@@ -591,14 +569,14 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     /**
      * @dev if the auction receives a new highest bid so the latest amount paid by the last address
      *      must be refunded for it. So this function add the amount to the recipientBalances mapping.
-     * @param _bidDTO BidDTO struct.
+     * @param bidDTO BidDTO struct.
      * @notice that the mapping is incremented only if is not the first bid in the auction.
      * @notice that the function EMIT the LastBidderRefunded event.
      */
-    function _refundLastBidder(BidDTO memory _bidDTO) private {
+    function _refundLastBidder(BidDTO memory bidDTO) private {
         MarketItem storage item = idMarketItemsByContractByOwner[
-            _bidDTO.contractAddress
-        ][_bidDTO.tokenId][_bidDTO.seller];
+            address(bidDTO.nft)
+        ][bidDTO.tokenId][bidDTO.seller];
 
         if (item.auctionProps.highestBidder != address(0)) {
             address lastBidder = item.auctionProps.highestBidder;
@@ -619,27 +597,24 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
      * @dev this is the last step in the place a bid flow. Here all the correct values will be
      *      updated to the idMarketItemsByContractByOwner mapping.
      * @notice that the AuctionNewBid event is emmited.
-     * @param _bidDTO BidDTO struct.
+     * @param bidDTO BidDTO struct.
      */
-    function _manageNewBid(BidDTO memory _bidDTO) private {
+    function _manageNewBid(BidDTO memory bidDTO) private {
         MarketItem storage item = idMarketItemsByContractByOwner[
-            _bidDTO.contractAddress
-        ][_bidDTO.tokenId][_bidDTO.seller];
+            address(bidDTO.nft)
+        ][bidDTO.tokenId][bidDTO.seller];
 
         /// @dev save the previous bidder to show in the event.
         address previousBidder = item.auctionProps.highestBidder;
 
         uint256 realPrice = msg.value;
 
-        ManageSecondarySale memory manageSecondarySale = _isSecondarySale[
-            _bidDTO.contractAddress
-        ][_bidDTO.tokenId];
+        ManagePrimarySale memory managePs = bidDTO.nft.getManagePrimarySale(
+            bidDTO.tokenId
+        );
 
         /// @dev If is primary sale so the bidder needs to pay the item price + 3% of the item price
-        if (
-            (manageSecondarySale.owner == _bidDTO.seller &&
-                !manageSecondarySale.sold)
-        ) {
+        if ((managePs.owner == bidDTO.seller && !managePs.soldout)) {
             realPrice = (msg.value * 100 * 1e18) / (103) / 1e18;
         }
 
@@ -649,8 +624,8 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
         item.auctionProps.highestBidder = msg.sender;
 
         emit AuctionNewBid(
-            _bidDTO.tokenId,
-            _bidDTO.contractAddress,
+            bidDTO.tokenId,
+            address(bidDTO.nft),
             previousBidder,
             msg.sender,
             realPrice,
@@ -662,13 +637,13 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     /**
      * @dev this function verify if the address is not the seller.
      * @notice if yes it REVERTS with a AuctionCreatorCannotBid() error.
-     * @param _bidDTO BidDTO struct.
+     * @param bidDTO BidDTO struct.
      */
-    function _isNotCreator(BidDTO memory _bidDTO) private view {
+    function _isNotCreator(BidDTO memory bidDTO) private view {
         if (
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].seller == msg.sender
+            idMarketItemsByContractByOwner[address(bidDTO.nft)][bidDTO.tokenId][
+                bidDTO.seller
+            ].seller == msg.sender
         ) {
             revert AuctionCreatorCannotBid();
         }
@@ -677,13 +652,13 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     /**
      * @dev this function verify if the address is not the auction current highest bidder.
      * @notice if yes it REVERTS with a LastBidderCannotPlaceNextBid() error.
-     * @param _bidDTO BidDTO struct.
+     * @param bidDTO BidDTO struct.
      */
-    function _isNotLastBidder(BidDTO memory _bidDTO) private view {
+    function _isNotLastBidder(BidDTO memory bidDTO) private view {
         if (
-            idMarketItemsByContractByOwner[_bidDTO.contractAddress][
-                _bidDTO.tokenId
-            ][_bidDTO.seller].auctionProps.highestBidder == msg.sender
+            idMarketItemsByContractByOwner[address(bidDTO.nft)][bidDTO.tokenId][
+                bidDTO.seller
+            ].auctionProps.highestBidder == msg.sender
         ) {
             revert LastBidderCannotPlaceNextBid();
         }
