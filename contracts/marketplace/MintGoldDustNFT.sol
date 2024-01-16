@@ -17,101 +17,6 @@ abstract contract MintGoldDustNFT is
     PausableUpgradeable,
     ReentrancyGuardUpgradeable
 {
-    // Add your custom code and functions here
-    /**
-     *
-     * @notice that the MintGoldDustERC721 is composed by other contract.
-     * @param _mintGoldDustCompany The contract responsible to MGD management features.
-     */
-    function initialize(
-        address _mintGoldDustCompany
-    ) internal onlyInitializing isZeroAddress(_mintGoldDustCompany) {
-        __ReentrancyGuard_init();
-        __Pausable_init();
-        mintGoldDustCompany = MintGoldDustCompany(
-            payable(_mintGoldDustCompany)
-        );
-    }
-
-    MintGoldDustCompany internal mintGoldDustCompany;
-    address internal mintGoldDustSetPriceAddress;
-    address internal mintGoldDustMarketplaceAuctionAddress;
-
-    mapping(uint256 => address) public tokenIdArtist;
-    mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
-
-    mapping(uint256 => bytes) public tokenIdMemoir;
-
-    mapping(uint256 => address[4]) public tokenCollaborators;
-    mapping(uint256 => uint256[5]) public tokenIdCollaboratorsPercentage;
-
-    mapping(uint256 => bool) public hasTokenCollaborators;
-    mapping(uint256 => uint256) public tokenIdCollaboratorsQuantity;
-
-    mapping(uint256 => bool) internal tokenWasSold;
-
-    mapping(uint256 => uint256) internal primarySaleQuantityToSold;
-
-    /// @notice Reduces the quantity of remaining items available for primary sale for a specific token.
-    ///         Only executes the update if there is a non-zero quantity of the token remaining for primary sale.
-    /// @dev This function should only be called by authorized addresses.
-    /// @param _tokenId The ID of the token whose primary sale quantity needs to be updated.
-    /// @param _amountSold The amount sold that needs to be subtracted from the remaining quantity.
-    function updatePrimarySaleQuantityToSold(
-        uint256 _tokenId,
-        uint256 _amountSold
-    ) external {
-        require(
-            msg.sender == mintGoldDustMarketplaceAuctionAddress ||
-                msg.sender == mintGoldDustSetPriceAddress,
-            "Unauthorized on NFT"
-        );
-        if (primarySaleQuantityToSold[_tokenId] > 0) {
-            primarySaleQuantityToSold[_tokenId] =
-                primarySaleQuantityToSold[_tokenId] -
-                _amountSold;
-        }
-    }
-
-    uint256[48] private __gap;
-
-    /// @notice that this function is used for the Mint Gold Dust owner
-    /// create the dependence of the Mint Gold Dust set price contract address.
-    /// @param _mintGoldDustSetPriceAddress the address to be setted.
-    function setMintGoldDustSetPriceAddress(
-        address _mintGoldDustSetPriceAddress
-    ) external {
-        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
-        require(
-            address(mintGoldDustSetPriceAddress) == address(0),
-            "Already setted!"
-        );
-        mintGoldDustSetPriceAddress = _mintGoldDustSetPriceAddress;
-    }
-
-    /// @notice that this function is used for the Mint Gold Dust owner
-    /// create the dependence of the Mint Gold Dust Marketplace Auction address.
-    /// @param _mintGoldDustMarketplaceAuctionAddress the address to be setted.
-    function setMintGoldDustMarketplaceAuctionAddress(
-        address _mintGoldDustMarketplaceAuctionAddress
-    ) external {
-        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
-        require(
-            address(mintGoldDustMarketplaceAuctionAddress) == address(0),
-            "Already setted!"
-        );
-        mintGoldDustMarketplaceAuctionAddress = _mintGoldDustMarketplaceAuctionAddress;
-    }
-
-    function setTokenWasSold(uint256 _tokenId) public {
-        require(
-            msg.sender == mintGoldDustMarketplaceAuctionAddress ||
-                msg.sender == mintGoldDustSetPriceAddress,
-            "Unauthorized on NFT"
-        );
-        tokenWasSold[_tokenId] = true;
-    }
-
     /**
      * @notice that this is an event that contains the info for a mint.
      * @dev it will be triggered after a successfully traditional minting or split minting.
@@ -159,211 +64,36 @@ abstract contract MintGoldDustNFT is
         uint256 amount
     );
 
-    function transfer(
-        address from,
-        address to,
-        uint256 tokenId,
-        uint256 amount
-    ) external virtual;
+    MintGoldDustCompany internal mintGoldDustCompany;
+    address internal mintGoldDustSetPriceAddress;
+    address internal mintGoldDustMarketplaceAuctionAddress;
 
-    function executeMintFlow(
-        string calldata _tokenURI,
-        uint256 _royaltyPercent,
-        uint256 _amount,
-        address _artistAddress,
-        uint256 _collectorMintId,
-        bytes calldata _memoir
-    ) internal virtual returns (uint256);
+    mapping(uint256 => address) public tokenIdArtist;
+    mapping(uint256 => uint256) public tokenIdRoyaltyPercent;
 
-    /**
-     * @notice that is the function responsible by the mint a new MintGoldDustNFT token.
-     * @dev that is a virtual function that MUST be implemented by the NFT contracts childrens.
-     * @param _tokenURI the URI that contains the metadata for the NFT.
-     * @param _royaltyPercent the royalty percentage to be applied for this NFT secondary sales.
-     * @param _amount the quantity to be minted for this token.
-     */
-    function mintNft(
-        string calldata _tokenURI,
-        uint256 _royaltyPercent,
-        uint256 _amount,
-        bytes calldata _memoir
-    )
-        public
-        payable
-        isArtistWhitelisted(msg.sender)
-        validPercentage(_royaltyPercent)
-        whenNotPaused
-        returns (uint256)
-    {
-        uint256 newTokenId = executeMintFlow(
-            _tokenURI,
-            _royaltyPercent,
-            _amount,
-            msg.sender,
-            0,
-            _memoir
-        );
+    mapping(uint256 => bytes) public tokenIdMemoir;
 
-        return newTokenId;
+    mapping(uint256 => address[4]) public tokenCollaborators;
+    mapping(uint256 => uint256[5]) public tokenIdCollaboratorsPercentage;
+
+    mapping(uint256 => bool) public hasTokenCollaborators;
+    mapping(uint256 => uint256) public tokenIdCollaboratorsQuantity;
+
+    mapping(uint256 => bool) internal _tokenWasSold;
+
+    mapping(uint256 => uint256) internal _primarySaleQuantityToSold;
+
+    uint256[48] private __gap;
+
+    /// @notice that this modifier is used to check if the address is not zero address
+    modifier isZeroAddress(address _address) {
+        require(_address != address(0), "address is zero address");
+        _;
     }
 
-    /**
-     * @notice that is the function responsible by the mint and split a new MintGoldDustNFT token.
-     * @dev that it receives two arrays one with the _newOwners that are the collaborators for this NFT
-     *      and the _ownersPercentage that is the percentage of participation for each collaborators.
-     *      @notice that the _newOwners array MUST always have the length equals the _ownersPercentage length minus one.
-     *              it is because the fist collaborators we already have that is the creator of the NFT and is saved in
-     *              the tokenIdArtist mapping.
-     * @param _tokenURI the URI that contains the metadata for the NFT.
-     * @param _royalty the royalty percentage to be applied for this NFT secondary sales.
-     * @param _newOwners an array of address that can be a number of maximum 4 collaborators.
-     * @param _ownersPercentage an array of uint256 that are the percetages for the artist and for each one of the collaborators.
-     *    @dev @notice that the percetages will be applied in order that the f position 0 is the percetage for the artist and
-     *                 the others will match with the _newOwners array order.
-     * @param _amount the quantity to be minted for this token.
-     */
-    function splitMint(
-        string calldata _tokenURI,
-        uint256 _royalty,
-        address[] calldata _newOwners,
-        uint256[] calldata _ownersPercentage,
-        uint256 _amount,
-        bytes calldata _memoir
-    )
-        external
-        whenNotPaused
-        arrayLengthCheck(_newOwners, _ownersPercentage)
-        returns (uint256)
-    {
-        uint256 _tokenId = mintNft(_tokenURI, _royalty, _amount, _memoir);
-        executeSplitMintFlow(_tokenId, _newOwners, _ownersPercentage);
-        return _tokenId;
-    }
-
-    function collectorMint(
-        string calldata _tokenURI,
-        uint256 _royaltyPercent,
-        uint256 _amountToMint,
-        address _artistAddress,
-        bytes calldata _memoir,
-        uint256 _collectorMintId,
-        address _sender
-    )
-        external
-        onlySetPrice
-        checkParameters(_sender, _artistAddress, _royaltyPercent)
-        whenNotPaused
-        returns (uint256)
-    {
-        uint256 newTokenId = executeMintFlow(
-            _tokenURI,
-            _royaltyPercent,
-            _amountToMint,
-            _artistAddress,
-            _collectorMintId,
-            _memoir
-        );
-
-        return newTokenId;
-    }
-
-    function collectorSplitMint(
-        string calldata _tokenURI,
-        uint256 _royalty,
-        address[] calldata _newOwners,
-        uint256[] calldata _ownersPercentage,
-        uint256 _amountToMint,
-        address _artistAddress,
-        bytes calldata _memoir,
-        uint256 _collectorMintId,
-        address _sender
-    )
-        external
-        onlySetPrice
-        checkParameters(_sender, _artistAddress, _royalty)
-        whenNotPaused
-        arrayLengthCheck(_newOwners, _ownersPercentage)
-        returns (uint256)
-    {
-        uint256 _tokenId = executeMintFlow(
-            _tokenURI,
-            _royalty,
-            _amountToMint,
-            _artistAddress,
-            _collectorMintId,
-            _memoir
-        );
-
-        executeSplitMintFlow(_tokenId, _newOwners, _ownersPercentage);
-        return _tokenId;
-    }
-
-    function executeSplitMintFlow(
-        uint256 _tokenId,
-        address[] calldata _newOwners,
-        uint256[] calldata _ownersPercentage
-    ) private {
-        uint256 ownersCount = 0;
-        /// @dev it is a new variable to keep track of the total percentage assigned to collaborators.
-        uint256 totalPercentage = 0;
-
-        for (uint256 i = 0; i < _newOwners.length; i++) {
-            require(
-                _newOwners[i] != address(0),
-                "Owner address cannot be null!"
-            );
-            require(_ownersPercentage[i] > 0, "Percentage must be > zero!");
-
-            ownersCount++;
-            totalPercentage += _ownersPercentage[i]; /// @dev Accumulate the percentage for each valid collaborator
-            tokenCollaborators[_tokenId][i] = _newOwners[i];
-            tokenIdCollaboratorsPercentage[_tokenId][i] = _ownersPercentage[i];
-        }
-
-        require(
-            _ownersPercentage[ownersCount] > 0,
-            "Percentage must be > zero!"
-        );
-
-        require(ownersCount >= 1, "Add more than 1 owner!");
-
-        require(ownersCount < 5, "Add max 4!");
-
-        /// @dev the array of percentages is always one number greater than the collaborators length.
-        /// So is necessary do one more addition here.
-        totalPercentage += _ownersPercentage[ownersCount];
-
-        if (totalPercentage != 100e18) {
-            revert TheTotalPercentageCantBeGreaterOrLessThan100();
-        }
-
-        tokenIdCollaboratorsQuantity[_tokenId] = ownersCount + 1;
-        tokenIdCollaboratorsPercentage[_tokenId][
-            ownersCount
-        ] = _ownersPercentage[ownersCount];
-
-        hasTokenCollaborators[_tokenId] = true;
-        emit MintGoldDustNftMintedAndSplitted(
-            _tokenId,
-            _newOwners,
-            _ownersPercentage,
-            address(this)
-        );
-    }
-
-    /// @notice Pause the contract
-    function pauseContract() external isowner {
-        _pause();
-    }
-
-    /// @notice Unpause the contract
-    function unpauseContract() external isowner {
-        _unpause();
-    }
-
-    /// @notice that this modifier is used to check if the arrays length are valid
+    /// @notice Checks if the array lengths are valid
     /// @dev the _ownersPercentage array length MUST be equals the _newOwners array length plus one
-    modifier arrayLengthCheck(
+    modifier checkArraySize(
         address[] calldata _newOwners,
         uint256[] calldata _ownersPercentage
     ) {
@@ -427,9 +157,277 @@ abstract contract MintGoldDustNFT is
         _;
     }
 
-    /// @notice that this modifier is used to check if the address is not zero address
-    modifier isZeroAddress(address _address) {
-        require(_address != address(0), "address is zero address");
-        _;
+    /**
+     * @notice that the MintGoldDustERC721 is composed by other contract.
+     * @param _mintGoldDustCompany The contract responsible to MGD management features.
+     */
+    function initialize(
+        address _mintGoldDustCompany
+    ) internal onlyInitializing isZeroAddress(_mintGoldDustCompany) {
+        __ReentrancyGuard_init();
+        __Pausable_init();
+        mintGoldDustCompany = MintGoldDustCompany(
+            payable(_mintGoldDustCompany)
+        );
+    }
+
+    /**
+     * @notice that is the function responsible by the mint a new MintGoldDustNFT token.
+     * @dev that is a virtual function that MUST be implemented by the NFT contracts childrens.
+     * @param _tokenURI the URI that contains the metadata for the NFT.
+     * @param _royaltyPercent the royalty percentage to be applied for this NFT secondary sales.
+     * @param _amount the quantity to be minted for this token.
+     */
+    function mintNft(
+        string calldata _tokenURI,
+        uint256 _royaltyPercent,
+        uint256 _amount,
+        bytes calldata _memoir
+    )
+        public
+        payable
+        isArtistWhitelisted(msg.sender)
+        validPercentage(_royaltyPercent)
+        whenNotPaused
+        returns (uint256)
+    {
+        uint256 newTokenId = _executeMintFlow(
+            _tokenURI,
+            _royaltyPercent,
+            _amount,
+            msg.sender,
+            0,
+            _memoir
+        );
+
+        return newTokenId;
+    }
+
+    /**
+     * @notice that is the function responsible by the mint and split a new MintGoldDustNFT token.
+     * @dev that it receives two arrays one with the _newOwners that are the collaborators for this NFT
+     *      and the _ownersPercentage that is the percentage of participation for each collaborators.
+     *      @notice that the _newOwners array MUST always have the length equals the _ownersPercentage length minus one.
+     *              it is because the fist collaborators we already have that is the creator of the NFT and is saved in
+     *              the tokenIdArtist mapping.
+     * @param _tokenURI the URI that contains the metadata for the NFT.
+     * @param _royalty the royalty percentage to be applied for this NFT secondary sales.
+     * @param _newOwners an array of address that can be a number of maximum 4 collaborators.
+     * @param _ownersPercentage an array of uint256 that are the percetages for the artist and for each one of the collaborators.
+     *    @dev @notice that the percetages will be applied in order that the f position 0 is the percetage for the artist and
+     *                 the others will match with the _newOwners array order.
+     * @param _amount the quantity to be minted for this token.
+     */
+    function splitMint(
+        string calldata _tokenURI,
+        uint256 _royalty,
+        address[] calldata _newOwners,
+        uint256[] calldata _ownersPercentage,
+        uint256 _amount,
+        bytes calldata _memoir
+    )
+        external
+        whenNotPaused
+        checkArraySize(_newOwners, _ownersPercentage)
+        returns (uint256)
+    {
+        uint256 _tokenId = mintNft(_tokenURI, _royalty, _amount, _memoir);
+        _executeSplitMintFlow(_tokenId, _newOwners, _ownersPercentage);
+        return _tokenId;
+    }
+
+    function collectorMint(
+        string calldata _tokenURI,
+        uint256 _royaltyPercent,
+        uint256 _amountToMint,
+        address _artistAddress,
+        bytes calldata _memoir,
+        uint256 _collectorMintId,
+        address _sender
+    )
+        external
+        onlySetPrice
+        checkParameters(_sender, _artistAddress, _royaltyPercent)
+        whenNotPaused
+        returns (uint256)
+    {
+        uint256 newTokenId = _executeMintFlow(
+            _tokenURI,
+            _royaltyPercent,
+            _amountToMint,
+            _artistAddress,
+            _collectorMintId,
+            _memoir
+        );
+
+        return newTokenId;
+    }
+
+    function collectorSplitMint(
+        string calldata _tokenURI,
+        uint256 _royalty,
+        address[] calldata _newOwners,
+        uint256[] calldata _ownersPercentage,
+        uint256 _amountToMint,
+        address _artistAddress,
+        bytes calldata _memoir,
+        uint256 _collectorMintId,
+        address _sender
+    )
+        external
+        onlySetPrice
+        checkParameters(_sender, _artistAddress, _royalty)
+        whenNotPaused
+        checkArraySize(_newOwners, _ownersPercentage)
+        returns (uint256)
+    {
+        uint256 _tokenId = _executeMintFlow(
+            _tokenURI,
+            _royalty,
+            _amountToMint,
+            _artistAddress,
+            _collectorMintId,
+            _memoir
+        );
+
+        _executeSplitMintFlow(_tokenId, _newOwners, _ownersPercentage);
+        return _tokenId;
+    }
+
+    /// @notice Reduces the quantity of remaining items available for primary sale for a specific token.
+    ///         Only executes the update if there is a non-zero quantity of the token remaining for primary sale.
+    /// @dev This function should only be called by authorized addresses.
+    /// @param _tokenId The ID of the token whose primary sale quantity needs to be updated.
+    /// @param _amountSold The amount sold that needs to be subtracted from the remaining quantity.
+    function updatePrimarySaleQuantityToSold(
+        uint256 _tokenId,
+        uint256 _amountSold
+    ) external {
+        require(
+            msg.sender == mintGoldDustMarketplaceAuctionAddress ||
+                msg.sender == mintGoldDustSetPriceAddress,
+            "Unauthorized on NFT"
+        );
+        if (_primarySaleQuantityToSold[_tokenId] > 0) {
+            _primarySaleQuantityToSold[_tokenId] =
+                _primarySaleQuantityToSold[_tokenId] -
+                _amountSold;
+        }
+    }
+
+    /// @notice that this function is used for the Mint Gold Dust owner
+    /// create the dependence of the Mint Gold Dust set price contract address.
+    /// @param _mintGoldDustSetPriceAddress the address to be setted.
+    function setMintGoldDustSetPriceAddress(
+        address _mintGoldDustSetPriceAddress
+    ) external {
+        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
+        require(
+            address(mintGoldDustSetPriceAddress) == address(0),
+            "Already setted!"
+        );
+        mintGoldDustSetPriceAddress = _mintGoldDustSetPriceAddress;
+    }
+
+    /// @notice that this function is used for the Mint Gold Dust owner
+    /// create the dependence of the Mint Gold Dust Marketplace Auction address.
+    /// @param _mintGoldDustMarketplaceAuctionAddress the address to be setted.
+    function setMintGoldDustMarketplaceAuctionAddress(
+        address _mintGoldDustMarketplaceAuctionAddress
+    ) external {
+        require(msg.sender == mintGoldDustCompany.owner(), "Unauthorized");
+        require(
+            address(mintGoldDustMarketplaceAuctionAddress) == address(0),
+            "Already setted!"
+        );
+        mintGoldDustMarketplaceAuctionAddress = _mintGoldDustMarketplaceAuctionAddress;
+    }
+
+    function setTokenWasSold(uint256 _tokenId) public {
+        require(
+            msg.sender == mintGoldDustMarketplaceAuctionAddress ||
+                msg.sender == mintGoldDustSetPriceAddress,
+            "Unauthorized on NFT"
+        );
+        _tokenWasSold[_tokenId] = true;
+    }
+
+    function transfer(
+        address from,
+        address to,
+        uint256 tokenId,
+        uint256 amount
+    ) external virtual;
+
+    function _executeMintFlow(
+        string calldata _tokenURI,
+        uint256 _royaltyPercent,
+        uint256 _amount,
+        address _artistAddress,
+        uint256 _collectorMintId,
+        bytes calldata _memoir
+    ) internal virtual returns (uint256);
+
+    function _executeSplitMintFlow(
+        uint256 _tokenId,
+        address[] calldata _newOwners,
+        uint256[] calldata _ownersPercentage
+    ) private {
+        uint256 ownersCount = 0;
+        /// @dev it is a new variable to keep track of the total percentage assigned to collaborators.
+        uint256 totalPercentage = 0;
+
+        for (uint256 i = 0; i < _newOwners.length; i++) {
+            require(
+                _newOwners[i] != address(0),
+                "Owner address cannot be null!"
+            );
+            require(_ownersPercentage[i] > 0, "Percentage must be > zero!");
+
+            ownersCount++;
+            totalPercentage += _ownersPercentage[i]; /// @dev Accumulate the percentage for each valid collaborator
+            tokenCollaborators[_tokenId][i] = _newOwners[i];
+            tokenIdCollaboratorsPercentage[_tokenId][i] = _ownersPercentage[i];
+        }
+
+        require(
+            _ownersPercentage[ownersCount] > 0,
+            "Percentage must be > zero!"
+        );
+
+        require(ownersCount >= 1, "Add more than 1 owner!");
+
+        require(ownersCount < 5, "Add max 4!");
+
+        /// @dev the array of percentages is always one number greater than the collaborators length.
+        /// So is necessary do one more addition here.
+        totalPercentage += _ownersPercentage[ownersCount];
+
+        if (totalPercentage != 100e18) {
+            revert TheTotalPercentageCantBeGreaterOrLessThan100();
+        }
+
+        tokenIdCollaboratorsQuantity[_tokenId] = ownersCount + 1;
+        tokenIdCollaboratorsPercentage[_tokenId][
+            ownersCount
+        ] = _ownersPercentage[ownersCount];
+
+        hasTokenCollaborators[_tokenId] = true;
+        emit MintGoldDustNftMintedAndSplitted(
+            _tokenId,
+            _newOwners,
+            _ownersPercentage,
+            address(this)
+        );
+    }
+
+    /// @notice Pause the contract
+    function pauseContract() external isowner {
+        _pause();
+    }
+
+    /// @notice Unpause the contract
+    function unpauseContract() external isowner {
+        _unpause();
     }
 }
