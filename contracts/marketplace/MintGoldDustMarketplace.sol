@@ -106,8 +106,8 @@ abstract contract MintGoldDustMarketplace is
         uint256 amount
     );
 
-    error Item_isNotListed(address _contractAddress);
-    error Item_isNotListedBySeller(
+    error ItemIsNotListed(address _contractAddress);
+    error ItemIsNotListedBySeller(
         uint256 tokenId,
         address market,
         address contractAddress,
@@ -659,7 +659,7 @@ abstract contract MintGoldDustMarketplace is
             idMarketItemsByContractByOwner[_contractAddress][_tokenId][_seller]
                 .tokenAmount == 0
         ) {
-            revert Item_isNotListedBySeller(
+            revert ItemIsNotListedBySeller(
                 _tokenId,
                 address(this),
                 _contractAddress,
@@ -672,7 +672,7 @@ abstract contract MintGoldDustMarketplace is
             (MintGoldDustERC721(mintGoldDustERC721Address)).ownerOf(_tokenId) !=
             address(this)
         ) {
-            revert Item_isNotListed(_contractAddress);
+            revert ItemIsNotListed(_contractAddress);
         }
 
         if (
@@ -683,7 +683,7 @@ abstract contract MintGoldDustMarketplace is
             ) ==
             0
         ) {
-            revert Item_isNotListed(_contractAddress);
+            revert ItemIsNotListed(_contractAddress);
         }
     }
 
