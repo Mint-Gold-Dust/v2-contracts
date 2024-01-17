@@ -190,16 +190,16 @@ abstract contract MintGoldDustMarketplace is
         mintGoldDustERC1155Address = _mintGoldDustERC1155Address;
     }
 
-    /// @notice Returns the `isSecondarySale` mapping.
+    /// @notice Helper function that returns the current primary sale market info for `tokenId`.
     /// @param nft of nft contract
     /// @param tokenId of token
     /// @custom:daigaro
-    // function getSecondarySale(
-    //     address nft,
-    //     uint256 tokenId
-    // ) external view returns (ManageSecondarySale memory) {
-    //     return _isSecondarySale[nft][tokenId];
-    // }
+    function getManagePrimarySale(
+        address nft,
+        uint256 tokenId
+    ) external view returns (ManagePrimarySale memory) {
+        return MintGoldDustNFT(nft).getManagePrimarySale(tokenId);
+    }
 
     /// @notice that this function set an instance of the MintGoldDustMarketplace to the sibling contract.
     /// @param _mintGoldDustMarketplace the address of the MintGoldDustMarketplace.
@@ -826,16 +826,18 @@ abstract contract MintGoldDustMarketplace is
         //     marketItem.isERC721
         // );
 
-        // ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
-        //     saleDTO.nft
-        // ][saleDTO.tokenId];
+        ManagePrimarySale memory mPSale = saleDTO.nft.getManagePrimarySale(
+            saleDTO.tokenId
+        );
 
         saleDTO.nft.updatePrimarySaleQuantityToSell(
             saleDTO.tokenId,
             realAmount
         );
 
-        saleDTO.nft.setTokenWasSold(saleDTO.tokenId);
+        if (mPSale.amount - realAmount == 0) {
+            saleDTO.nft.setTokenWasSold(saleDTO.tokenId);
+        }
 
         itemsSold.increment();
 
