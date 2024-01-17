@@ -229,7 +229,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
         {
           tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
           seller: addr1.address,
         },
         {
