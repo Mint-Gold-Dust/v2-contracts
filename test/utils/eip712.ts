@@ -1,6 +1,6 @@
 import { BigNumber, ethers } from "ethers";
 
-interface CollectorMintDTO {
+export interface CollectorMintDTO {
   nft: string;
   tokenURI: string;
   royalty: BigNumber;
