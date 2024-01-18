@@ -11,12 +11,13 @@ const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
     develop: {
-      url: "http://127.0.0.1:8545/",      
+      url: "http://127.0.0.1:8545/",
     },
     hardhat: {
       forking: {
         url: "https://eth-mainnet.g.alchemy.com/v2/bhwVbe04yQYbezp6JIFOlQAZmBbiSJAq",
-      }
+        // blockNumber: 19029795 // Only for testing `test/upgrade/RefactorPrimarySaleStorage.ts`
+      },
     },
     sepolia: {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
@@ -38,7 +39,7 @@ const config: HardhatUserConfig = {
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: [`${process.env.PK}`],      
+      accounts: [`${process.env.PK}`],
       chainId: 1, // Optional: specify the chainId for mainnet
     },
   },
@@ -62,13 +63,13 @@ const config: HardhatUserConfig = {
     artifacts: "./artifacts",
   },
   mocha: {
-    timeout: 40000,
+    timeout: 200000,
   },
   etherscan: {
     // Define Your API key for Etherscan on .env
     // Obtain one at https://etherscan.io/
-    apiKey: `${process.env.ETHERSCAN_KEY}`
-  }
+    apiKey: `${process.env.ETHERSCAN_KEY}`,
+  },
 };
 
 export default config;
