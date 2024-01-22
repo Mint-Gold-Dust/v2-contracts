@@ -7,7 +7,7 @@ async function generateWallet(
   const privateKey = ethers.Wallet.createRandom().privateKey;
 
   let provider;
-  if (!provider) {
+  if (!passedProvider) {
     provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
   } else {
     provider = passedProvider;
