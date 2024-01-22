@@ -365,7 +365,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC721.address, 1)
+            .getSecondarySale(mintGoldDustERC721.address, 1)
         ).sold
       ).to.be.equal(false);
     });
@@ -792,7 +792,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC721.address, 1)
+            .getSecondarySale(mintGoldDustERC721.address, 1)
         ).sold
       ).to.be.equal(false);
 
@@ -885,7 +885,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .isSecondarySale(mintGoldDustERC721.address, 1)
+            .getSecondarySale(mintGoldDustERC721.address, 1)
         ).sold
       ).to.be.equal(true);
 
@@ -932,7 +932,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       // expect item sold to be true
       expect(
         (
-          await mintGoldDustSetPrice.isSecondarySale(
+          await mintGoldDustSetPrice.getSecondarySale(
             mintGoldDustERC721.address,
             1
           )
@@ -1123,7 +1123,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       // verify if the isSecondarySale sale attribute is true
       expect(
         (
-          await mintGoldDustSetPrice.isSecondarySale(
+          await mintGoldDustSetPrice.getSecondarySale(
             mintGoldDustERC721.address,
             1
           )
@@ -1262,7 +1262,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n___________________________________
       // expect item sold to be true
       expect(
         (
-          await mintGoldDustSetPrice.isSecondarySale(
+          await mintGoldDustSetPrice.getSecondarySale(
             mintGoldDustERC721.address,
             1
           )

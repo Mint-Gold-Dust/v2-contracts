@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
+import {CollectorMintDTO, DelistDTO, ListDTO, ManageSecondarySale, MarketItem, SaleDTO} from "../libraries/MgdMarketPlaceDataTypes.sol";
 import {MintGoldDustMarketplace} from "./MintGoldDustMarketplace.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
@@ -11,12 +12,6 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     using ECDSA for bytes32;
-
-    struct DelistDTO {
-        uint256 tokenId;
-        uint256 amount;
-        address contractAddress;
-    }
 
     /**
      * @notice that this event show the info about a new listing to the set price market.

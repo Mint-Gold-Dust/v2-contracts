@@ -262,7 +262,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(7);
 
@@ -393,7 +393,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(7);
 
@@ -669,7 +669,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.false;
 
@@ -677,7 +677,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(4);
 
@@ -700,7 +700,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.true;
 
@@ -708,7 +708,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(0);
 

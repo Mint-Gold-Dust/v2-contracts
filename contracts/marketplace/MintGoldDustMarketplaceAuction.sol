@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
+import {AuctionProps, BidDTO, ListDTO, ManageSecondarySale, MarketItem, SaleDTO} from "../libraries/MgdMarketPlaceDataTypes.sol";
 import {MintGoldDustMarketplace} from "./MintGoldDustMarketplace.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
@@ -14,19 +15,6 @@ import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 /// @custom:contact klvh@mintgolddust.io
 contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
     using Counters for Counters.Counter;
-
-    /**
-     * @notice that is a Data Transfer Object to be transferred betwwen the functions in the auction flow.
-     *              It consists of the following fields:
-     *                    - tokenId: The tokenId of the marketItem.
-     *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
-     *                    - seller: The seller of the marketItem.
-     */
-    struct BidDTO {
-        uint256 tokenId;
-        address contractAddress;
-        address seller;
-    }
 
     Counters.Counter public auctionIds;
     mapping(address => mapping(address => mapping(uint256 => mapping(address => bool))))
@@ -526,7 +514,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
             revert BidTooLow();
         }
 
-        ManageSecondarySale memory manageSecondarySale = isSecondarySale[
+        ManageSecondarySale memory manageSecondarySale = _isSecondarySale[
             _bidDTO.contractAddress
         ][_bidDTO.tokenId];
 
@@ -643,7 +631,7 @@ contract MintGoldDustMarketplaceAuction is MintGoldDustMarketplace {
 
         uint256 realPrice = msg.value;
 
-        ManageSecondarySale memory manageSecondarySale = isSecondarySale[
+        ManageSecondarySale memory manageSecondarySale = _isSecondarySale[
             _bidDTO.contractAddress
         ][_bidDTO.tokenId];
 

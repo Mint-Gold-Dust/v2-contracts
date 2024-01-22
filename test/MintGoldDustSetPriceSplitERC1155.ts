@@ -301,7 +301,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.equal(false);
     });
@@ -598,7 +598,12 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         })
       )
         .to.emit(mintGoldDustSetPrice, "NftQuantityDelisted")
-        .withArgs(1, quantityToList, addr1.address, mintGoldDustERC1155.address);
+        .withArgs(
+          1,
+          quantityToList,
+          addr1.address,
+          mintGoldDustERC1155.address
+        );
       // the market item should be sold
       //   await expect(
       //     (
@@ -751,7 +756,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).sold
       ).to.be.equal(false);
 
@@ -847,7 +852,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getSecondarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(amountToMint - amountToBuy);
 
@@ -1086,7 +1091,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
       // verify if the isSecondarySale sale attribute is true
       expect(
         (
-          await mintGoldDustSetPrice.isSecondarySale(
+          await mintGoldDustSetPrice.getSecondarySale(
             mintGoldDustERC1155.address,
             1
           )
@@ -1223,7 +1228,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
       // expect item sold to be true
       expect(
         (
-          await mintGoldDustSetPrice.isSecondarySale(
+          await mintGoldDustSetPrice.getSecondarySale(
             mintGoldDustERC1155.address,
             1
           )
