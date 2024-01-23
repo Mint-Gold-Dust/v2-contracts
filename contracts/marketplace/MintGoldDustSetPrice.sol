@@ -390,7 +390,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      */
-    function purchaseNft(SaleDTO memory saleDTO) external payable {
+    function purchaseNft(SaleDTO memory saleDTO) external payable nonReentrant {
         _executePurchaseNftFlow(saleDTO, msg.sender, msg.value);
     }
 
