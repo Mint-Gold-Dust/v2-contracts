@@ -13,7 +13,7 @@ import dealEth from "../../utils/dealEth";
 export const ONE_DAY = 86400;
 export const ONE_SECOND = 1;
 
-export const DEBUG = true;
+export const DEBUG = false;
 
 // Production contract addresses
 const ADDR_mgdNft721 = "0x4B0Dc0900dDe9d4f15115Bee56554857AE0Becb0";

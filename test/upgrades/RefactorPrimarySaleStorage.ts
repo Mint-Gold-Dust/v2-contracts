@@ -1,8 +1,8 @@
 import { ethers, upgrades, network } from "hardhat";
 import { expect } from "chai";
-import { impersonate, stopImpersonating } from "../../utils/impersonate";
-import dealEth from "../../utils/dealEth";
-import setTimestampNexBlock from "../../utils/setTimestampNextBlock";
+import { impersonate, stopImpersonating } from "../utils/impersonate";
+import dealEth from "../utils/dealEth";
+import setTimestampNexBlock from "../utils/setTimestampNextBlock";
 import { loadFixture } from "ethereum-waffle";
 import {
   rpssSetup,
@@ -11,7 +11,7 @@ import {
   ONE_SECOND,
   LOW_PRICE,
   addCollectorFee,
-} from "./rpssSetup";
+} from "./setup/rpssSetup";
 
 describe("RefactorPrimarySaleStorage.ts", function () {
   /**
@@ -301,8 +301,19 @@ describe("RefactorPrimarySaleStorage.ts", function () {
     });
 
     it("should check collector2 buy is succesfull for tokenId721_2", async () => {
-      const { mgdSetPrice, mgd721, collector2, tokenId721_2, artist1 } =
-        await loadFixture(upgradingFromRpssSetup);
+      const {
+        mgdSetPrice,
+        mgd721,
+        collector2,
+        tokenId721_2,
+        artist1,
+        mgdOwnerSigner,
+      } = await loadFixture(upgradingFromRpssSetup);
+      await impersonate(mgdOwnerSigner.address);
+      await mgd721
+        .connect(mgdOwnerSigner)
+        .setOverridePrimarySaleQuantityToSell([tokenId721_2]);
+
       await impersonate(collector2.address);
       await mgdSetPrice.connect(collector2).purchaseNft(
         {
@@ -312,7 +323,7 @@ describe("RefactorPrimarySaleStorage.ts", function () {
           seller: artist1.address,
         },
         {
-          value: LOW_PRICE,
+          value: addCollectorFee(LOW_PRICE),
         }
       );
       expect(await mgd721.ownerOf(tokenId721_2)).to.equal(collector2.address);
