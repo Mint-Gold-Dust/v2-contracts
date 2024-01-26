@@ -6,7 +6,7 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {MintGoldDustCompany} from "./MintGoldDustCompany.sol";
-import {ManagePrimarySale} from "../libraries/MgdMarketPlaceDataTypes.sol";
+import {CollectorMintDTO, ManagePrimarySale} from "../libraries/MgdMarketPlaceDataTypes.sol";
 
 error RoyaltyInvalidPercentage();
 error UnauthorizedOnNFT(string message);
@@ -95,8 +95,8 @@ abstract contract MintGoldDustNFT is
     /// @notice Checks if the array lengths are valid
     /// @dev the _ownersPercentage array length MUST be equals the _newOwners array length plus one
     modifier checkArraySize(
-        address[] calldata _newOwners,
-        uint256[] calldata _ownersPercentage
+        address[] memory _newOwners,
+        uint256[] memory _ownersPercentage
     ) {
         if (_ownersPercentage.length != _newOwners.length + 1) {
             revert NumberOfCollaboratorsAndPercentagesNotMatch();
@@ -130,7 +130,7 @@ abstract contract MintGoldDustNFT is
 
     /// @notice that this modifier do a group of verifications for the collector mint flow
     modifier checkParameters(
-        address _sender,
+        address sender,
         address _artistAddress,
         uint256 percentage
     ) {
@@ -266,61 +266,64 @@ abstract contract MintGoldDustNFT is
     }
 
     function collectorMint(
-        string calldata _tokenURI,
-        uint256 _royaltyPercent,
-        uint256 _amountToMint,
-        address _artistAddress,
-        bytes calldata _memoir,
-        uint256 _collectorMintId,
-        address _sender
+        CollectorMintDTO memory collectorMintDTO,
+        address sender
     )
         external
         onlySetPrice
-        checkParameters(_sender, _artistAddress, _royaltyPercent)
+        checkParameters(
+            sender,
+            collectorMintDTO.artistSigner,
+            collectorMintDTO.royalty
+        )
         whenNotPaused
         returns (uint256)
     {
         uint256 newTokenId = _executeMintFlow(
-            _tokenURI,
-            _royaltyPercent,
-            _amountToMint,
-            _artistAddress,
-            _collectorMintId,
-            _memoir
+            collectorMintDTO.tokenURI,
+            collectorMintDTO.royalty,
+            collectorMintDTO.amount,
+            collectorMintDTO.artistSigner,
+            collectorMintDTO.collectorMintId,
+            collectorMintDTO.memoir
         );
 
         return newTokenId;
     }
 
     function collectorSplitMint(
-        string calldata _tokenURI,
-        uint256 _royalty,
-        address[] calldata _newOwners,
-        uint256[] calldata _ownersPercentage,
-        uint256 _amountToMint,
-        address _artistAddress,
-        bytes calldata _memoir,
-        uint256 _collectorMintId,
-        address _sender
+        CollectorMintDTO memory collectorMintDTO,
+        address sender
     )
         external
         onlySetPrice
-        checkParameters(_sender, _artistAddress, _royalty)
+        checkParameters(
+            sender,
+            collectorMintDTO.artistSigner,
+            collectorMintDTO.royalty
+        )
         whenNotPaused
-        checkArraySize(_newOwners, _ownersPercentage)
+        checkArraySize(
+            collectorMintDTO.collaborators,
+            collectorMintDTO.ownersPercentage
+        )
         returns (uint256)
     {
-        uint256 _tokenId = _executeMintFlow(
-            _tokenURI,
-            _royalty,
-            _amountToMint,
-            _artistAddress,
-            _collectorMintId,
-            _memoir
+        uint256 newTokenId = _executeMintFlow(
+            collectorMintDTO.tokenURI,
+            collectorMintDTO.royalty,
+            collectorMintDTO.amount,
+            collectorMintDTO.artistSigner,
+            collectorMintDTO.collectorMintId,
+            collectorMintDTO.memoir
         );
 
-        _executeSplitMintFlow(_tokenId, _newOwners, _ownersPercentage);
-        return _tokenId;
+        _executeSplitMintFlow(
+            newTokenId,
+            collectorMintDTO.collaborators,
+            collectorMintDTO.ownersPercentage
+        );
+        return newTokenId;
     }
 
     /// @notice Reduces the quantity of remaining items available for primary sale for a specific token.
@@ -391,18 +394,18 @@ abstract contract MintGoldDustNFT is
     ) external virtual;
 
     function _executeMintFlow(
-        string calldata _tokenURI,
+        string memory _tokenURI,
         uint256 _royaltyPercent,
         uint256 _amount,
         address _artistAddress,
         uint256 _collectorMintId,
-        bytes calldata _memoir
+        bytes memory _memoir
     ) internal virtual returns (uint256);
 
     function _executeSplitMintFlow(
         uint256 _tokenId,
-        address[] calldata _newOwners,
-        uint256[] calldata _ownersPercentage
+        address[] memory _newOwners,
+        uint256[] memory _ownersPercentage
     ) private {
         uint256 ownersCount = 0;
         /// @dev it is a new variable to keep track of the total percentage assigned to collaborators.

@@ -79,12 +79,12 @@ contract MintGoldDustERC721 is
      * Emits a {MintGoldDustNFTMinted} event.
      */
     function _executeMintFlow(
-        string calldata _tokenURI,
+        string memory _tokenURI,
         uint256 _royaltyPercent,
         uint256,
         address _sender,
         uint256 _collectorMintId,
-        bytes calldata _memoir
+        bytes memory _memoir
     ) internal override isZeroAddress(_sender) returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();

@@ -77,12 +77,12 @@ contract MintGoldDustERC1155 is
      * @param _amount The amount of tokens to be minted.
      */
     function _executeMintFlow(
-        string calldata _tokenURI,
+        string memory _tokenURI,
         uint256 _royaltyPercent,
         uint256 _amount,
         address _sender,
         uint256 _collectorMintId,
-        bytes calldata _memoir
+        bytes memory _memoir
     ) internal override isZeroAddress(_sender) returns (uint256) {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
