@@ -198,7 +198,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
         {
           tokenId: 1,
-          contractAddress: mintGoldDustERC721.address,
+          nft: mintGoldDustERC721.address,
           seller: addr1.address,
         },
         {
@@ -210,7 +210,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await mintGoldDustMarketplaceAuction.connect(addr3).placeBid(
         {
           tokenId: 1,
-          contractAddress: mintGoldDustERC721.address,
+          nft: mintGoldDustERC721.address,
           seller: addr1.address,
         },
         {
@@ -226,7 +226,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await expect(
         mintGoldDustMarketplaceAuction.connect(addr4).endAuction({
           tokenId: 1,
-          contractAddress: mintGoldDustERC721.address,
+          nft: mintGoldDustERC721.address,
           seller: addr1.address,
         })
       ).to.be.revertedWith("Unauthorized");
@@ -236,7 +236,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await expect(
         mintGoldDustMarketplaceAuction.connect(addr4).endAuction({
           tokenId: 1,
-          contractAddress: mintGoldDustERC721.address,
+          nft: mintGoldDustERC721.address,
           seller: addr1.address,
         })
       ).to.be.revertedWith("Unauthorized");
@@ -246,7 +246,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await expect(
         mintGoldDustMarketplaceAuction.connect(addr3).endAuction({
           tokenId: 1,
-          contractAddress: mintGoldDustERC721.address,
+          nft: mintGoldDustERC721.address,
           seller: addr1.address,
         })
       ).to.be.revertedWithCustomError(
@@ -261,14 +261,14 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
 
       await mintGoldDustMarketplaceAuction.connect(addr3).endAuction({
         tokenId: 1,
-        contractAddress: mintGoldDustERC721.address,
+        nft: mintGoldDustERC721.address,
         seller: addr1.address,
       });
 
       await expect(
         mintGoldDustMarketplaceAuction.connect(addr3).endAuction({
           tokenId: 1,
-          contractAddress: mintGoldDustERC721.address,
+          nft: mintGoldDustERC721.address,
           seller: addr1.address,
         })
       )
@@ -321,7 +321,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
       await expect(
         mintGoldDustMarketplaceAuction.connect(addr1).endAuction({
           tokenId: 1,
-          contractAddress: mintGoldDustERC721.address,
+          nft: mintGoldDustERC721.address,
           seller: addr1.address,
         })
       ).to.be.revertedWithCustomError(

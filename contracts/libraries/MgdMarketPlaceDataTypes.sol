@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
+import {MintGoldDustNFT} from "../marketplace/MintGoldDustNFT.sol";
+
 /**
  * This struct consists of the following fields:
  *    - endTime: the time that the auction must be finished. Is the start time plus 24 hours.
@@ -21,19 +23,19 @@ struct AuctionProps {
  * @notice that is a Data Transfer Object to be transferred betwwen the functions in the auction flow.
  *              It consists of the following fields:
  *                    - tokenId: The tokenId of the marketItem.
- *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+ *                    - nft: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
  *                    - seller: The seller of the marketItem.
  */
 struct BidDTO {
     uint256 tokenId;
-    address contractAddress;
+    MintGoldDustNFT nft;
     address seller;
 }
 
 /**
  * @notice that is a Data Transfer Object to be transferred between functions in the Collector (lazy) mint flow.
  *              It consists of the following fields:
- *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+ *                    - nft: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
  *                    - tokenURI the URI that contains the metadata for the NFT.
  *                    - royalty the royalty percentage to be applied for this NFT secondary sales.
  *                    - collaborators an array of address that can be a number of maximum 4 collaborators.
@@ -45,7 +47,7 @@ struct BidDTO {
  *                    - collectorMintId: the id of the collector mint generated off chain.
  */
 struct CollectorMintDTO {
-    address contractAddress;
+    MintGoldDustNFT nft;
     string tokenURI;
     uint256 royalty;
     bytes memoir;
@@ -60,7 +62,7 @@ struct CollectorMintDTO {
 struct DelistDTO {
     uint256 tokenId;
     uint256 amount;
-    address contractAddress;
+    MintGoldDustNFT nft;
 }
 
 /**
@@ -69,22 +71,22 @@ struct DelistDTO {
  *                    - tokenid: The tokenId of the marketItem.
  *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
  *                              MintGoldDustERC721 the amout must be always one.
- *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+ *                    - nft: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
  *                    - price: the price to be paid for the item in the set price market and it correponds
  *                             to the reserve price for the marketplace auction.
  */
 struct ListDTO {
     uint256 tokenId;
     uint256 amount;
-    address contractAddress;
+    MintGoldDustNFT nft;
     uint256 price;
 }
 
 /// @notice that this struct has the necessary fields to manage the secondary sales.
 /// @dev it will be used by the isSecondarySale mapping.
-struct ManageSecondarySale {
+struct ManagePrimarySale {
     address owner;
-    bool sold;
+    bool soldout;
     uint256 amount;
 }
 
@@ -115,12 +117,12 @@ struct MarketItem {
  *                  - tokenid: The tokenId of the marketItem.
  *                  - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
  *                            MintGoldDustERC721 the amout must be always one.
- *                  - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
+ *                  - nft: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
  *                  - seller: The seller of the marketItem.
  */
 struct SaleDTO {
     uint256 tokenId;
     uint256 amount;
-    address contractAddress;
+    MintGoldDustNFT nft;
     address seller;
 }
