@@ -1,12 +1,12 @@
 import { BigNumber, ethers } from "ethers";
 
-interface CollectorMintDTO {
+export interface CollectorMintDTO {
   nft: string;
   tokenURI: string;
   royalty: BigNumber;
   memoir: Uint8Array;
   collaborators: string[];
-  ownersPercentage: number[];
+  ownersPercentage: number[] | BigNumber[];
   amount: number;
   artistSigner: string;
   price: BigNumber;

@@ -172,6 +172,22 @@ abstract contract MintGoldDustNFT is
         );
     }
 
+    /// @dev this function will be removed after upgrade the contracts to the new version.
+    function setOverridePrimarySaleQuantityToSell(
+        uint256[] calldata _tokenId
+    ) external {
+        require(
+            msg.sender == mintGoldDustCompany.owner() &&
+                address(this) == 0x4B0Dc0900dDe9d4f15115Bee56554857AE0Becb0,
+            "Unauthorized"
+        );
+        uint256 len = _tokenId.length;
+
+        for (uint i = 0; i < len; i++) {
+            _primarySaleQuantityToSell[_tokenId[i]] = 1;
+        }
+    }
+
     function getManagePrimarySale(
         uint256 _tokenId
     ) public view returns (ManagePrimarySale memory) {
