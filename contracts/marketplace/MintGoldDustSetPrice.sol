@@ -269,7 +269,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      *      6. Verify if artist signatures are valid.
      */
     function collectorMintPurchase(
-        CollectorMintDTO memory collectorMintDTO,
+        CollectorMintDTO calldata collectorMintDTO,
         bytes32 eip712HashOffChain,
         bytes memory signature,
         bytes memory mintGoldDustSignature,
@@ -326,24 +326,12 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
 
         if (collectorMintDTO.collaborators.length == 0) {
             tokenId = collectorMintDTO.nft.collectorMint(
-                collectorMintDTO.tokenURI,
-                collectorMintDTO.royalty,
-                collectorMintDTO.amount,
-                collectorMintDTO.artistSigner,
-                collectorMintDTO.memoir,
-                collectorMintDTO.collectorMintId,
+                collectorMintDTO,
                 msg.sender
             );
         } else {
             tokenId = collectorMintDTO.nft.collectorSplitMint(
-                collectorMintDTO.tokenURI,
-                collectorMintDTO.royalty,
-                collectorMintDTO.collaborators,
-                collectorMintDTO.ownersPercentage,
-                collectorMintDTO.amount,
-                collectorMintDTO.artistSigner,
-                collectorMintDTO.memoir,
-                collectorMintDTO.collectorMintId,
+                collectorMintDTO,
                 msg.sender
             );
         }
