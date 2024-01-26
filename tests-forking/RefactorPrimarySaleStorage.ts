@@ -1,8 +1,8 @@
 import { ethers, upgrades, network } from "hardhat";
 import { expect } from "chai";
-import { impersonate, stopImpersonating } from "../utils/impersonate";
-import dealEth from "../utils/dealEth";
-import setTimestampNexBlock from "../utils/setTimestampNextBlock";
+import { impersonate, stopImpersonating } from "../test/utils/impersonate";
+import dealEth from "../test/utils/dealEth";
+import setTimestampNexBlock from "../test/utils/setTimestampNextBlock";
 import { loadFixture } from "ethereum-waffle";
 import {
   rpssSetup,
@@ -11,7 +11,7 @@ import {
   ONE_SECOND,
   LOW_PRICE,
   addCollectorFee,
-} from "./setup/rpssSetup";
+} from "./setups/rpssSetup";
 
 describe("RefactorPrimarySaleStorage.ts", function () {
   /**

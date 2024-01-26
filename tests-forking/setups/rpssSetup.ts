@@ -1,14 +1,14 @@
 import { ethers } from "hardhat";
 import { BigNumber } from "ethers";
-import { impersonate, stopImpersonating } from "../../utils/impersonate";
+import { impersonate, stopImpersonating } from "../../test/utils/impersonate";
 import {
   CollectorMintDTO,
   encodeData,
   generateEIP712Hash,
-} from "../../utils/eip712";
-import generateWallet from "../../utils/generateWallet";
-import setTimestampNexBlock from "../../utils/setTimestampNextBlock";
-import dealEth from "../../utils/dealEth";
+} from "../../test/utils/eip712";
+import generateWallet from "../../test/utils/generateWallet";
+import setTimestampNexBlock from "../../test/utils/setTimestampNextBlock";
+import dealEth from "../../test/utils/dealEth";
 
 export const ONE_DAY = 86400;
 export const ONE_SECOND = 1;
