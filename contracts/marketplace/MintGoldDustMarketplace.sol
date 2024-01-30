@@ -141,23 +141,6 @@ abstract contract MintGoldDustMarketplace is
     mapping(address => mapping(uint256 => mapping(address => MarketItem)))
         public idMarketItemsByContractByOwner;
 
-    /**
-     *  @notice that this mapping will manage the state to track the secondary sales.
-     *  @dev here we can handle when a secondarySale should start. A succinct example that you can
-     *  understand easily is the following:
-     *      - An artist mint 10 items for a MintGoldDustERC1155.
-     *      - He list 5 items for sale.
-     *      - A buyer buys 5 items.
-     *      - This buyer list s5 items for sale.
-     *      - The artist buys your 5 items back.
-     *      - Now the artist has 10 items again.
-     *      - But notice that it can sale only more five in the primary sale flow.
-     *  With this mapping and the ManageSecondarySale struct we can manage it.
-     */
-    /// @custom:daigaro
-    // mapping(address => mapping(uint256 => ManageSecondarySale))
-    //     internal _isSecondarySale;
-
     modifier isowner() {
         if (msg.sender != mintGoldDustCompany.owner()) {
             revert AddressUnauthorized("Not Mint Gold Dust owner");
@@ -193,7 +176,6 @@ abstract contract MintGoldDustMarketplace is
     /// @notice Helper function that returns the current primary sale market info for `tokenId`.
     /// @param nft of nft contract
     /// @param tokenId of token
-    /// @custom:daigaro
     function getManagePrimarySale(
         address nft,
         uint256 tokenId
@@ -213,65 +195,6 @@ abstract contract MintGoldDustMarketplace is
             _mintGoldDustMarketplace
         );
     }
-
-    /// @notice that this function is used to populate the _isSecondarySale mapping for the
-    /// sibling contract. This way the mapping state will be shared.
-    /// @param nft the address of the MintGoldDustERC1155 or MintGoldDustERC721.
-    /// @param tokenId the id of the token.
-    /// @param _owner the owner of the token.
-    /// @param _sold a boolean that indicates if the token was sold or not.
-    /// @param amount the amount of tokens minted for this token.
-    /// @custom:daigaro
-    // function setSecondarySale(
-    //     address nft,
-    //     uint256 tokenId,
-    //     address _owner,
-    //     bool _sold,
-    //     uint256 amount
-    // ) external {
-    //     require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
-    //     _isSecondarySale[nft][tokenId] = ManageSecondarySale(
-    //         _owner,
-    //         _sold,
-    //         amount
-    //     );
-    // }
-
-    /// @notice that this function should be used to update the amount attribute for the _isSecondarySale mapping
-    /// in the sibling contract.
-    /// @param nft the address of the MintGoldDustERC1155 or MintGoldDustERC721.
-    /// @param tokenId the id of the token.
-    /// @param amount the amount of tokens minted for this token.
-    /// @custom:daigaro
-    // function updateSecondarySaleAmount(
-    //     address nft,
-    //     uint256 tokenId,
-    //     uint256 amount
-    // ) external {
-    //     require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
-    //     ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
-    //         nft
-    //     ][tokenId];
-    //     _manageSecondarySale.amount = _manageSecondarySale.amount - amount;
-    // }
-
-    /// @notice that this function should be used to update the sold attribute for the _isSecondarySale mapping
-    /// in the sibling contract.
-    /// @param nft the address of the MintGoldDustERC1155 or MintGoldDustERC721.
-    /// @param tokenId the id of the token.
-    /// @param _sold a boolean that indicates if the token was sold or not.
-    /// @custom:daigaro
-    // function updateSecondarySaleSold(
-    //     address nft,
-    //     uint256 tokenId,
-    //     bool _sold
-    // ) external {
-    //     require(msg.sender == address(mintGoldDustMarketplace), "Unauthorized");
-    //     ManageSecondarySale storage _manageSecondarySale = _isSecondarySale[
-    //         nft
-    //     ][tokenId];
-    //     _manageSecondarySale.sold = _sold;
-    // }
 
     /// @notice Pause the contract
     function pauseContract() external isowner {
@@ -371,31 +294,6 @@ abstract contract MintGoldDustMarketplace is
             revert MustBeERC721OrERC1155();
         }
 
-        /// @custom:daigaro
-        // if (
-        //     _isSecondarySale[address(_mintGoldDustNFT)][_listDTO.tokenId]
-        //         .owner == address(0)
-        // ) {
-        //     uint256 amountMinted = 1;
-
-        //     if (address(_mintGoldDustNFT) == mintGoldDustERC1155Address) {
-        //         amountMinted = (
-        //             MintGoldDustERC1155(mintGoldDustERC1155Address)
-        //         ).balanceOf(sender, _listDTO.tokenId);
-        //     }
-
-        //     _isSecondarySale[address(_mintGoldDustNFT)][
-        //         _listDTO.tokenId
-        //     ] = ManageSecondarySale(sender, false, amountMinted);
-        //     mintGoldDustMarketplace.setSecondarySale(
-        //         _listDTO.contractAddress,
-        //         _listDTO.tokenId,
-        //         sender,
-        //         false,
-        //         amountMinted
-        //     );
-        // }
-
         ManagePrimarySale memory managePS = listDTO.nft.getManagePrimarySale(
             listDTO.tokenId
         );
@@ -444,22 +342,6 @@ abstract contract MintGoldDustMarketplace is
             realAmount
         );
     }
-
-    /// @notice that this function check a boolean and depending of the value return a MintGoldDustERC721 or a MintGoldDustERC1155.
-    /// @dev If true is created an instance of a MintGoldDustERC721 using polymorphism with the parent contract. If not
-    ///      it creates an isntance for MintGoldDustERC1155.
-    /// @param _isERC721 a boolean that say if the address is an ERC721 or not.
-    /// @return MintGoldDustNFT an instance of MintGoldDustERC721 or MintGoldDustERC1155.
-    /// @custom:daigaro
-    // function _getERC1155OrERC721(
-    //     bool _isERC721
-    // ) internal view returns (MintGoldDustNFT) {
-    //     if (_isERC721) {
-    //         return MintGoldDustNFT(mintGoldDustERC721Address);
-    //     } else {
-    //         return MintGoldDustNFT(mintGoldDustERC1155Address);
-    //     }
-    // }
 
     /**
      * @param saleDTO The SaleDTO struct parameter to use.
