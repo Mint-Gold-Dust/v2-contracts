@@ -2,12 +2,18 @@
 pragma solidity 0.8.18;
 
 import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
+import {MintGoldDustERC1155} from "./MintGoldDustERC1155.sol";
 import {MintGoldDustMarketplace} from "./MintGoldDustMarketplace.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+
+struct CollectorMintControls {
+    uint256 tokenId;
+    uint256 count;
+}
 
 contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     using ECDSA for bytes32;
@@ -90,6 +96,8 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     }
 
     mapping(uint256 => bool) public collectorMintIdUsed;
+
+    mapping(uint256 => CollectorMintControls) public collectorMintControls;
 
     /**
      *
@@ -310,27 +318,34 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     {
         mustBeMintGoldDustERC721Or1155(_collectorMintDTO.contractAddress);
 
-        require(_collectorMintDTO.amount > 0, "Invalid amount to mint");
-        require(_amountToBuy > 0, "Invalid amount to buy");
-
+        require(_collectorMintDTO.amount > 0, "Invalid edition amount");
         require(
             collectorMintIdUsed[_collectorMintDTO.collectorMintId] == false,
             "Collector Mint Id already used"
         );
 
-        collectorMintIdUsed[_collectorMintDTO.collectorMintId] = true;
+        CollectorMintControls storage controls = collectorMintControls[
+            _collectorMintDTO.collectorMintId
+        ];
+
+        require(
+            _amountToBuy > 0 &&
+                _amountToBuy + controls.count <= _collectorMintDTO.amount,
+            "Invalid amount to buy"
+        );
+
+        controls.count += _amountToBuy;
+
+        if (controls.count == _collectorMintDTO.amount) {
+            collectorMintIdUsed[_collectorMintDTO.collectorMintId] = true;
+        }
 
         MintGoldDustNFT _mintGoldDustNFT;
-        uint256 realAmount = _collectorMintDTO.amount;
-
         if (_collectorMintDTO.contractAddress == mintGoldDustERC721Address) {
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC721Address);
-            realAmount = 1;
         } else {
             _mintGoldDustNFT = MintGoldDustNFT(mintGoldDustERC1155Address);
         }
-
-        require(_amountToBuy <= realAmount, "Invalid amount to buy");
 
         bytes32 _eip712HashOnChain = generateEIP712Hash(_collectorMintDTO);
         require(_eip712HashOnChain == _eip712HashOffChain, "Invalid hash");
@@ -353,35 +368,43 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
             "Invalid signature"
         );
 
-        uint256 _tokenId;
+        uint256 _tokenId = controls.tokenId;
 
-        if (_collectorMintDTO.collaborators.length == 0) {
-            _tokenId = _mintGoldDustNFT.collectorMint(
-                _collectorMintDTO.tokenURI,
-                _collectorMintDTO.royalty,
-                _collectorMintDTO.amount,
-                _collectorMintDTO.artistSigner,
-                _collectorMintDTO.memoir,
-                _collectorMintDTO.collectorMintId,
-                msg.sender
-            );
+        if (_tokenId == 0) {
+            if (_collectorMintDTO.collaborators.length == 0) {
+                _tokenId = _mintGoldDustNFT.collectorMint(
+                    _collectorMintDTO.tokenURI,
+                    _collectorMintDTO.royalty,
+                    _amountToBuy,
+                    _collectorMintDTO.artistSigner,
+                    _collectorMintDTO.memoir,
+                    _collectorMintDTO.collectorMintId,
+                    msg.sender
+                );
+            } else {
+                _tokenId = _mintGoldDustNFT.collectorSplitMint(
+                    _collectorMintDTO.tokenURI,
+                    _collectorMintDTO.royalty,
+                    _collectorMintDTO.collaborators,
+                    _collectorMintDTO.ownersPercentage,
+                    _amountToBuy,
+                    _collectorMintDTO.artistSigner,
+                    _collectorMintDTO.memoir,
+                    _collectorMintDTO.collectorMintId,
+                    msg.sender
+                );
+            }
+            controls.tokenId = _tokenId;
         } else {
-            _tokenId = _mintGoldDustNFT.collectorSplitMint(
-                _collectorMintDTO.tokenURI,
-                _collectorMintDTO.royalty,
-                _collectorMintDTO.collaborators,
-                _collectorMintDTO.ownersPercentage,
-                _collectorMintDTO.amount,
-                _collectorMintDTO.artistSigner,
-                _collectorMintDTO.memoir,
-                _collectorMintDTO.collectorMintId,
-                msg.sender
+            MintGoldDustERC1155(address(_mintGoldDustNFT)).collectorMint(
+                _tokenId,
+                _amountToBuy
             );
         }
 
         ListDTO memory _listDTO = ListDTO(
             _tokenId,
-            _collectorMintDTO.amount,
+            _amountToBuy,
             _collectorMintDTO.contractAddress,
             _collectorMintDTO.price
         );
