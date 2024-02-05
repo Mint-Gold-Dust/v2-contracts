@@ -396,8 +396,20 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
             }
             controls.tokenId = _tokenId;
         } else {
-            MintGoldDustERC1155(address(_mintGoldDustNFT)).collectorMint(
+            MintGoldDustERC1155(address(_mintGoldDustNFT))
+                .collectorMintFromExisting(_tokenId, _amountToBuy);
+            isSecondarySale[address(_mintGoldDustNFT)][
+                _tokenId
+            ] = ManageSecondarySale(
+                _collectorMintDTO.artistSigner,
+                false,
+                _amountToBuy
+            );
+            mintGoldDustMarketplace.setSecondarySale(
+                _collectorMintDTO.contractAddress,
                 _tokenId,
+                _collectorMintDTO.artistSigner,
+                false,
                 _amountToBuy
             );
         }
@@ -415,7 +427,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
             _listDTO.tokenId,
             _collectorMintDTO.artistSigner,
             _listDTO.price,
-            _collectorMintDTO.amount,
+            _amountToBuy,
             _collectorMintDTO.contractAddress
         );
 

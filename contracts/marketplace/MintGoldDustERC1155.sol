@@ -73,7 +73,7 @@ contract MintGoldDustERC1155 is
      * @dev Requirements"
      * - Must only be called by {MintGoldDustSetPrice} contract
      */
-    function collectorMint(
+    function collectorMintFromExisting(
         uint256 tokenId,
         uint256 amount
     ) external onlySetPrice {
