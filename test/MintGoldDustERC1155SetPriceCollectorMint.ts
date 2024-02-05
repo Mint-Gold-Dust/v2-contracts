@@ -191,7 +191,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
   });
 
   describe("\n--------------- Tests related witn collector mint functionality after a MintGoldDustERC1155 traditional purchase on set price ---------------\n", function () {
-    let quantityToMint = 10;
+    let editionSize = 10;
     let quantityToBuy = 5;
 
     // Create an instance of the ListDTO struct
@@ -220,7 +220,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         memoir: bytesMemoir,
         collaborators: [],
         ownersPercentage: [],
-        amount: quantityToMint,
+        amount: editionSize,
         artistSigner: addr1.address,
         price: toWei(price),
         collectorMintId: 1,
@@ -303,7 +303,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       expect(events[0].args!.tokenURI).to.be.equal(URI);
       expect(events[0].args!.owner).to.be.equal(addr1.address);
       expect(events[0].args!.royalty).to.be.equal(toWei(royalty));
-      expect(events[0].args!.amount).to.be.equal(quantityToMint);
+      expect(events[0].args!.amount).to.be.equal(quantityToBuy);
       expect(events[0].args!.isERC721).to.be.false;
       expect(events[0].args!.collectorMintId).to.be.equal(1);
       expect(events[0].args!.memoir).to.be.equal(
@@ -329,7 +329,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       expect(receipt.events[4].args.tokenId).to.be.equal(1);
       expect(receipt.events[4].args.seller).to.be.equal(addr1.address);
       expect(receipt.events[4].args.price).to.be.equal(toWei(price));
-      expect(receipt.events[4].args.amount).to.be.equal(quantityToMint);
+      expect(receipt.events[4].args.amount).to.be.equal(quantityToBuy);
       expect(receipt.events[4].args.contractAddress).to.be.equal(
         mintGoldDustERC1155.address
       );
@@ -386,7 +386,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(5);
       expect(
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
-      ).to.equal(5);
+      ).to.equal(0);
 
       const primarySaleFee = (price * quantityToBuy * 100 * 0.15) / 100;
       const collectorFee = price * quantityToBuy * 0.03;
@@ -425,10 +425,10 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         1
       );
       expect(manageSecondarySale.amount).to.be.equal(
-        quantityToMint - quantityToBuy
+        0
       );
       expect(manageSecondarySale.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySale.sold).to.be.false;
+      expect(manageSecondarySale.sold).to.be.true;
 
       const manageSecondarySaleAuction =
         await mintGoldDustMarketplaceAuction.isSecondarySale(
@@ -436,10 +436,10 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           1
         );
       expect(manageSecondarySaleAuction.amount).to.be.equal(
-        quantityToMint - quantityToBuy
+        0
       );
       expect(manageSecondarySaleAuction.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySaleAuction.sold).to.be.false;
+      expect(manageSecondarySaleAuction.sold).to.be.true;
 
       const collectorBalanceBeforeSecondTx = await addr2.getBalance();
       const artistBuyerItsOwnArtBalance = await addr1.getBalance();
