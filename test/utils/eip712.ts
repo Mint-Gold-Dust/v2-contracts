@@ -6,7 +6,7 @@ interface CollectorMintDTO {
   royalty: BigNumber;
   memoir: Uint8Array;
   collaborators: string[];
-  ownersPercentage: number[];
+  ownersPercentage: number[] | BigNumber[];
   amount: number;
   artistSigner: string;
   price: BigNumber;

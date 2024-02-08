@@ -383,7 +383,9 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
 
       expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(0);
-      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(5);
+      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(
+        quantityToBuy
+      );
       expect(
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
       ).to.equal(0);
@@ -419,14 +421,11 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         ethers.BigNumber.from("100000000000000")
       );
 
-      // The artist amount should be 5.
       const manageSecondarySale = await mintGoldDustSetPrice.isSecondarySale(
         mintGoldDustERC1155.address,
         1
       );
-      expect(manageSecondarySale.amount).to.be.equal(
-        0
-      );
+      expect(manageSecondarySale.amount).to.be.equal(0);
       expect(manageSecondarySale.owner).to.be.equal(addr1.address);
       expect(manageSecondarySale.sold).to.be.true;
 
@@ -435,446 +434,111 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           mintGoldDustERC1155.address,
           1
         );
-      expect(manageSecondarySaleAuction.amount).to.be.equal(
-        0
-      );
+      expect(manageSecondarySaleAuction.amount).to.be.equal(0);
       expect(manageSecondarySaleAuction.owner).to.be.equal(addr1.address);
       expect(manageSecondarySaleAuction.sold).to.be.true;
 
-      const collectorBalanceBeforeSecondTx = await addr2.getBalance();
-      const artistBuyerItsOwnArtBalance = await addr1.getBalance();
-      const deployerBeforeSecondTx = await deployer.getBalance();
-
-      // Artist approve mintGoldDustSetPrice marketplace to exchange its NFT
-      await mintGoldDustERC1155
-        .connect(addr2)
-        .setApprovalForAll(mintGoldDustSetPrice.address, true);
-
-      //HERE STARTS THE OTHER PROCESS
-      const txList = await mintGoldDustSetPrice
-        .connect(addr2)
-        .list(1, quantityToBuy, mintGoldDustERC1155.address, toWei(price));
-
-      const receiptList = await txList.wait();
-      const totalGasList = receiptList.gasUsed.mul(await txList.gasPrice);
-
-      const txPurchase = await mintGoldDustSetPrice.connect(addr1).purchaseNft(
-        {
-          tokenId: 1,
-          amount: quantityToBuy,
-          contractAddress: mintGoldDustERC1155.address,
-          seller: addr2.address,
-        },
-        {
-          value: toWei(price * 5),
-        }
-      );
-
-      const secondarySaleFee = (price * quantityToBuy * 100 * 0.05) / 100;
-      console.log("SECONDARY SALE: ", secondarySaleFee);
-
-      const royaltPercent = (price * quantityToBuy * 100 * 0.05) / 100;
-      console.log("ROYALT PERCENT: ", royaltPercent);
-
-      console.log("PRICE: ", price * quantityToBuy);
-      const sellerAmountSecondarySale =
-        price * quantityToBuy - secondarySaleFee - royaltPercent;
-
-      console.log("sellerAmountSecondarySale: ", sellerAmountSecondarySale);
-
-      console.log("TOTALGASTOLIST: ", totalGasList);
-
-      console.log(
-        "TESTE COUNT: ",
-        collectorBalanceBeforeSecondTx.add(
-          toWei(sellerAmountSecondarySale).sub(totalGasList)
-        )
-      );
-
-      const receiptPurchase = await txPurchase.wait();
-      const totalGasPurchase = receiptPurchase.gasUsed.mul(
-        await txPurchase.gasPrice
-      );
-
-      // The artist amount should be 5.
-      const manageSecondarySale2 = await mintGoldDustSetPrice.isSecondarySale(
-        mintGoldDustERC1155.address,
-        1
-      );
-      expect(manageSecondarySale2.amount).to.be.equal(
-        quantityToMint - quantityToBuy
-      );
-      expect(manageSecondarySale2.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySale2.sold).to.be.false;
-
-      const manageSecondarySaleAuction2 =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
-          mintGoldDustERC1155.address,
-          1
+      // Artist mints for themselves some extra 2 NFTs
+      const newQuantityToBuy = 2;
+      tokenAmount =
+        price * newQuantityToBuy + (price * newQuantityToBuy * 3) / 100;
+      const tx2 = await mintGoldDustSetPrice
+        .connect(addr1)
+        .collectorMintPurchase(
+          collectrDTO,
+          hash,
+          signature,
+          mintGoldDustSignature,
+          newQuantityToBuy,
+          {
+            value: toWei(tokenAmount),
+          }
         );
-      expect(manageSecondarySaleAuction2.amount).to.be.equal(
-        quantityToMint - quantityToBuy
-      );
-      expect(manageSecondarySaleAuction2.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySaleAuction2.sold).to.be.false;
+      await tx2.wait();
 
-      const collectorBalanceAfterSecondTx = await addr2.getBalance();
-      const artistBuyerItsOwnArtBalanceAfter = await addr1.getBalance();
-
-      expect(artistBuyerItsOwnArtBalance).to.be.equal(
-        artistBuyerItsOwnArtBalanceAfter
-          .add(toWei(price * quantityToBuy))
-          .add(totalGasPurchase)
-          .sub(toWei(royaltPercent))
-      );
-
-      console.log("Got by addr2.getbalance() ::::::", await addr2.getBalance());
-
-      console.log(
-        `Got doing the calculation:  \n collectorBalanceAfterSecondTx
-        .add(totalGasList)
-        .sub(toWei(sellerAmountSecondarySale))`,
-        collectorBalanceAfterSecondTx
-          .add(totalGasList)
-          .sub(toWei(sellerAmountSecondarySale))
-      );
-
-      expect(collectorBalanceAfterSecondTx).to.be.closeTo(
-        collectorBalanceBeforeSecondTx
-          .add(toWei(sellerAmountSecondarySale))
-          .sub(totalGasList),
-        ethers.BigNumber.from("100000000000000")
-      );
-
-      expect(await deployer.getBalance()).to.be.equal(
-        deployerBeforeSecondTx.add(toWei(secondarySaleFee))
-      );
-
-      expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(5);
-      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(0);
-      expect(
-        await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
-      ).to.equal(5);
-
-      /**
-       * Until here:
-       * 1. The artist minted 10 NFTs
-       *   - So the manageSecondarySale.amount should be 10
-       *   - And the ERC1155 balance of the artist should be 0
-       *   - And the ERC1155 balance for the mintGoldDustSetPrice contract should be 10
-       * 2. The artist sold 5 NFTs to addr2
-       *   - So the manageSecondarySale.amount should be 5
-       *   - And the ERC1155 balance of the artist should be 0
-       *   - And the ERC1155 balance for the mintGoldDustSetPrice contract should be 5
-       *   - And the ERC1155 balance of the addr2 should be 5
-       * 3. The addr2 sold 5 NFTs to addr1
-       *   - So the manageSecondarySale.amount should keep 5
-       *   - And the ERC1155 balance of the artist should be 5
-       *   - And the ERC1155 balance of the addr2 should be 0
-       *
-       * If the artist try to list more than 5 NFTs:
-       *   - it should revert with an error, because the manageSecondarySale.amount is 5.
-       *   - It means that this artist only have more 5 NFTs to sell in the primary market.
-       * So to achieve this error in the collector mint flow we'll delist the artist last 5 items
-       * and try to relist more than 5.
-       *
-       */
-
-      // Here starts the third operation
-      const artistBalanceBeforeThirdTx = await addr1.getBalance();
-      const buyerBalanceBeforeThirdTx = await addr2.getBalance();
-      const deployerBeforeThirdTx = await deployer.getBalance();
-
-      const txDelist = await mintGoldDustSetPrice.connect(addr1).delistNft({
-        tokenId: 1,
-        amount: 5,
-        contractAddress: mintGoldDustERC1155.address,
-      });
-
-      const receiptDelist = await txDelist.wait();
-      const totalGasDelist = receiptDelist.gasUsed.mul(await txDelist.gasPrice);
-
+      // Check nft token balances
       expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(
-        10
+        newQuantityToBuy
       );
-      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(0);
+      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(
+        quantityToBuy
+      );
       expect(
         await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
       ).to.equal(0);
 
-      // Here we confirm that the state manipulation is working for both contracts
-      await expect(
-        mintGoldDustMarketplaceAuction
-          .connect(addr1)
-          .list(1, 10, mintGoldDustERC1155.address, toWei(price))
-      ).to.be.revertedWith("Invalid amount for primary sale");
-
+      // Another collector tries to mint more than remaining edition size
+      const badAmountToBuy = 6;
+      tokenAmount = price * badAmountToBuy + (price * badAmountToBuy * 3) / 100;
       await expect(
         mintGoldDustSetPrice
-          .connect(addr1)
-          .list(1, 10, mintGoldDustERC1155.address, toWei(price))
-      ).to.be.revertedWith("Invalid amount for primary sale");
+          .connect(addr3)
+          .collectorMintPurchase(
+            collectrDTO,
+            hash,
+            signature,
+            mintGoldDustSignature,
+            badAmountToBuy,
+            {
+              value: toWei(price),
+            }
+          )
+      ).to.be.revertedWith("Invalid amount to buy");
+      // Check nft token balances
+      expect(await mintGoldDustERC1155.balanceOf(addr3.address, 1)).to.equal(0);
 
-      const txList3 = await mintGoldDustSetPrice
-        .connect(addr1)
-        .list(1, quantityToBuy, mintGoldDustERC1155.address, toWei(price));
-
-      const receiptList3 = await txList3.wait();
-      const totalGasList3 = receiptList3.gasUsed.mul(await txList3.gasPrice);
-
-      tokenAmount = price * quantityToBuy + (price * quantityToBuy * 3) / 100;
-
-      const txPurchase2 = await mintGoldDustSetPrice.connect(addr2).purchaseNft(
-        {
-          tokenId: 1,
-          amount: quantityToBuy,
-          contractAddress: mintGoldDustERC1155.address,
-          seller: addr1.address,
-        },
-        {
-          value: toWei(tokenAmount),
-        }
-      );
-
-      const receiptPurchase2 = await txPurchase2.wait();
-      const totalGasPurchase2 = receiptPurchase2.gasUsed.mul(
-        txPurchase2.gasPrice
-      );
-
-      expect(await addr1.getBalance()).to.be.closeTo(
-        artistBalanceBeforeThirdTx
-          .sub(totalGasDelist)
-          .sub(totalGasList3)
-          .add(toWei(sellerAmount)),
-        ethers.BigNumber.from("1000000000000000")
-      );
-
-      expect(await addr2.getBalance()).to.be.equal(
-        buyerBalanceBeforeThirdTx.sub(toWei(tokenAmount)).sub(totalGasPurchase2)
-      );
-
-      expect(await deployer.getBalance()).to.be.equal(
-        deployerBeforeThirdTx.add(
-          toWei(primarySaleFee).add(toWei(collectorFee))
-        )
-      );
-
-      const manageSecondarySale3 = await mintGoldDustSetPrice.isSecondarySale(
-        mintGoldDustERC1155.address,
-        1
-      );
-
-      expect(manageSecondarySale3.amount).to.be.equal(0);
-      expect(manageSecondarySale3.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySale3.sold).to.be.true;
-
-      const manageSecondarySaleAuction3 =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
-          mintGoldDustERC1155.address,
-          1
+      // Same collector mints the remaining edition size
+      const lastBuyAmount = 3;
+      tokenAmount = price * lastBuyAmount + (price * lastBuyAmount * 3) / 100;
+      const tx3 = await mintGoldDustSetPrice
+        .connect(addr3)
+        .collectorMintPurchase(
+          collectrDTO,
+          hash,
+          signature,
+          mintGoldDustSignature,
+          lastBuyAmount,
+          {
+            value: toWei(tokenAmount),
+          }
         );
-      expect(manageSecondarySaleAuction3.amount).to.be.equal(0);
-      expect(manageSecondarySaleAuction3.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySaleAuction3.sold).to.be.true;
-
-      expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(5);
-      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(5);
-      expect(
-        await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
-      ).to.equal(0);
-
-      // Now let's do the process again that the addr1 buys the addr2 NFTs
-      // But now we'll list all tokens and it should work well. Now all sales are secondary for the artist for this NFT
-
-      const artistBalanceBeforeFourthTx = await addr1.getBalance();
-      const buyerBalanceBeforeFourthTx = await addr2.getBalance();
-      const deployerBeforeFourthTx = await deployer.getBalance();
-
-      const txList4 = await mintGoldDustSetPrice
-        .connect(addr2)
-        .list(1, quantityToBuy, mintGoldDustERC1155.address, toWei(price));
-
-      const receiptList4 = await txList4.wait();
-      const totalGasList4 = receiptList4.gasUsed.mul(await txList4.gasPrice);
-
-      const txPurchase3 = await mintGoldDustSetPrice.connect(addr1).purchaseNft(
-        {
-          tokenId: 1,
-          amount: quantityToBuy,
-          contractAddress: mintGoldDustERC1155.address,
-          seller: addr2.address,
-        },
-        {
-          value: toWei(price * 5),
-        }
+      await tx3.wait();
+      // Check nft token balances
+      expect(await mintGoldDustERC1155.balanceOf(addr3.address, 1)).to.equal(
+        lastBuyAmount
       );
 
-      const receiptPurchase3 = await txPurchase3.wait();
-      const totalGasPurchase3 = receiptPurchase3.gasUsed.mul(
-        txPurchase3.gasPrice
-      );
-
-      expect(await addr1.getBalance()).to.be.equal(
-        artistBalanceBeforeFourthTx
-          .add(toWei(royaltPercent))
-          .sub(totalGasPurchase3)
-          .sub(toWei(price * 5))
-      );
-
-      expect(await addr2.getBalance()).to.be.equal(
-        buyerBalanceBeforeFourthTx
-          .sub(totalGasList4)
-          .add(toWei(sellerAmountSecondarySale))
-      );
-
-      expect(await deployer.getBalance()).to.be.equal(
-        deployerBeforeFourthTx.add(toWei(secondarySaleFee))
-      );
-
-      const manageSecondarySale4 = await mintGoldDustSetPrice.isSecondarySale(
-        mintGoldDustERC1155.address,
-        1
-      );
-
-      expect(manageSecondarySale4.amount).to.be.equal(0);
-      expect(manageSecondarySale4.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySale4.sold).to.be.true;
-
-      const manageSecondarySaleAuction4 =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
-          mintGoldDustERC1155.address,
-          1
-        );
-      expect(manageSecondarySaleAuction4.amount).to.be.equal(0);
-      expect(manageSecondarySaleAuction4.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySaleAuction4.sold).to.be.true;
-
+      // Lastly no one can mint anymore
+      const noMoreBuyAmount = 1;
+      tokenAmount =
+        price * noMoreBuyAmount + (price * noMoreBuyAmount * 3) / 100;
+      await expect(
+        mintGoldDustSetPrice
+          .connect(addr3)
+          .collectorMintPurchase(
+            collectrDTO,
+            hash,
+            signature,
+            mintGoldDustSignature,
+            noMoreBuyAmount,
+            {
+              value: toWei(price),
+            }
+          )
+      ).to.be.revertedWith("Collector Mint Id already used");
+      // Check ALL final nft token balances
       expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(
-        10
+        newQuantityToBuy
       );
-      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(0);
-      expect(
-        await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
-      ).to.equal(0);
-
-      // // Now we'll list the 10 items. And all sales now MUST be secondary sales.
-      const artistBalanceBeforeFifthTx = await addr1.getBalance();
-      const buyerBalanceBeforeFifthTx = await addr2.getBalance();
-      const deployerBeforeFifthTx = await deployer.getBalance();
-
-      const txList5 = await mintGoldDustSetPrice
-        .connect(addr1)
-        .list(1, quantityToBuy, mintGoldDustERC1155.address, toWei(price));
-
-      const receiptList5 = await txList5.wait();
-      const totalGasList5 = receiptList5.gasUsed.mul(await txList5.gasPrice);
-
-      const txPurchase4 = await mintGoldDustSetPrice.connect(addr2).purchaseNft(
-        {
-          tokenId: 1,
-          amount: quantityToBuy,
-          contractAddress: mintGoldDustERC1155.address,
-          seller: addr1.address,
-        },
-        {
-          value: toWei(price * 5),
-        }
-      );
-
-      const receiptPurchase4 = await txPurchase4.wait();
-      const totalGasPurchase4 = receiptPurchase4.gasUsed.mul(
-        txPurchase4.gasPrice
-      );
-
-      expect(await addr2.getBalance()).to.be.equal(
-        buyerBalanceBeforeFifthTx.sub(totalGasPurchase4).sub(toWei(price * 5))
-      );
-
-      expect(await addr1.getBalance()).to.be.equal(
-        artistBalanceBeforeFifthTx
-          .sub(totalGasList5)
-          .add(toWei(sellerAmountSecondarySale))
-          .add(toWei(royaltPercent))
-      );
-
-      expect(await deployer.getBalance()).to.be.equal(
-        deployerBeforeFifthTx.add(toWei(secondarySaleFee))
-      );
-
-      const manageSecondarySale5 = await mintGoldDustSetPrice.isSecondarySale(
-        mintGoldDustERC1155.address,
-        1
-      );
-
-      expect(manageSecondarySale5.amount).to.be.equal(0);
-      expect(manageSecondarySale5.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySale5.sold).to.be.true;
-
-      const manageSecondarySaleAuction5 =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
-          mintGoldDustERC1155.address,
-          1
-        );
-      expect(manageSecondarySaleAuction5.amount).to.be.equal(0);
-      expect(manageSecondarySaleAuction5.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySaleAuction5.sold).to.be.true;
-
-      expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(5);
-      expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(5);
-      expect(
-        await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
-      ).to.equal(0);
-
-      const artistBalanceBeforeSixthTx = await addr1.getBalance();
-      const buyerBalanceBeforeSixthTx = await addr2.getBalance();
-      const deployerBeforeSixthTx = await deployer.getBalance();
-
-      const txList6 = await mintGoldDustSetPrice
-        .connect(addr1)
-        .list(1, quantityToBuy, mintGoldDustERC1155.address, toWei(price));
-
-      const receiptList6 = await txList6.wait();
-      const totalGasList6 = receiptList6.gasUsed.mul(await txList6.gasPrice);
-
-      const txPurchase5 = await mintGoldDustSetPrice.connect(addr2).purchaseNft(
-        {
-          tokenId: 1,
-          amount: quantityToBuy,
-          contractAddress: mintGoldDustERC1155.address,
-          seller: addr1.address,
-        },
-        {
-          value: toWei(price * 5),
-        }
-      );
-
-      const receiptPurchase5 = await txPurchase5.wait();
-      const totalGasPurchase5 = receiptPurchase5.gasUsed.mul(
-        txPurchase5.gasPrice
-      );
-
-      expect(await addr2.getBalance()).to.be.equal(
-        buyerBalanceBeforeSixthTx.sub(totalGasPurchase5).sub(toWei(price * 5))
-      );
-
-      expect(await addr1.getBalance()).to.be.equal(
-        artistBalanceBeforeSixthTx
-          .sub(totalGasList6)
-          .add(toWei(sellerAmountSecondarySale))
-          .add(toWei(royaltPercent))
-      );
-
-      expect(await deployer.getBalance()).to.be.equal(
-        deployerBeforeSixthTx.add(toWei(secondarySaleFee))
-      );
-
-      expect(await mintGoldDustERC1155.balanceOf(addr1.address, 1)).to.equal(0);
       expect(await mintGoldDustERC1155.balanceOf(addr2.address, 1)).to.equal(
-        10
+        quantityToBuy
       );
-      expect(
-        await mintGoldDustERC1155.balanceOf(mintGoldDustSetPrice.address, 1)
-      ).to.equal(0);
+      expect(await mintGoldDustERC1155.balanceOf(addr3.address, 1)).to.equal(
+        lastBuyAmount
+      );
+      expect(quantityToBuy + newQuantityToBuy + lastBuyAmount).to.be.equal(
+        editionSize
+      );
     });
   });
 
