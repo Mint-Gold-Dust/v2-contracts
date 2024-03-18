@@ -1,7 +1,7 @@
 import { BigNumber, ethers } from "ethers";
 
-interface CollectorMintDTO {
-  contractAddress: string;
+export interface CollectorMintDTO {
+  nft: string;
   tokenURI: string;
   royalty: BigNumber;
   memoir: Uint8Array;
@@ -14,7 +14,7 @@ interface CollectorMintDTO {
 }
 
 const collectorMintDTOType: any = [
-  { name: "contractAddress", type: "address" },
+  { name: "nft", type: "address" },
   { name: "tokenURI", type: "string" },
   { name: "royalty", type: "uint256" },
   { name: "memoir", type: "bytes" },
@@ -29,7 +29,7 @@ const collectorMintDTOType: any = [
 function encodeData(collectorMintDTO: CollectorMintDTO): string {
   const encoder = new ethers.utils.AbiCoder();
   const encodedData = encoder.encode(collectorMintDTOType, [
-    collectorMintDTO.contractAddress,
+    collectorMintDTO.nft,
     collectorMintDTO.tokenURI,
     collectorMintDTO.royalty,
     collectorMintDTO.memoir,
@@ -63,7 +63,7 @@ function encodeData(collectorMintDTO: CollectorMintDTO): string {
 //         "uint256",
 //       ],
 //       [
-//         collectorMintDTO.contractAddress,
+//         collectorMintDTO.nft,
 //         collectorMintDTO.tokenURI,
 //         collectorMintDTO.royalty,
 //         collectorMintDTO.memoir,

@@ -504,7 +504,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       await mintGoldDustSetPrice.connect(addr1).delistNft({
         tokenId: 1,
         amount: 1,
-        contractAddress: mintGoldDustERC721.address,
+        nft: mintGoldDustERC721.address,
       });
 
       const finalOwner = await mintGoldDustERC721.ownerOf(1);

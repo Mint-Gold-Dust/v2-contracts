@@ -78,7 +78,7 @@ contract MintGoldDustERC1155 is
         uint256 amount
     ) external onlySetPrice {
         _mint(tokenIdArtist[tokenId], tokenId, amount, "");
-        primarySaleQuantityToSold[tokenId] += amount;
+        _primarySaleQuantityToSell[tokenId] += amount;
     }
 
     /**
@@ -91,7 +91,7 @@ contract MintGoldDustERC1155 is
      * @param _royaltyPercent The royalty percentage for this art work.
      * @param _amount The amount of tokens to be minted.
      */
-    function executeMintFlow(
+    function _executeMintFlow(
         string calldata _tokenURI,
         uint256 _royaltyPercent,
         uint256 _amount,
@@ -107,7 +107,7 @@ contract MintGoldDustERC1155 is
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
         tokenIdMemoir[newTokenId] = _memoir;
 
-        primarySaleQuantityToSold[newTokenId] = _amount;
+        _primarySaleQuantityToSell[newTokenId] = _amount;
 
         emit MintGoldDustNFTMinted(
             newTokenId,
@@ -160,11 +160,11 @@ contract MintGoldDustERC1155 is
 
         require(
             // Ensure the owner has enough tokens to burn
-            primarySaleQuantityToSold[tokenId] >= amount,
+            _primarySaleQuantityToSell[tokenId] >= amount,
             "Items sold not possible to burn"
         );
 
-        require(tokenWasSold[tokenId] == false, "Token already sold");
+        require(_tokenWasSold[tokenId] == false, "Token already sold");
 
         _burn(tokenOwner, tokenId, amount);
         emit TokenBurned(

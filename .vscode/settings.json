@@ -1,3 +1,12 @@
 {
-  "solidity.compileUsingRemoteVersion": "v0.8.18+commit.87f61d96"
+  "solidity.compileUsingRemoteVersion": "v0.8.18+commit.87f61d96",
+  "cSpell.words": [
+    "addrs",
+    "collab",
+    "delisting",
+    "hexlify",
+    "IERC",
+    "soldout",
+    "struct"
+  ]
 }

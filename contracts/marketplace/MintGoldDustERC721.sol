@@ -78,7 +78,7 @@ contract MintGoldDustERC721 is
      *
      * Emits a {MintGoldDustNFTMinted} event.
      */
-    function executeMintFlow(
+    function _executeMintFlow(
         string calldata _tokenURI,
         uint256 _royaltyPercent,
         uint256,
@@ -93,6 +93,8 @@ contract MintGoldDustERC721 is
         tokenIdArtist[newTokenId] = _sender;
         tokenIdRoyaltyPercent[newTokenId] = _royaltyPercent;
         tokenIdMemoir[newTokenId] = _memoir;
+
+        _primarySaleQuantityToSell[newTokenId] = 1;
 
         emit MintGoldDustNFTMinted(
             newTokenId,
@@ -131,7 +133,7 @@ contract MintGoldDustERC721 is
             "Only creator or allowed"
         );
 
-        require(tokenWasSold[tokenId] == false, "Token already sold");
+        require(_tokenWasSold[tokenId] == false, "Token already sold");
 
         _burn(tokenId);
         emit TokenBurned(tokenId, true, tokenIdArtist[tokenId], msg.sender, 1);

@@ -220,8 +220,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC721.address, 1)
-        ).sold
+            .getManagePrimarySale(mintGoldDustERC721.address, 1)
+        ).soldout
       ).to.be.equal(false);
 
       console.log("\n\t\t ITEM PRICE: ", priceToList);
@@ -237,7 +237,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
           {
             tokenId: 1,
             amount: 1,
-            contractAddress: mintGoldDustERC721.address,
+            nft: mintGoldDustERC721.address,
             seller: addr1.address,
           },
           {

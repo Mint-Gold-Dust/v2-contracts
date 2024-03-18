@@ -218,7 +218,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     it("Should track a collector mint flow", async function () {
       let collectrDTO = {
-        contractAddress: mintGoldDustERC721.address,
+        nft: mintGoldDustERC721.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,
@@ -412,30 +412,30 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         mintGoldDustOwnerBalanceBefore.add(
           toWei(primarySaleFee).add(toWei(collectorFee))
         ),
-        ethers.BigNumber.from("100000000000000")
+        ethers.BigNumber.from("200000000000000")
       );
 
       // The artist amount should be 5.
-      const manageSecondarySale = await mintGoldDustSetPrice.isSecondarySale(
+      const managePrimarySale = await mintGoldDustSetPrice.getManagePrimarySale(
         mintGoldDustERC721.address,
         1
       );
-      expect(manageSecondarySale.amount).to.be.equal(
+      expect(managePrimarySale.amount).to.be.equal(
         quantityToMint - quantityToBuy
       );
-      expect(manageSecondarySale.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySale.sold).to.be.true;
+      expect(managePrimarySale.owner).to.be.equal(addr1.address);
+      expect(managePrimarySale.soldout).to.be.true;
 
-      const manageSecondarySaleAuction =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
+      const managePrimarySaleAuction =
+        await mintGoldDustMarketplaceAuction.getManagePrimarySale(
           mintGoldDustERC721.address,
           1
         );
-      expect(manageSecondarySaleAuction.amount).to.be.equal(
+      expect(managePrimarySaleAuction.amount).to.be.equal(
         quantityToMint - quantityToBuy
       );
-      expect(manageSecondarySaleAuction.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySaleAuction.sold).to.be.true;
+      expect(managePrimarySaleAuction.owner).to.be.equal(addr1.address);
+      expect(managePrimarySaleAuction.soldout).to.be.true;
 
       const collectorBalanceBeforeSecondTx = await addr2.getBalance();
       const artistBuyerItsOwnArtBalance = await addr1.getBalance();
@@ -458,7 +458,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         {
           tokenId: 1,
           amount: quantityToBuy,
-          contractAddress: mintGoldDustERC721.address,
+          nft: mintGoldDustERC721.address,
           seller: addr2.address,
         },
         {
@@ -493,26 +493,27 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       );
 
       // The artist amount should be 5.
-      const manageSecondarySale2 = await mintGoldDustSetPrice.isSecondarySale(
-        mintGoldDustERC721.address,
-        1
-      );
-      expect(manageSecondarySale2.amount).to.be.equal(
-        quantityToMint - quantityToBuy
-      );
-      expect(manageSecondarySale2.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySale2.sold).to.be.true;
-
-      const manageSecondarySaleAuction2 =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
+      const managePrimarySale2 =
+        await mintGoldDustSetPrice.getManagePrimarySale(
           mintGoldDustERC721.address,
           1
         );
-      expect(manageSecondarySaleAuction2.amount).to.be.equal(
+      expect(managePrimarySale2.amount).to.be.equal(
         quantityToMint - quantityToBuy
       );
-      expect(manageSecondarySaleAuction2.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySaleAuction2.sold).to.be.true;
+      expect(managePrimarySale2.owner).to.be.equal(addr1.address);
+      expect(managePrimarySale2.soldout).to.be.true;
+
+      const managePrimarySaleAuction2 =
+        await mintGoldDustMarketplaceAuction.getManagePrimarySale(
+          mintGoldDustERC721.address,
+          1
+        );
+      expect(managePrimarySaleAuction2.amount).to.be.equal(
+        quantityToMint - quantityToBuy
+      );
+      expect(managePrimarySaleAuction2.owner).to.be.equal(addr1.address);
+      expect(managePrimarySaleAuction2.soldout).to.be.true;
 
       const collectorBalanceAfterSecondTx = await addr2.getBalance();
       const artistBuyerItsOwnArtBalanceAfter = await addr1.getBalance();
@@ -539,7 +540,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         collectorBalanceBeforeSecondTx
           .add(toWei(sellerAmountSecondarySale))
           .sub(totalGasList),
-        ethers.BigNumber.from("100000000000000")
+        ethers.BigNumber.from("200000000000000")
       );
 
       expect(await deployer.getBalance()).to.be.equal(
@@ -565,7 +566,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         {
           tokenId: 1,
           amount: quantityToBuy,
-          contractAddress: mintGoldDustERC721.address,
+          nft: mintGoldDustERC721.address,
           seller: addr1.address,
         },
         {
@@ -596,23 +597,24 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         deployerBeforeThirdTx.add(toWei(secondarySaleFee))
       );
 
-      const manageSecondarySale3 = await mintGoldDustSetPrice.isSecondarySale(
-        mintGoldDustERC721.address,
-        1
-      );
-
-      expect(manageSecondarySale3.amount).to.be.equal(0);
-      expect(manageSecondarySale3.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySale3.sold).to.be.true;
-
-      const manageSecondarySaleAuction3 =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
+      const managePrimarySale3 =
+        await mintGoldDustSetPrice.getManagePrimarySale(
           mintGoldDustERC721.address,
           1
         );
-      expect(manageSecondarySaleAuction3.amount).to.be.equal(0);
-      expect(manageSecondarySaleAuction3.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySaleAuction3.sold).to.be.true;
+
+      expect(managePrimarySale3.amount).to.be.equal(0);
+      expect(managePrimarySale3.owner).to.be.equal(addr1.address);
+      expect(managePrimarySale3.soldout).to.be.true;
+
+      const managePrimarySaleAuction3 =
+        await mintGoldDustMarketplaceAuction.getManagePrimarySale(
+          mintGoldDustERC721.address,
+          1
+        );
+      expect(managePrimarySaleAuction3.amount).to.be.equal(0);
+      expect(managePrimarySaleAuction3.owner).to.be.equal(addr1.address);
+      expect(managePrimarySaleAuction3.soldout).to.be.true;
 
       expect(await mintGoldDustERC721.ownerOf(1)).to.equal(addr2.address);
     });
@@ -661,7 +663,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     it("Call the function passing everything correct. The attacker can generate the object, the EIP712 and everything using an address that is not a whitelisted artist. It MUST revert with an UnauthorizedOnNFT error.", async () => {
       let collectrDTO = {
-        contractAddress: mintGoldDustERC721.address,
+        nft: mintGoldDustERC721.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,
@@ -710,7 +712,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     it('Should call the collectorMint function passing a wrong royalty percentage. It MUST revert with an "Invalid contract address" error.', async () => {
       let collectrDTO = {
-        contractAddress: mintGoldDustERC721.address,
+        nft: mintGoldDustERC721.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,
@@ -752,7 +754,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     it("Call the function passing everything correct. But in this case the caller do not use our private key to sign. It MUST revert with an 'Invalid Signature' error.", async () => {
       let collectrDTO = {
-        contractAddress: mintGoldDustERC721.address,
+        nft: mintGoldDustERC721.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,
@@ -797,7 +799,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
 
     it("Call the function passing everything correct. But in this case the caller do not use our private key to sign. It MUST revert with an 'Invalid Signature' error.", async () => {
       let collectrDTO = {
-        contractAddress: mintGoldDustERC721.address,
+        nft: mintGoldDustERC721.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,

@@ -291,7 +291,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
       await mintGoldDustSetPrice.connect(addr1).delistNft({
         tokenId: 1,
         amount: quantityToList,
-        contractAddress: mintGoldDustERC1155.address,
+        nft: mintGoldDustERC1155.address,
       });
       await mintGoldDustSetPrice
         .connect(addr1)
@@ -301,8 +301,8 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
-        ).sold
+            .getManagePrimarySale(mintGoldDustERC1155.address, 1)
+        ).soldout
       ).to.be.equal(false);
     });
 
@@ -502,7 +502,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         {
           tokenId: 1,
           amount: quantityToList,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
           seller: addr1.address,
         },
         {
@@ -594,11 +594,16 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         mintGoldDustSetPrice.connect(addr1).delistNft({
           tokenId: 1,
           amount: quantityToList,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
         })
       )
         .to.emit(mintGoldDustSetPrice, "NftQuantityDelisted")
-        .withArgs(1, quantityToList, addr1.address, mintGoldDustERC1155.address);
+        .withArgs(
+          1,
+          quantityToList,
+          addr1.address,
+          mintGoldDustERC1155.address
+        );
       // the market item should be sold
       //   await expect(
       //     (
@@ -609,7 +614,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
       //           1,
       //           addr1.address
       //         )
-      //     ).sold
+      //     ).soldout
       //   ).to.be.equal(true);
 
       console.log(
@@ -647,7 +652,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         mintGoldDustSetPrice.connect(addr2).delistNft({
           tokenId: 1,
           amount: quantityToList,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
         })
       ).to.be.revertedWithCustomError(
         mintGoldDustSetPrice,
@@ -721,7 +726,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           {
             tokenId: 1,
             amount: amountToList + 1,
-            contractAddress: mintGoldDustERC1155.address,
+            nft: mintGoldDustERC1155.address,
             seller: addr1.address,
           },
           {
@@ -751,8 +756,8 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         (
           await mintGoldDustSetPrice
             .connect(addr1)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
-        ).sold
+            .getManagePrimarySale(mintGoldDustERC1155.address, 1)
+        ).soldout
       ).to.be.equal(false);
 
       let gasPrice = await mintGoldDustSetPrice.signer.getGasPrice();
@@ -760,7 +765,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         {
           tokenId: 1,
           amount: amountToBuy,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
           seller: addr1.address,
         },
         {
@@ -791,7 +796,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           {
             tokenId: 1,
             amount: amountToBuy,
-            contractAddress: mintGoldDustERC1155.address,
+            nft: mintGoldDustERC1155.address,
             seller: addr1.address,
           },
           {
@@ -847,7 +852,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         (
           await mintGoldDustSetPrice
             .connect(addr2)
-            .isSecondarySale(mintGoldDustERC1155.address, 1)
+            .getManagePrimarySale(mintGoldDustERC1155.address, 1)
         ).amount
       ).to.be.equal(amountToMint - amountToBuy);
 
@@ -916,7 +921,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         {
           tokenId: 1,
           amount: amountToList,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
           seller: addr1.address,
         },
         {
@@ -930,7 +935,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           {
             tokenId: 1,
             amount: amountToBuy,
-            contractAddress: mintGoldDustERC1155.address,
+            nft: mintGoldDustERC1155.address,
             seller: addr2.address,
           },
           {
@@ -949,7 +954,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           {
             tokenId: 1,
             amount: amountToBuy,
-            contractAddress: mintGoldDustERC1155.address,
+            nft: mintGoldDustERC1155.address,
             seller: addr1.address,
           },
           {
@@ -968,7 +973,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           {
             tokenId: 1,
             amount: amountToBuy,
-            contractAddress: mintGoldDustERC1155.address,
+            nft: mintGoldDustERC1155.address,
             seller: addr1.address,
           },
           {
@@ -1046,7 +1051,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         {
           tokenId: 1,
           amount: amountToBuy,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
           seller: addr1.address,
         },
         {
@@ -1086,11 +1091,11 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
       // verify if the isSecondarySale sale attribute is true
       expect(
         (
-          await mintGoldDustSetPrice.isSecondarySale(
+          await mintGoldDustSetPrice.getManagePrimarySale(
             mintGoldDustERC1155.address,
             1
           )
-        ).sold
+        ).soldout
       ).to.be.equal(true);
       // get the balances for the seller and the owner of the marketplace.
       const feeAccountInitialEthBal = await deployer.getBalance();
@@ -1108,7 +1113,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
         {
           tokenId: 1,
           amount: amountToBuyForSecondary,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
           seller: addr2.address,
         },
         {
@@ -1128,7 +1133,7 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
           {
             tokenId: 1,
             amount: amountToBuyForSecondary,
-            contractAddress: mintGoldDustERC1155.address,
+            nft: mintGoldDustERC1155.address,
             seller: addr2.address,
           },
           {
@@ -1223,11 +1228,11 @@ describe("\nMGDSetPrice.sol Smart Contract \n************************___********
       // expect item sold to be true
       expect(
         (
-          await mintGoldDustSetPrice.isSecondarySale(
+          await mintGoldDustSetPrice.getManagePrimarySale(
             mintGoldDustERC1155.address,
             1
           )
-        ).sold
+        ).soldout
       ).to.be.equal(true);
     });
   });

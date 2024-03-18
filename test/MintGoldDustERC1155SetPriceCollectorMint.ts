@@ -11,7 +11,6 @@ import generateWallet from "./utils/generateWallet";
 chai.use(chaiAsPromised);
 
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
-const fromWei = (num: any) => ethers.utils.formatEther(num);
 
 describe("MintGoldDustSetPrice.sol Smart Contract \n___________________________________________________\n \nThis smart contract is responsible by all functionalities related with the fixed price market. \n Here goes the tests related with the collectorMint feature of MintGoldDustSetPrice market for MintGoldDustERC1155 tokens. \n\n", function () {
   let MintGoldDustERC721: ContractFactory;
@@ -190,7 +189,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     bytesMemoir = encoder.encode(MEMOIR);
   });
 
-  describe("\n--------------- Tests related witn collector mint functionality after a MintGoldDustERC1155 traditional purchase on set price ---------------\n", function () {
+  describe("\n--------------- Tests related with collector mint functionality after a MintGoldDustERC1155 traditional purchase on set price ---------------\n", function () {
     let editionSize = 10;
     let quantityToBuy = 5;
 
@@ -213,8 +212,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Should track a collector mint flow", async function () {
-      let collectrDTO = {
-        contractAddress: mintGoldDustERC1155.address,
+      let collectorDTO = {
+        nft: mintGoldDustERC1155.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,
@@ -233,7 +232,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const signer = ethers.provider.getSigner(1);
 
       // Generate the encoded data
-      const encodedData = encodeData(collectrDTO);
+      const encodedData = encodeData(collectorDTO);
 
       // Generate the EIP712 hash
       const hash = generateEIP712Hash(encodedData, domainSeparator);
@@ -275,7 +274,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const tx = await mintGoldDustSetPrice
         .connect(addr2)
         .collectorMintPurchase(
-          collectrDTO,
+          collectorDTO,
           hash,
           signature,
           mintGoldDustSignature,
@@ -418,25 +417,26 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         mintGoldDustOwnerBalanceBefore.add(
           toWei(primarySaleFee).add(toWei(collectorFee))
         ),
-        ethers.BigNumber.from("100000000000000")
+        ethers.BigNumber.from("200000000000000")
       );
 
-      const manageSecondarySale = await mintGoldDustSetPrice.isSecondarySale(
+      // The managePrimarySale amount should be 0 because the minted amount was purchased.
+      const managePrimarySale = await mintGoldDustSetPrice.getManagePrimarySale(
         mintGoldDustERC1155.address,
         1
       );
-      expect(manageSecondarySale.amount).to.be.equal(0);
-      expect(manageSecondarySale.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySale.sold).to.be.true;
+      expect(managePrimarySale.amount).to.be.equal(0);
+      expect(managePrimarySale.owner).to.be.equal(addr1.address);
+      expect(managePrimarySale.soldout).to.be.true;
 
-      const manageSecondarySaleAuction =
-        await mintGoldDustMarketplaceAuction.isSecondarySale(
+      const managePrimarySaleAuction =
+        await mintGoldDustMarketplaceAuction.getManagePrimarySale(
           mintGoldDustERC1155.address,
           1
         );
-      expect(manageSecondarySaleAuction.amount).to.be.equal(0);
-      expect(manageSecondarySaleAuction.owner).to.be.equal(addr1.address);
-      expect(manageSecondarySaleAuction.sold).to.be.true;
+      expect(managePrimarySaleAuction.amount).to.be.equal(0);
+      expect(managePrimarySaleAuction.owner).to.be.equal(addr1.address);
+      expect(managePrimarySaleAuction.soldout).to.be.true;
 
       // Artist mints for themselves some extra 2 NFTs
       const newQuantityToBuy = 2;
@@ -445,7 +445,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const tx2 = await mintGoldDustSetPrice
         .connect(addr1)
         .collectorMintPurchase(
-          collectrDTO,
+          collectorDTO,
           hash,
           signature,
           mintGoldDustSignature,
@@ -474,7 +474,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         mintGoldDustSetPrice
           .connect(addr3)
           .collectorMintPurchase(
-            collectrDTO,
+            collectorDTO,
             hash,
             signature,
             mintGoldDustSignature,
@@ -493,7 +493,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const tx3 = await mintGoldDustSetPrice
         .connect(addr3)
         .collectorMintPurchase(
-          collectrDTO,
+          collectorDTO,
           hash,
           signature,
           mintGoldDustSignature,
@@ -516,7 +516,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         mintGoldDustSetPrice
           .connect(addr3)
           .collectorMintPurchase(
-            collectrDTO,
+            collectorDTO,
             hash,
             signature,
             mintGoldDustSignature,
@@ -582,8 +582,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Call the function passing everything correct. The attacker can generate the object, the EIP712 and everything using an address that is not a whitelisted artist. It MUST revert with an UnauthorizedOnNFT error.", async () => {
-      let collectrDTO = {
-        contractAddress: mintGoldDustERC1155.address,
+      let collectorDTO = {
+        nft: mintGoldDustERC1155.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,
@@ -598,7 +598,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const signer = ethers.provider.getSigner(2);
 
       // Generate the encoded data
-      const encodedData = encodeData(collectrDTO);
+      const encodedData = encodeData(collectorDTO);
 
       // Generate the EIP712 hash
       const hash = generateEIP712Hash(encodedData, domainSeparator);
@@ -613,7 +613,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         mintGoldDustSetPrice
           .connect(addr2)
           .collectorMintPurchase(
-            collectrDTO,
+            collectorDTO,
             hash,
             signature,
             mintGoldDustSignature,
@@ -631,8 +631,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it('Should call the collectorMint function passing a wrong royalty percentage. It MUST revert with an "Invalid contract address" error.', async () => {
-      let collectrDTO = {
-        contractAddress: mintGoldDustERC1155.address,
+      let collectorDTO = {
+        nft: mintGoldDustERC1155.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,
@@ -647,7 +647,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const signer = ethers.provider.getSigner(1);
 
       // Generate the encoded data
-      const encodedData = encodeData(collectrDTO);
+      const encodedData = encodeData(collectorDTO);
 
       // Generate the EIP712 hash
       const hash = generateEIP712Hash(encodedData, domainSeparator);
@@ -663,7 +663,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       await mintGoldDustSetPrice
         .connect(addr2)
         .collectorMintPurchase(
-          collectrDTO,
+          collectorDTO,
           hash,
           signature,
           mintGoldDustSignature,
@@ -675,8 +675,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Call the function passing everything correct. But in this case the caller do not use our private key to sign. It MUST revert with an 'Invalid Signature' error.", async () => {
-      let collectrDTO = {
-        contractAddress: mintGoldDustERC1155.address,
+      let collectorDTO = {
+        nft: mintGoldDustERC1155.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,
@@ -691,7 +691,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const signer = ethers.provider.getSigner(1);
 
       // Generate the encoded data
-      const encodedData = encodeData(collectrDTO);
+      const encodedData = encodeData(collectorDTO);
 
       // Generate the EIP712 hash
       const hash = generateEIP712Hash(encodedData, domainSeparator);
@@ -710,7 +710,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         mintGoldDustSetPrice
           .connect(addr2)
           .collectorMintPurchase(
-            collectrDTO,
+            collectorDTO,
             hash,
             signature,
             signatureWrong,
@@ -723,8 +723,8 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
     });
 
     it("Call the function passing everything correct. But in this case the caller do not use our private key to sign. It MUST revert with an 'Invalid Signature' error.", async () => {
-      let collectrDTO = {
-        contractAddress: mintGoldDustERC1155.address,
+      let collectorDTO = {
+        nft: mintGoldDustERC1155.address,
         tokenURI: URI,
         royalty: toWei(royalty),
         memoir: bytesMemoir,
@@ -739,7 +739,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
       const signer = ethers.provider.getSigner(1);
 
       // Generate the encoded data
-      const encodedData = encodeData(collectrDTO);
+      const encodedData = encodeData(collectorDTO);
 
       // Generate the EIP712 hash
       const hash = generateEIP712Hash(encodedData, domainSeparator);
@@ -754,7 +754,7 @@ describe("MintGoldDustSetPrice.sol Smart Contract \n____________________________
         mintGoldDustSetPrice
           .connect(addr2)
           .collectorMintPurchase(
-            collectrDTO,
+            collectorDTO,
             hash,
             signature,
             mintGoldDustSignature,

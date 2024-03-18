@@ -259,7 +259,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         const tx = await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
           {
             tokenId: 1,
-            contractAddress: mintGoldDustERC721.address,
+            nft: mintGoldDustERC721.address,
             seller: addr1.address,
           },
           {
@@ -505,7 +505,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         const tx = await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
           {
             tokenId: 1,
-            contractAddress: mintGoldDustERC721.address,
+            nft: mintGoldDustERC721.address,
             seller: addr1.address,
           },
           {
@@ -658,7 +658,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           .placeBid(
             {
               tokenId: 1,
-              contractAddress: mintGoldDustERC721.address,
+              nft: mintGoldDustERC721.address,
               seller: addr1.address,
             },
             {
@@ -905,7 +905,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
         const tx = await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
           {
             tokenId: 1,
-            contractAddress: mintGoldDustERC721.address,
+            nft: mintGoldDustERC721.address,
             seller: addr1.address,
           },
           {
@@ -1012,7 +1012,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Con
           .placeBid(
             {
               tokenId: 1,
-              contractAddress: mintGoldDustERC721.address,
+              nft: mintGoldDustERC721.address,
               seller: addr1.address,
             },
             {

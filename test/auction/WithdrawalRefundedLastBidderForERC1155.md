@@ -7,53 +7,53 @@ import { ethers } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Contracts \n************___************\n \nHere we'll have the tests related of an auction refund last bidder and withdrawal flow. \n", function () {
-  let MintGoldDustERC721: ContractFactory;
-  let mintGoldDustERC721: Contract;
+describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Contracts \n****\*\*\*\*****\_\_\_****\*\*\*\*****\n \nHere we'll have the tests related of an auction refund last bidder and withdrawal flow. \n", function () {
+let MintGoldDustERC721: ContractFactory;
+let mintGoldDustERC721: Contract;
 
-  let MintGoldDustERC1155: ContractFactory;
-  let mintGoldDustERC1155: Contract;
+let MintGoldDustERC1155: ContractFactory;
+let mintGoldDustERC1155: Contract;
 
-  let MintGoldDustCompany: ContractFactory;
-  let mintGoldDustCompany: Contract;
+let MintGoldDustCompany: ContractFactory;
+let mintGoldDustCompany: Contract;
 
-  let MintGoldDustMarketplaceAuction: ContractFactory;
-  let mintGoldDustMarketplaceAuction: Contract;
+let MintGoldDustMarketplaceAuction: ContractFactory;
+let mintGoldDustMarketplaceAuction: Contract;
 
-  let MintGoldDustSetPrice: ContractFactory;
-  let mintGoldDustSetPrice: Contract;
+let MintGoldDustSetPrice: ContractFactory;
+let mintGoldDustSetPrice: Contract;
 
-  let MintGoldDustMemoir: ContractFactory;
-  let mintGoldDustMemoir: Contract;
+let MintGoldDustMemoir: ContractFactory;
+let mintGoldDustMemoir: Contract;
 
-  let deployer: SignerWithAddress;
-  let addr1: SignerWithAddress;
-  let addr2: SignerWithAddress;
-  let addr3: SignerWithAddress;
-  let addrs: SignerWithAddress[];
+let deployer: SignerWithAddress;
+let addr1: SignerWithAddress;
+let addr2: SignerWithAddress;
+let addr3: SignerWithAddress;
+let addrs: SignerWithAddress[];
 
-  let URI = "sample URI";
-  let baseURI = "https://example.com/{id}.json";
+let URI = "sample URI";
+let baseURI = "https://example.com/{id}.json";
 
-  //const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
-  const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-  const primary_sale_fee_percent_initial = 15000000000000000000n;
-  const secondary_sale_fee_percent_initial = 5000000000000000000n;
-  const collector_fee_initial = 3000000000000000000n;
-  const max_royalty_initial = 20000000000000000000n;
-  const auction_duration = 5;
-  const auction_extension_duration = 1;
+//const REAL_OWNER = "0x46ab5D1518688f66286aF7c6C9f5552edd050d15";
+const TEST_OWNER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+const primary_sale_fee_percent_initial = 15000000000000000000n;
+const secondary_sale_fee_percent_initial = 5000000000000000000n;
+const collector_fee_initial = 3000000000000000000n;
+const max_royalty_initial = 20000000000000000000n;
+const auction_duration = 5;
+const auction_extension_duration = 1;
 
-  const MEMOIR = "This is a great moment of my life!";
+const MEMOIR = "This is a great moment of my life!";
 
-  beforeEach(async function () {
-    MintGoldDustCompany = await ethers.getContractFactory(
-      "MintGoldDustCompany"
-    );
-    MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
-    MintGoldDustERC1155 = await ethers.getContractFactory(
-      "MintGoldDustERC1155"
-    );
+beforeEach(async function () {
+MintGoldDustCompany = await ethers.getContractFactory(
+"MintGoldDustCompany"
+);
+MintGoldDustERC721 = await ethers.getContractFactory("MintGoldDustERC721");
+MintGoldDustERC1155 = await ethers.getContractFactory(
+"MintGoldDustERC1155"
+);
 
     MintGoldDustMarketplaceAuction = await ethers.getContractFactory(
       "MintGoldDustMarketplaceAuction"
@@ -126,12 +126,13 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
     await mintGoldDustCompany
       .connect(deployer)
       .setValidator(deployer.address, true);
-  });
 
-  describe("\n****************_**************** Tests related with withdrawal refunded funds in an auction after a highest bid for MintGoldDustERC1155 ****************_****************\n", function () {
-    let price = 1;
-    let quantityToMint = 1;
-    let quantityToList = 1;
+});
+
+describe("\n******\*\*\*\*******_******\*\*\*\******* Tests related with withdrawal refunded funds in an auction after a highest bid for MintGoldDustERC1155 ******\*\*\*\*******_******\*\*\*\*******\n", function () {
+let price = 1;
+let quantityToMint = 1;
+let quantityToList = 1;
 
     beforeEach(async () => {
       // MGD owner whitelist the artist
@@ -176,7 +177,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       const tx1 = await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
         {
           tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
           seller: addr1.address,
         },
         {
@@ -244,7 +245,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       const tx2 = await mintGoldDustMarketplaceAuction.connect(addr3).placeBid(
         {
           tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
           seller: addr1.address,
         },
         {
@@ -329,7 +330,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       await mintGoldDustMarketplaceAuction.connect(addr2).placeBid(
         {
           tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
           seller: addr1.address,
         },
         {
@@ -340,7 +341,7 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
       await mintGoldDustMarketplaceAuction.connect(addr3).placeBid(
         {
           tokenId: 1,
-          contractAddress: mintGoldDustERC1155.address,
+          nft: mintGoldDustERC1155.address,
           seller: addr1.address,
         },
         {
@@ -354,5 +355,6 @@ describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Co
           .withdrawRefundedFunds(toWei(price + 1))
       ).to.be.revertedWith("Insufficient balance");
     });
-  });
+
+});
 });
