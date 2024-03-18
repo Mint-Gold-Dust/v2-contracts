@@ -7,7 +7,7 @@ import { ethers } from "hardhat";
 const toWei = (num: any) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: any) => ethers.utils.formatEther(num);
 
-describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC721.sol Smart Contracts \n************___************\n \nHere we'll have the tests related with the bid flow for an auction for the MintGoldDustERC721 token. \n", function () {
+describe("\nMintGoldDustMaretplaceAuction.sol + MintGoldDustERC1155.sol Smart Contracts \n************___************\n \nHere we'll have the tests related with the bid flow for an auction for the MintGoldDustERC1155 token. \n", function () {
   let MintGoldDustERC721: ContractFactory;
   let mintGoldDustERC721: Contract;
 

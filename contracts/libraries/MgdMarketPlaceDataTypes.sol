@@ -83,7 +83,6 @@ struct ListDTO {
 }
 
 /// @notice that this struct has the necessary fields to manage the secondary sales.
-/// @dev it will be used by the isSecondarySale mapping.
 struct ManagePrimarySale {
     address owner;
     bool soldout;

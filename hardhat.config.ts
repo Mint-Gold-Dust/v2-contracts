@@ -5,7 +5,7 @@ import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
-import "hardhat-gas-reporter";
+// import "hardhat-gas-reporter";
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",

@@ -67,6 +67,21 @@ contract MintGoldDustERC1155 is
     }
 
     /**
+     * @notice Mints additional copy(ies) of a collector mint edition
+     * @param tokenId for extra edition(s)
+     * @param amount to mint
+     * @dev Requirements"
+     * - Must only be called by {MintGoldDustSetPrice} contract
+     */
+    function collectorMintFromExisting(
+        uint256 tokenId,
+        uint256 amount
+    ) external onlySetPrice {
+        _mint(tokenIdArtist[tokenId], tokenId, amount, "");
+        _primarySaleQuantityToSell[tokenId] += amount;
+    }
+
+    /**
      * Mints a new Mint Gold Dust token.
      * @notice Fails if artist is not whitelisted or if the royalty surpass the max royalty limit
      * setted on MintGoldDustCompany smart contract.

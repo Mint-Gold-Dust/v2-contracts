@@ -2,6 +2,7 @@
 pragma solidity 0.8.18;
 
 import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
+import {MintGoldDustERC1155} from "./MintGoldDustERC1155.sol";
 import {CollectorMintDTO, DelistDTO, ListDTO, ManagePrimarySale, MarketItem, SaleDTO} from "../libraries/MgdMarketPlaceDataTypes.sol";
 import {MintGoldDustMarketplace} from "./MintGoldDustMarketplace.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -9,6 +10,11 @@ import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+
+struct CollectorMintControls {
+    uint256 tokenId;
+    uint256 count;
+}
 
 contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     using ECDSA for bytes32;
@@ -21,7 +27,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      * @param price the price for this item sale.
      *    @dev it cannot be zero.
      * @param amount the quantity of tokens to be listed for an MintGoldDustERC1155.
-     *    @dev For MintGoldDustERC721 the amout must be always one.
+     *    @dev For MintGoldDustERC721 the amount must be always one.
      * @param contractAddress the MintGoldDustERC1155 or the MintGoldDustERC721 address.
      */
     event MintGoldDustNftListedToSetPrice(
@@ -85,6 +91,8 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     }
 
     mapping(uint256 => bool) public collectorMintIdUsed;
+
+    mapping(uint256 => CollectorMintControls) public collectorMintControls;
 
     /**
      *
@@ -242,7 +250,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     }
 
     /**
-     * @notice that is a function responsilble by start the collector (lazy) mint process on chain.
+     * @notice that is a function responsible by start the collector (lazy) mint process on chain.
      * @param collectorMintDTO is the CollectorMintDTO struct
      *                It consists of the following fields:
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
@@ -252,7 +260,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      *                    - collaborators: The collaborators of the marketItem.
      *                    - ownersPercentage: The ownersPercentage of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
+     *                              MintGoldDustERC721 the amount must be always one.
      *                    - artistSigner: The artistSigner of the marketItem.
      *                    - price: The price or reserve price for the item.
      *                    - collectorMintId: Is the collector mint id generated off chain.
@@ -284,22 +292,26 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         _mustBeMintGoldDustERC721Or1155(address(collectorMintDTO.nft));
 
         require(collectorMintDTO.amount > 0, "Invalid amount to mint");
-        require(amountToBuy > 0, "Invalid amount to buy");
-
         require(
             collectorMintIdUsed[collectorMintDTO.collectorMintId] == false,
             "Collector Mint Id already used"
         );
 
-        collectorMintIdUsed[collectorMintDTO.collectorMintId] = true;
+        CollectorMintControls storage controls = collectorMintControls[
+            collectorMintDTO.collectorMintId
+        ];
 
-        uint256 realAmount = collectorMintDTO.amount;
+        require(
+            amountToBuy > 0 &&
+                amountToBuy + controls.count <= collectorMintDTO.amount,
+            "Invalid amount to buy"
+        );
 
-        if (address(collectorMintDTO.nft) == mintGoldDustERC721Address) {
-            realAmount = 1;
+        controls.count += amountToBuy;
+
+        if (controls.count == collectorMintDTO.amount) {
+            collectorMintIdUsed[collectorMintDTO.collectorMintId] = true;
         }
-
-        require(amountToBuy <= realAmount, "Invalid amount to buy");
 
         bytes32 eip712HashOnChain = _generateEIP712Hash(collectorMintDTO);
         require(eip712HashOnChain == eip712HashOffChain, "Invalid hash");
@@ -322,35 +334,41 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
             "Invalid signature"
         );
 
-        uint256 tokenId;
+        uint256 tokenId = controls.tokenId;
 
-        if (collectorMintDTO.collaborators.length == 0) {
-            tokenId = collectorMintDTO.nft.collectorMint(
-                collectorMintDTO.tokenURI,
-                collectorMintDTO.royalty,
-                collectorMintDTO.amount,
-                collectorMintDTO.artistSigner,
-                collectorMintDTO.memoir,
-                collectorMintDTO.collectorMintId,
-                msg.sender
-            );
+        if (tokenId == 0) {
+            if (collectorMintDTO.collaborators.length == 0) {
+                tokenId = collectorMintDTO.nft.collectorMint(
+                    collectorMintDTO.tokenURI,
+                    collectorMintDTO.royalty,
+                    amountToBuy,
+                    collectorMintDTO.artistSigner,
+                    collectorMintDTO.memoir,
+                    collectorMintDTO.collectorMintId,
+                    msg.sender
+                );
+            } else {
+                tokenId = collectorMintDTO.nft.collectorSplitMint(
+                    collectorMintDTO.tokenURI,
+                    collectorMintDTO.royalty,
+                    collectorMintDTO.collaborators,
+                    collectorMintDTO.ownersPercentage,
+                    amountToBuy,
+                    collectorMintDTO.artistSigner,
+                    collectorMintDTO.memoir,
+                    collectorMintDTO.collectorMintId,
+                    msg.sender
+                );
+            }
+            controls.tokenId = tokenId;
         } else {
-            tokenId = collectorMintDTO.nft.collectorSplitMint(
-                collectorMintDTO.tokenURI,
-                collectorMintDTO.royalty,
-                collectorMintDTO.collaborators,
-                collectorMintDTO.ownersPercentage,
-                collectorMintDTO.amount,
-                collectorMintDTO.artistSigner,
-                collectorMintDTO.memoir,
-                collectorMintDTO.collectorMintId,
-                msg.sender
-            );
+            MintGoldDustERC1155(address(collectorMintDTO.nft))
+                .collectorMintFromExisting(tokenId, amountToBuy);
         }
 
         ListDTO memory listDTO = ListDTO(
             tokenId,
-            collectorMintDTO.amount,
+            amountToBuy,
             collectorMintDTO.nft,
             collectorMintDTO.price
         );
@@ -361,7 +379,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
             listDTO.tokenId,
             collectorMintDTO.artistSigner,
             listDTO.price,
-            collectorMintDTO.amount,
+            amountToBuy,
             address(collectorMintDTO.nft)
         );
 
@@ -379,14 +397,14 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      * @notice function will fail if the market item does has the auction property to true.
      * @notice function will fail if the token was not listed to the set price market.
      * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
-     * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
+     * @notice function will fail if the amount paid by the buyer does not cover the purchase amount required.
      * @dev This function is specific for the set price market.
      * For the auction market we have a second purchaseAuctionNft function. See below.
      * @param saleDTO The SaleDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
+     *                              MintGoldDustERC721 the amount must be always one.
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      */
@@ -458,7 +476,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      *                    - collaborators: The collaborators of the marketItem.
      *                    - ownersPercentage: The ownersPercentage of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
+     *                              MintGoldDustERC721 the amount must be always one.
      *                    - artistSigner: The artistSigner of the marketItem.
      *                    - price: The price or reserve price for the item.
      * @notice that this function depends on another two functions:
@@ -517,7 +535,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      *                    - collaborators: The collaborators of the marketItem.
      *                    - ownersPercentage: The ownersPercentage of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
+     *                              MintGoldDustERC721 the amount must be always one.
      *                    - artistSigner: The artistSigner of the marketItem.
      *                    - price: The price or reserve price for the item.
      */
