@@ -250,7 +250,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
     }
 
     /**
-     * @notice that is a function responsilble by start the collector (lazy) mint process on chain.
+     * @notice that is a function responsible by start the collector (lazy) mint process on chain.
      * @param collectorMintDTO is the CollectorMintDTO struct
      *                It consists of the following fields:
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
@@ -260,7 +260,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      *                    - collaborators: The collaborators of the marketItem.
      *                    - ownersPercentage: The ownersPercentage of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
+     *                              MintGoldDustERC721 the amount must be always one.
      *                    - artistSigner: The artistSigner of the marketItem.
      *                    - price: The price or reserve price for the item.
      *                    - collectorMintId: Is the collector mint id generated off chain.
@@ -364,20 +364,6 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
         } else {
             MintGoldDustERC1155(address(collectorMintDTO.nft))
                 .collectorMintFromExisting(tokenId, amountToBuy);
-            // isSecondarySale[address(_mintGoldDustNFT)][
-            //     tokenId
-            // ] = ManageSecondarySale(
-            //     collectorMintDTO.artistSigner,
-            //     false,
-            //     amountToBuy
-            // );
-            // mintGoldDustMarketplace.setSecondarySale(
-            //     collectorMintDTO.contractAddress,
-            //     tokenId,
-            //     collectorMintDTO.artistSigner,
-            //     false,
-            //     amountToBuy
-            // );
         }
 
         ListDTO memory listDTO = ListDTO(
@@ -411,14 +397,14 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      * @notice function will fail if the market item does has the auction property to true.
      * @notice function will fail if the token was not listed to the set price market.
      * @notice function will fail if the contract address is not a MintGoldDustERC721 neither a MintGoldDustERC1155.
-     * @notice function will fail if the amount paid by the buyer does not cover the purshace amount required.
+     * @notice function will fail if the amount paid by the buyer does not cover the purchase amount required.
      * @dev This function is specific for the set price market.
      * For the auction market we have a second purchaseAuctionNft function. See below.
      * @param saleDTO The SaleDTO struct parameter to use.
      *                 It consists of the following fields:
      *                    - tokenid: The tokenId of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
+     *                              MintGoldDustERC721 the amount must be always one.
      *                    - contractAddress: The MintGoldDustERC1155 or the MintGoldDustERC721 address.
      *                    - seller: The seller of the marketItem.
      */
@@ -490,7 +476,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      *                    - collaborators: The collaborators of the marketItem.
      *                    - ownersPercentage: The ownersPercentage of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
+     *                              MintGoldDustERC721 the amount must be always one.
      *                    - artistSigner: The artistSigner of the marketItem.
      *                    - price: The price or reserve price for the item.
      * @notice that this function depends on another two functions:
@@ -549,7 +535,7 @@ contract MintGoldDustSetPrice is MintGoldDustMarketplace {
      *                    - collaborators: The collaborators of the marketItem.
      *                    - ownersPercentage: The ownersPercentage of the marketItem.
      *                    - amount: The quantity of tokens to be listed for an MintGoldDustERC1155. For
-     *                              MintGoldDustERC721 the amout must be always one.
+     *                              MintGoldDustERC721 the amount must be always one.
      *                    - artistSigner: The artistSigner of the marketItem.
      *                    - price: The price or reserve price for the item.
      */
