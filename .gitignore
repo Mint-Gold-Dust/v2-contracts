@@ -13,4 +13,4 @@ artifacts
 /deployments/hardhat/
 
 # Vscode configurations
-.vscode/*
+.vscode/
