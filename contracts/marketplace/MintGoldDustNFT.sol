@@ -175,7 +175,7 @@ abstract contract MintGoldDustNFT is
     /// @dev this function will be removed after upgrade the contracts to the new version.
     function setOverridePrimarySaleQuantityToSell(
         uint256[] calldata _tokenId
-    ) external {
+    ) external virtual {
         require(
             msg.sender == mintGoldDustCompany.owner() &&
                 address(this) == 0x4B0Dc0900dDe9d4f15115Bee56554857AE0Becb0,

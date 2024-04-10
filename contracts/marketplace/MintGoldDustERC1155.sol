@@ -3,7 +3,8 @@ pragma solidity 0.8.18;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ERC1155Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
-import {ERC1155URIStorageUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
+import {ERC1155URIStorageUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
 import {MintGoldDustCompany} from "./MintGoldDustCompany.sol";
 import {MintGoldDustNFT} from "./MintGoldDustNFT.sol";
 import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
@@ -13,13 +14,9 @@ import {Counters} from "@openzeppelin/contracts/utils/Counters.sol";
 /// @author Mint Gold Dust LLC
 /// @custom:contact klvh@mintgolddust.io
 
-contract MintGoldDustERC1155 is
-    Initializable,
-    ERC1155Upgradeable,
-    ERC1155URIStorageUpgradeable,
-    MintGoldDustNFT
-{
+contract MintGoldDustERC1155 is Initializable, ERC1155Upgradeable, ERC1155URIStorageUpgradeable, MintGoldDustNFT {
     using Counters for Counters.Counter;
+
     Counters.Counter public _tokenIds;
 
     /**
@@ -27,10 +24,7 @@ contract MintGoldDustERC1155 is
      * @notice that the MintGoldDustERC1155 is composed by other contract.
      * @param _mintGoldDustCompany The contract responsible to Mint Gold Dust management features.
      */
-    function initializeChild(
-        address _mintGoldDustCompany,
-        string calldata baseURI
-    ) external initializer {
+    function initializeChild(address _mintGoldDustCompany, string calldata baseURI) external initializer {
         __ERC1155_init(baseURI);
         __ERC1155URIStorage_init();
         MintGoldDustNFT.initialize(_mintGoldDustCompany);
@@ -43,20 +37,13 @@ contract MintGoldDustERC1155 is
      * @param tokenId ID of the token.
      * @param amount Amount of tokens to be transferred.
      */
-    function transfer(
-        address from,
-        address to,
-        uint256 tokenId,
-        uint256 amount
-    ) public virtual override nonReentrant {
+    function transfer(address from, address to, uint256 tokenId, uint256 amount) public virtual override nonReentrant {
         safeTransferFrom(from, to, tokenId, amount, "");
     }
 
     /// @notice that this mapping will return the uri for the respective token id.
     /// @param tokenId is the id of the token.
-    function uri(
-        uint256 tokenId
-    )
+    function uri(uint256 tokenId)
         public
         view
         virtual
@@ -73,10 +60,7 @@ contract MintGoldDustERC1155 is
      * @dev Requirements"
      * - Must only be called by {MintGoldDustSetPrice} contract
      */
-    function collectorMintFromExisting(
-        uint256 tokenId,
-        uint256 amount
-    ) external onlySetPrice {
+    function collectorMintFromExisting(uint256 tokenId, uint256 amount) external onlySetPrice {
         _mint(tokenIdArtist[tokenId], tokenId, amount, "");
         _primarySaleQuantityToSell[tokenId] += amount;
     }
@@ -110,17 +94,25 @@ contract MintGoldDustERC1155 is
         _primarySaleQuantityToSell[newTokenId] = _amount;
 
         emit MintGoldDustNFTMinted(
-            newTokenId,
-            _tokenURI,
-            _sender,
-            _royaltyPercent,
-            _amount,
-            false,
-            _collectorMintId,
-            _memoir
+            newTokenId, _tokenURI, _sender, _royaltyPercent, _amount, false, _collectorMintId, _memoir
         );
 
         return newTokenId;
+    }
+
+    function setOverridePrimarySaleQuantityToSell(uint256[] calldata _tokenId) external override {
+        require(
+            msg.sender == mintGoldDustCompany.owner() && address(this) == 0x47356C2EFdf0eA13eF48ecAE9651D6BB8a524dd9,
+            "Unauthorized"
+        );
+
+        uint256 len = _tokenId.length;
+
+        for (uint256 i = 0; i < len; i++) {
+            uint256 amountForSale =
+                ERC1155Upgradeable(address(this)).balanceOf(0x76cDa4e918581c4a57CB3e65975768c5F295f4D9, _tokenId[i]);
+            _primarySaleQuantityToSell[_tokenId[i]] = amountForSale;
+        }
     }
 
     /**
@@ -140,10 +132,8 @@ contract MintGoldDustERC1155 is
     function burnToken(uint256 tokenId, uint256 amount) external whenNotPaused {
         require(
             // Ensure the caller is either (approved or is the owner) or is the Mint Gold Dust Owner
-            isApprovedForAll(tokenIdArtist[tokenId], msg.sender) ||
-                tokenIdArtist[tokenId] == msg.sender ||
-                msg.sender == mintGoldDustCompany.owner() ||
-                mintGoldDustCompany.isAddressValidator(msg.sender),
+            isApprovedForAll(tokenIdArtist[tokenId], msg.sender) || tokenIdArtist[tokenId] == msg.sender
+                || msg.sender == mintGoldDustCompany.owner() || mintGoldDustCompany.isAddressValidator(msg.sender),
             "Only creator or allowed"
         );
 
@@ -167,13 +157,7 @@ contract MintGoldDustERC1155 is
         require(_tokenWasSold[tokenId] == false, "Token already sold");
 
         _burn(tokenOwner, tokenId, amount);
-        emit TokenBurned(
-            tokenId,
-            true,
-            tokenIdArtist[tokenId],
-            msg.sender,
-            amount
-        );
+        emit TokenBurned(tokenId, true, tokenIdArtist[tokenId], msg.sender, amount);
     }
 
     /**
@@ -185,11 +169,7 @@ contract MintGoldDustERC1155 is
      *
      * Note: This internal function is called by the `burn` function, which takes care of validations like owner checks and sufficient balance checks.
      */
-    function _burn(
-        address account,
-        uint256 id,
-        uint256 amount
-    ) internal override {
+    function _burn(address account, uint256 id, uint256 amount) internal override {
         super._burn(account, id, amount);
     }
 }
