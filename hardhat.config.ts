@@ -54,6 +54,11 @@ const config: HardhatUserConfig = {
         },
       },
       viaIR: true,
+      outputSelection: {
+        "*": {
+          "*": ["storageLayout"],
+        },
+      },
     },
   },
   paths: {
