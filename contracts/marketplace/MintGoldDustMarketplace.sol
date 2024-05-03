@@ -141,7 +141,7 @@ abstract contract MintGoldDustMarketplace is
     mapping(address => mapping(uint256 => mapping(address => MarketItem)))
         public idMarketItemsByContractByOwner;
 
-    mapping(address => mapping(uint256 => ManagePrimarySale)) 
+    mapping(address => mapping(uint256 => ManagePrimarySale))
         private _deprecatedStorageSlot;
 
     modifier isowner() {
