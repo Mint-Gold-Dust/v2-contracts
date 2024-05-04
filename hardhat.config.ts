@@ -25,12 +25,6 @@ const config: HardhatUserConfig = {
       gasPrice: 20000000000, // Optional: specify gas price in wei (this is just an example value)
       chainId: 11155111, // Optional: specify the chainId for sepolia
     },
-    goerli: {
-      url: `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`,
-      accounts: [`${process.env.PK}`],
-      gasPrice: 20000000000, // Optional: specify gas price in wei (this is just an example value)
-      chainId: 5, // Optional: specify the chainId for sepolia
-    },
     localhost: {
       url: "http://127.0.0.1:8545",
       accounts: [
@@ -41,6 +35,17 @@ const config: HardhatUserConfig = {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [`${process.env.PK}`],
       chainId: 1, // Optional: specify the chainId for mainnet
+    },
+    base: {
+      url: `https://mainnet.base.org`,
+      accounts: [`${process.env.PK}`],
+      chainId: 8453, // Optional: specify the chainId for base
+    },
+    baseSepolia: {
+      url: `https://sepolia.base.org`,
+      accounts: [`${process.env.PK}`],
+      gasPrice: 20000000000, // Optional: specify gas price in wei (this is just an example value)
+      chainId: 84532, // Optional: specify the chainId for base-sepolia
     },
   },
   solidity: {
@@ -74,6 +79,16 @@ const config: HardhatUserConfig = {
     // Define Your API key for Etherscan on .env
     // Obtain one at https://etherscan.io/
     apiKey: `${process.env.ETHERSCAN_KEY}`,
+    customChains: [
+      {
+        network: "baseSepolia",
+        chainId: 84532,
+        urls: {
+          apiURL: "https://api-sepolia.basescan.org/api",
+          browserURL: "https://sepolia.basescan.org/",
+        },
+      },
+    ],
   },
 };
 
