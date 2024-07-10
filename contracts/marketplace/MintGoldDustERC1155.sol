@@ -22,6 +22,10 @@ contract MintGoldDustERC1155 is
     using Counters for Counters.Counter;
     Counters.Counter public _tokenIds;
 
+    function name() external pure returns (string memory) {
+        return "Mint Gold Dust NFT";
+    }
+
     /**
      *
      * @notice that the MintGoldDustERC1155 is composed by other contract.
